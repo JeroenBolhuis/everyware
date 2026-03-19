@@ -15,7 +15,7 @@
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-list" :href="route('enquetes')" :current="request()->routeIs('enquetes')" wire:navigate>
+                    <flux:sidebar.item icon="clipboard-document-list" :href="route('enquetes.manage')" :current="request()->routeIs('enquetes.manage')" wire:navigate>
                         {{ __('Enquetes') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>

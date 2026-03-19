@@ -13,7 +13,7 @@
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:navbar.item>
-                <flux:navbar.item icon="clipboard-document-list" :href="route('enquetes')" :current="request()->routeIs('enquetes')" wire:navigate>
+                <flux:navbar.item icon="clipboard-document-list" :href="route('enquetes.manage')" :current="request()->routeIs('enquetes.manage')" wire:navigate>
                     {{ __('Enquetes') }}
                 </flux:navbar.item>
             </flux:navbar>
@@ -41,7 +41,7 @@
                     <flux:sidebar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-list" :href="route('enquetes')" :current="request()->routeIs('enquetes')" wire:navigate>
+                    <flux:sidebar.item icon="clipboard-document-list" :href="route('enquetes.manage')" :current="request()->routeIs('enquetes.manage')" wire:navigate>
                         {{ __('Enquetes') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>

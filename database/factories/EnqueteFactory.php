@@ -25,4 +25,9 @@ class EnqueteFactory extends Factory
             'is_published' => false,
         ];
     }
+
+    public function published(): static
+    {
+        return $this->state(fn () => ['is_published' => true]);
+    }
 }
