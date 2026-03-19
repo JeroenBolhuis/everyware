@@ -37,6 +37,6 @@ test('deployment tool versions are pinned for local and vercel parity', function
     );
 
     expect($composer['require']['php'])->toBe('^8.4');
+    expect($composer['extra']['runtime']['node'])->toBe('22');
     expect($package['engines']['node'])->toBe('22.x');
-    expect(trim(file_get_contents($projectPath.'/.node-version')))->toBe('22');
 });

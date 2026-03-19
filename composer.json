@@ -94,6 +94,9 @@
         ]
     },
     "extra": {
+        "runtime": {
+            "node": "22"
+        },
         "laravel": {
             "dont-discover": []
         }
