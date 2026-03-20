@@ -34,6 +34,9 @@
                         $oldAnswer = old("answers.$question->id");
                         $leftOption = $question->options[0] ?? 'nee';
                         $rightOption = $question->options[1] ?? 'ja';
+                        $currentQuestionNumber = $index + 1;
+                        $totalQuestions = $survey->questions->count();
+                        $progressPercentage = (int) round(($currentQuestionNumber / $totalQuestions) * 100);
                     @endphp
 
                     <section
@@ -44,18 +47,11 @@
                         data-required="{{ $question->required ? '1' : '0' }}"
                         aria-hidden="{{ $isFirst ? 'false' : 'true' }}"
                     >
-                        <div class="mb-4">
-                            <div class="text-sm text-red-500 mb-2">
-                                Vraag {{ $index + 1 }} van {{ $survey->questions->count() }}
-                            </div>
-
-                            <div class="w-full bg-red-100 h-2 rounded-full overflow-hidden" aria-hidden="true">
-                                <div
-                                    class="bg-red-400 h-2 rounded-full transition-all duration-300"
-                                    style="width: {{ (($index + 1) / $survey->questions->count()) * 100 }}%"
-                                ></div>
-                            </div>
-                        </div>
+                        <x-surveys.progress-bar
+                            :current-question-number="$currentQuestionNumber"
+                            :total-questions="$totalQuestions"
+                            :progress-percentage="$progressPercentage"
+                        />
 
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                             <h2 class="text-3xl font-semibold text-gray-900 mb-3">

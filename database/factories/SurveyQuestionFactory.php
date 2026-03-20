@@ -22,11 +22,11 @@ class SurveyQuestionFactory extends Factory
     {
         return [
             'survey_id' => Survey::factory(),
-            'question_id' => fake()->unique()->slug(3),
-            'prompt' => fake()->sentence(),
-            'description' => fake()->sentence(),
-            'placeholder' => fake()->sentence(),
-            'order' => 1,
+            'question' => fake()->sentence(),
+            'type' => fake()->randomElement(['radio', 'swipe', 'textarea']),
+            'options' => null,
+            'required' => true,
+            'sort_order' => 1,
         ];
     }
 }
