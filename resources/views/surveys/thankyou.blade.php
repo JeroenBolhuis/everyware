@@ -9,8 +9,8 @@
             <div class="bg-gray-100 rounded-lg p-4">
                 <p class="font-semibold mb-2">Rechten intrekken</p>
                 <p class="mb-2">Via deze link kun je jouw toestemming of antwoorden laten intrekken:</p>
-                <a class="text-blue-600 underline break-all" href="{{ route('surveys.withdraw.show', $response->withdrawal_token) }}">
-                    {{ route('surveys.withdraw.show', $response->withdrawal_token) }}
+                <a class="text-blue-600 underline break-all" href="{{ route('survey.withdraw.show', $response->withdrawal_token) }}">
+                    {{ route('survey.withdraw.show', $response->withdrawal_token) }}
                 </a>
             </div>
         </div>

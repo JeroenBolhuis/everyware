@@ -10,7 +10,7 @@
                     Weet je zeker dat je jouw toestemming of enquête-inzending wilt intrekken?
                 </p>
 
-                <form method="POST" action="{{ route('surveys.withdraw.destroy', $response->withdrawal_token) }}">
+                <form method="POST" action="{{ route('survey.withdraw.destroy', $response->withdrawal_token) }}">
                     @csrf
                     <button class="px-6 py-3 rounded-xl bg-red-600 text-white font-semibold">
                         Intrekken

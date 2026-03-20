@@ -4,27 +4,26 @@ use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyWithdrawalController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::name('app.')->group(function () {
+    Route::view('/', 'welcome')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
-    Route::view('enquetes', 'enquetes')->name('enquetes');
-});
-
-Route::name('surveys.')->group(function () {
-    Route::controller(SurveyController::class)->group(function () {
-        Route::get('/surveys/{survey}', 'show')->name('show');
-        Route::post('/surveys/{survey}', 'store')->name('store');
-        Route::get('/survey-response/{response}/thank-you', 'thankYou')->name('thankyou');
+    Route::middleware(['auth', 'verified'])->group(function () {
+        Route::view('dashboard', 'dashboard')->name('dashboard');
+        Route::view('enquetes', 'enquetes')->name('enquetes');
     });
-
-    Route::prefix('survey-withdraw')
-        ->name('withdraw.')
-        ->controller(SurveyWithdrawalController::class)
-        ->group(function () {
-            Route::get('/{token}', 'show')->name('show');
-            Route::post('/{token}', 'destroy')->name('destroy');
-        });
 });
+
+Route::prefix('survey')->name('survey.')->group(function () {
+    Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
+    Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
+    Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');
+});
+
+Route::prefix('survey-withdraw')->name('survey.withdraw.')->group(function () {
+    Route::get('/{token}', [SurveyWithdrawalController::class, 'show'])->name('show');
+    Route::post('/{token}', [SurveyWithdrawalController::class, 'destroy'])->name('destroy');
+});
+
+Route::get('/surveys', [SurveyController::class, 'index'])->name('surveys.index');
 
 require __DIR__.'/settings.php';

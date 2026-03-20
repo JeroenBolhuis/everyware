@@ -11,6 +11,25 @@ use Illuminate\Support\Str;
 
 class SurveyController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = Survey::query();
+
+        // Filter by status
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        // Search by title
+        if ($request->has('search') && $request->search !== '') {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        $surveys = $query->paginate(10);
+
+        return view('surveys.index', compact('surveys'));
+    }
+
     public function show(Survey $survey)
     {
         $survey->load('questions');
@@ -60,7 +79,7 @@ class SurveyController extends Controller
             return $response;
         });
 
-        return redirect()->route('surveys.thankyou', $response);
+        return redirect()->route('survey.thankyou', $response);
     }
 
     public function thankYou(SurveyResponse $response)
