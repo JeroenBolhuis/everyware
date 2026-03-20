@@ -34,7 +34,7 @@ return [
 
     'compiled' => env(
         'VIEW_COMPILED_PATH',
-        env('VERCEL') ? '/tmp' : storage_path('framework/views')
+        getenv('VERCEL') ? '/tmp' : storage_path('framework/views')
     ),
 
 ];
