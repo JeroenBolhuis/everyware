@@ -3,6 +3,7 @@
 namespace App\Livewire\Student;
 
 use App\Models\Survey as SurveyModel;
+use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use Illuminate\Contracts\View\View;
@@ -124,7 +125,7 @@ class Survey extends Component
             return;
         }
 
-        $this->validateOnly('answers.'.$this->currentQuestion->question_id);
+        $this->validateOnly('answers.'.$this->currentQuestion->id);
         $this->currentQuestionIndex++;
     }
 
@@ -160,21 +161,26 @@ class Survey extends Component
             return;
         }
 
-        foreach ($this->answers as $questionId => $answer) {
-            $question = $this->questions->firstWhere('question_id', $questionId);
+        $response = SurveyResponse::query()->create([
+            'survey_id' => $this->survey->id,
+            'student_name' => auth()->user()->name,
+            'student_email' => auth()->user()->email,
+            'withdrawal_token' => (string) str()->uuid(),
+            'submitted_at' => now(),
+        ]);
 
-            if ($question) {
-                SurveyResponse::updateOrCreate(
-                    [
-                        'user_id' => auth()->id(),
-                        'survey_id' => $this->survey->id,
-                        'survey_question_id' => $question->id,
-                    ],
-                    [
-                        'answer' => $answer,
-                    ]
-                );
+        foreach ($this->answers as $questionId => $answer) {
+            $question = $this->questions->firstWhere('id', (int) $questionId);
+
+            if (! $question) {
+                continue;
             }
+
+            SurveyAnswer::query()->create([
+                'survey_response_id' => $response->id,
+                'survey_question_id' => $question->id,
+                'answer' => $answer,
+            ]);
         }
 
         $this->isCompleted = true;

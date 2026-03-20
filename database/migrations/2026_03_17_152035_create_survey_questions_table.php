@@ -14,11 +14,10 @@ return new class extends Migration
         Schema::create('survey_questions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('survey_id')->constrained()->cascadeOnDelete();
-            $table->string('question_id')->unique();
-            $table->text('prompt');
-            $table->text('description')->nullable();
-            $table->string('placeholder')->nullable();
-            $table->integer('order')->default(0);
+            $table->string('question');
+            $table->string('type');
+            $table->boolean('required')->default(true);
+            $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();
         });
     }

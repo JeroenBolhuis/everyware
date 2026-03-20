@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('survey_responses', function (Blueprint $table) {
+        Schema::create('survey_answers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('survey_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('survey_response_id')->constrained()->cascadeOnDelete();
             $table->foreignId('survey_question_id')->constrained()->cascadeOnDelete();
             $table->text('answer')->nullable();
             $table->timestamps();
-
-            $table->unique(['user_id', 'survey_id', 'survey_question_id']);
         });
     }
 
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('survey_responses');
+        Schema::dropIfExists('survey_answers');
     }
 };

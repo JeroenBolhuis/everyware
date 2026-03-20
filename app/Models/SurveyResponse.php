@@ -4,28 +4,31 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SurveyResponse extends Model
 {
     protected $fillable = [
-        'user_id',
         'survey_id',
-        'survey_question_id',
-        'answer',
+        'student_name',
+        'student_email',
+        'withdrawal_token',
+        'submitted_at',
+        'withdrawn_at',
     ];
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
+    protected $casts = [
+        'submitted_at' => 'datetime',
+        'withdrawn_at' => 'datetime',
+    ];
 
     public function survey(): BelongsTo
     {
         return $this->belongsTo(Survey::class);
     }
 
-    public function question(): BelongsTo
+    public function answers(): HasMany
     {
-        return $this->belongsTo(SurveyQuestion::class, 'survey_question_id');
+        return $this->hasMany(SurveyAnswer::class);
     }
 }

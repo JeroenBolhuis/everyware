@@ -1,0 +1,22 @@
+.swipe-card {
+    transition: transform 0.2s ease;
+    touch-action: pan-y;
+}
+
+.swipe-badge-left,
+.swipe-badge-right {
+    transition: opacity 0.2s ease;
+}
+
+.survey-option {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.survey-option:has(input[type="radio"]:checked) {
+    border-color: rgb(248 113 113);
+    background-color: rgb(254 242 242);
+}
+
+#surveyValidationMessage {
+    scroll-margin-top: 1rem;
+}

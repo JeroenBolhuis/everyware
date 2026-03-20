@@ -28,7 +28,7 @@
         </section>
     @endif
 
-    <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-950" wire:key="question-{{ $this->currentQuestion?->question_id }}">
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-xs dark:border-zinc-800 dark:bg-zinc-950" wire:key="question-{{ $this->currentQuestion?->id }}">
         @if ($this->totalQuestions === 0)
             <div class="space-y-3">
                 <flux:heading size="lg">{{ __('Er is nog geen actieve enquête') }}</flux:heading>
@@ -58,17 +58,17 @@
                         {{ __('Vraag :number', ['number' => $this->currentQuestionNumber]) }}
                     </flux:text>
 
-                    <flux:heading size="lg">{{ $this->currentQuestion?->prompt }}</flux:heading>
+                    <flux:heading size="lg">{{ $this->currentQuestion?->question }}</flux:heading>
 
                     <flux:text class="text-zinc-600 dark:text-zinc-400">
-                        {{ $this->currentQuestion?->description }}
+                        {{ __('Type vraag: :type', ['type' => $this->currentQuestion?->type]) }}
                     </flux:text>
                 </div>
 
                 <flux:textarea
-                    wire:model="answers.{{ $this->currentQuestion?->question_id }}"
+                    wire:model="answers.{{ $this->currentQuestion?->id }}"
                     rows="5"
-                    :placeholder="$this->currentQuestion?->placeholder"
+                    :placeholder="__('Vul hier je antwoord in')"
                 />
 
                 <div class="flex items-center justify-between gap-3">
