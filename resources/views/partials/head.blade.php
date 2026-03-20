@@ -12,5 +12,6 @@
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=fraunces:400,500,600,700|source-sans-3:400,500,600,700" rel="stylesheet" />
 
-@vite(['resources/css/app.css', 'resources/js/app.js'])
+<link rel="stylesheet" href="{{ asset('build/assets/app.css') }}">
+<script type="module" src="{{ asset('build/assets/app.js') }}"></script>
 @fluxAppearance
