@@ -1,24 +1,43 @@
 <x-layout>
     @vite(['resources/css/surveys/show.css', 'resources/js/surveys/show.js'])
 
+    @php
+        $totalQuestions = $survey->questions->count();
+        $initialStep = 0;
+
+        if ($errors->any()) {
+            foreach ($survey->questions as $errorIndex => $errorQuestion) {
+                if ($errors->has("answers.{$errorQuestion->id}")) {
+                    $initialStep = $errorIndex;
+                    break;
+                }
+            }
+        }
+    @endphp
+
     <div class="min-h-screen bg-gray-100">
         <x-surveys.page-header />
 
         <main class="max-w-3xl mx-auto mt-8 px-4 pb-10">
             <x-surveys.validation-notices />
 
-            <form method="POST" action="{{ route('survey.store', $survey) }}" id="surveyForm" novalidate>
+            <form
+                method="POST"
+                action="{{ route('survey.store', $survey) }}"
+                id="surveyForm"
+                data-initial-step="{{ $initialStep }}"
+                novalidate
+            >
                 @csrf
 
                 @foreach ($survey->questions as $index => $question)
                     @php
                         $isFirst = $index === 0;
-                        $isLast = $index === $survey->questions->count() - 1;
+                        $isLast = $index === $totalQuestions - 1;
                         $oldAnswer = old("answers.$question->id");
                         $leftOption = $question->options[0] ?? 'nee';
                         $rightOption = $question->options[1] ?? 'ja';
                         $currentQuestionNumber = $index + 1;
-                        $totalQuestions = $survey->questions->count();
                         $progressPercentage = (int) round(($currentQuestionNumber / $totalQuestions) * 100);
                     @endphp
 

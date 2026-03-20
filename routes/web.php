@@ -4,19 +4,18 @@ use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyWithdrawalController;
 use Illuminate\Support\Facades\Route;
 
-Route::name('app.')->group(function () {
-    Route::view('/', 'welcome')->name('home');
+Route::view('/', 'welcome')->name('home');
 
-    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::view('dashboard', 'dashboard')->name('dashboard');
-        Route::view('enquetes', 'enquetes')->name('enquetes');
-    });
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::view('enquetes', 'enquetes')->name('enquetes');
 });
 
 Route::prefix('survey')->name('survey.')->group(function () {
     Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
     Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
     Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');
+    Route::post('/response/{response}/contact-details', [SurveyController::class, 'storeContactDetails'])->name('contact-details.store');
 });
 
 Route::prefix('survey-withdraw')->name('survey.withdraw.')->group(function () {

@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    const requestedInitialStep = Number.parseInt(form.dataset.initialStep ?? '0', 10);
+    const initialStep = Number.isNaN(requestedInitialStep)
+        ? 0
+        : Math.min(Math.max(requestedInitialStep, 0), steps.length - 1);
+
     let currentStep = 0;
     let isSubmitting = false;
 
@@ -248,5 +253,5 @@ document.addEventListener('DOMContentLoaded', () => {
         resetCard();
     });
 
-    showStep(0);
+    showStep(initialStep);
 });
