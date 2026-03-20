@@ -1,19 +1,32 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyWithdrawalController;
+use App\Livewire\Student\Survey as StudentSurvey;
+use Illuminate\Support\Facades\Route;
+
 Route::view('/', 'welcome')->name('home');
+Route::livewire('student/enquete', StudentSurvey::class)->name('student.survey.show');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('enquetes', 'enquetes')->name('enquetes');
 });
-Route::get('/surveys/{survey}', [SurveyController::class, 'show'])->name('surveys.show');
-Route::post('/surveys/{survey}', [SurveyController::class, 'store'])->name('surveys.store');
 
-Route::get('/survey-response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('surveys.thankyou');
+Route::name('surveys.')->group(function () {
+    Route::controller(SurveyController::class)->group(function () {
+        Route::get('/surveys/{survey}', 'show')->name('show');
+        Route::post('/surveys/{survey}', 'store')->name('store');
+        Route::get('/survey-response/{response}/thank-you', 'thankYou')->name('thankyou');
+    });
 
-Route::get('/survey-withdraw/{token}', [SurveyWithdrawalController::class, 'show'])->name('surveys.withdraw.show');
-Route::post('/survey-withdraw/{token}', [SurveyWithdrawalController::class, 'destroy'])->name('surveys.withdraw.destroy');
+    Route::prefix('survey-withdraw')
+        ->name('withdraw.')
+        ->controller(SurveyWithdrawalController::class)
+        ->group(function () {
+            Route::get('/{token}', 'show')->name('show');
+            Route::post('/{token}', 'destroy')->name('destroy');
+        });
+});
+
 require __DIR__.'/settings.php';

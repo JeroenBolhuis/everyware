@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\SurveyResponse;
-use Illuminate\Http\Request;
 
 class SurveyWithdrawalController extends Controller
 {
@@ -18,7 +17,7 @@ class SurveyWithdrawalController extends Controller
     {
         $response = SurveyResponse::where('withdrawal_token', $token)->firstOrFail();
 
-        if (!$response->withdrawn_at) {
+        if (! $response->withdrawn_at) {
             $response->update([
                 'withdrawn_at' => now(),
             ]);
