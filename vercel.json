@@ -1,8 +1,11 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": null,
     "regions": [
         "hnd1"
     ],
+    "installCommand": "npm ci && composer install --no-dev --optimize-autoloader",
+    "buildCommand": "npm run build",
     "builds": [
         {
             "src": "/api/index.php",
@@ -15,8 +18,8 @@
     ],
     "routes": [
         {
-            "src": "/build/assets/(.*)",
-            "dest": "/public/build/assets/$1"
+            "src": "/build/(.*)",
+            "dest": "/public/build/$1"
         },
         {
             "src": "/favicon.(.*)",
