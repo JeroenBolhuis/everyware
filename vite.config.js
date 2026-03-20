@@ -18,13 +18,4 @@ export default defineConfig({
             ignored: ['**/storage/framework/views/**'],
         },
     },
-    build: {
-        rollupOptions: {
-            output: {
-                assetFileNames: 'assets/[name][extname]',
-                chunkFileNames: 'assets/[name].js',
-                entryFileNames: 'assets/[name].js',
-            },
-        },
-    },
 });
