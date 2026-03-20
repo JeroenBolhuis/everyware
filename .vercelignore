@@ -1,10 +1,1 @@
-.git
-.github
-.agents
-.codex
-.cursor
-.env
-node_modules
-vendor
-tests
-storage/logs
+/vendor
