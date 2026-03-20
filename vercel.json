@@ -4,8 +4,6 @@
     "regions": [
         "hnd1"
     ],
-    "installCommand": "npm ci && composer install --no-dev --optimize-autoloader",
-    "buildCommand": "npm run build",
     "builds": [
         {
             "src": "/api/index.php",
