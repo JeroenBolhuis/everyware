@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ContactInformationSubmission;
+use App\Http\Requests\Surveys\StoreSurveyContactDetailsRequest;
+use App\Http\Requests\Surveys\StoreSurveyResponseRequest;
 use App\Models\Survey;
-use App\Models\SurveyAnswer;
 use App\Models\SurveyResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,12 +18,12 @@ class SurveyController extends Controller
         $query = Survey::query();
 
         // Filter by status
-        if ($request->has('status') && $request->status !== '') {
+        if ($request->filled('status')) {
             $query->where('is_active', $request->status === 'active');
         }
 
         // Search by title
-        if ($request->has('search') && $request->search !== '') {
+        if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
         }
 
@@ -41,39 +41,30 @@ class SurveyController extends Controller
         return view('surveys.show', compact('survey'));
     }
 
-    public function store(Request $request, Survey $survey)
+    public function store(StoreSurveyResponseRequest $request, Survey $survey)
     {
-        $survey->load('questions');
-
-        $rules = [
-            'answers' => ['required', 'array'],
-        ];
-
-        foreach ($survey->questions as $question) {
-            $rules["answers.{$question->id}"] = $question->required ? ['required'] : ['nullable'];
-        }
-
-        $validated = $request->validate($rules);
+        $validated = $request->validated();
 
         $response = DB::transaction(function () use ($validated, $survey) {
-            $response = SurveyResponse::create([
-                'survey_id' => $survey->id,
+            $response = $survey->responses()->create([
                 'withdrawal_token' => Str::uuid(),
                 'submitted_at' => now(),
             ]);
 
-            foreach ($validated['answers'] as $questionId => $answer) {
-                SurveyAnswer::create([
-                    'survey_response_id' => $response->id,
+            $answers = collect($validated['answers'])
+                ->map(fn ($answer, $questionId) => [
                     'survey_question_id' => $questionId,
                     'answer' => $answer,
-                ]);
-            }
+                ])
+                ->values()
+                ->all();
+
+            $response->answers()->createMany($answers);
 
             return $response;
         });
 
-        return redirect()->route('survey.thankyou', $response);
+        return to_route('survey.thankyou', $response);
     }
 
     public function thankYou(SurveyResponse $response)
@@ -83,32 +74,23 @@ class SurveyController extends Controller
         return view('surveys.thankyou', compact('response'));
     }
 
-    public function storeContactDetails(Request $request, SurveyResponse $response)
+    public function storeContactDetails(StoreSurveyContactDetailsRequest $request, SurveyResponse $response)
     {
-        $validated = $request->validate([
-            'contact_name' => ['nullable', 'string', 'max:255'],
-            'contact_email' => ['nullable', 'email', 'max:255'],
-            'contact_phone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9\s\-()]{7,20}$/'],
-        ], [
-            'contact_email.email' => 'Vul een geldig e-mailadres in.',
-            'contact_phone.regex' => 'Vul een geldig telefoonnummer in.',
-        ]);
+        $validated = $request->validated();
 
         $contactInformationPayload = $this->buildContactInformationPayload($validated, $response);
 
         if ($contactInformationPayload === null) {
-            return redirect()
-                ->route('survey.thankyou', $response)
+            return to_route('survey.thankyou', $response)
                 ->with('contactDetailsSkipped', true);
         }
 
-        ContactInformationSubmission::updateOrCreate(
+        $response->contactInformationSubmission()->updateOrCreate(
             ['survey_response_id' => $response->id],
             $contactInformationPayload,
         );
 
-        return redirect()
-            ->route('survey.thankyou', $response)
+        return to_route('survey.thankyou', $response)
             ->with('contactDetailsSaved', true);
     }
 

@@ -5,26 +5,27 @@
 
             <!-- Filters -->
             <div class="mb-6 flex flex-wrap gap-4">
-                <form method="GET" class="flex flex-wrap gap-4 items-end">
+                <div class="flex flex-wrap gap-4 items-end">
                     <div>
                         <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search by Title</label>
-                        <input type="text" name="search" id="search" value="{{ request('search') }}" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" onkeyup="this.form.submit()">
+                        <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Search..." class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
                     <div>
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select name="status" id="status" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" onchange="this.form.submit()">
+                        <select name="status" id="status" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">All</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>
                     </div>
 
-                    <a href="{{ route('surveys.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">Clear</a>
-                </form>
+                    <button id="clear-btn" type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 self-end h-[38px]">Clear</button>
+                </div>
             </div>
 
             <!-- Surveys List -->
+            <div id="surveys-container">
             <div class="space-y-4">
                 @forelse ($surveys as $survey)
                     <div class="border rounded-lg p-6 {{ $survey->is_active ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200' }}">
@@ -67,6 +68,67 @@
                     {{ $surveys->appends(request()->query())->links() }}
                 </div>
             @endif
+            </div>{{-- end #surveys-container --}}
         </div>
     </div>
+
+    <script>
+        const searchInput = document.getElementById('search');
+        const statusSelect = document.getElementById('status');
+        const clearBtn = document.getElementById('clear-btn');
+        const container = document.getElementById('surveys-container');
+        let debounceTimer;
+
+        function fetchSurveys(page) {
+            const search = searchInput.value;
+            const status = statusSelect.value;
+            const params = new URLSearchParams({ search, status, page: page || 1 });
+
+            fetch(`{{ route('surveys.index') }}?${params}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContainer = doc.getElementById('surveys-container');
+                if (newContainer) container.innerHTML = newContainer.innerHTML;
+
+                // Re-attach pagination link listeners
+                attachPaginationListeners();
+
+                // Update browser URL without reload
+                const url = new URL(window.location.href);
+                url.searchParams.set('search', search);
+                url.searchParams.set('status', status);
+                url.searchParams.set('page', page || 1);
+                window.history.replaceState({}, '', url);
+            });
+        }
+
+        function attachPaginationListeners() {
+            container.querySelectorAll('nav a[href]').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const url = new URL(this.href);
+                    fetchSurveys(url.searchParams.get('page') || 1);
+                });
+            });
+        }
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => fetchSurveys(1), 300);
+        });
+
+        statusSelect.addEventListener('change', () => fetchSurveys(1));
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            statusSelect.value = '';
+            fetchSurveys(1);
+        });
+
+        attachPaginationListeners();
+    </script>
 </x-layout>
