@@ -23,7 +23,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureVercelServerless();
         $this->configureDefaults();
+    }
+
+    /**
+     * When VERCEL=1, avoid database-backed session/cache/queue if dashboard env copies .env.
+     */
+    protected function configureVercelServerless(): void
+    {
+        if (! getenv('VERCEL')) {
+            return;
+        }
+
+        config([
+            'cache.default' => 'array',
+            'queue.default' => 'sync',
+            'session.driver' => 'cookie',
+        ]);
     }
 
     /**

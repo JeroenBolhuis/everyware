@@ -1,16 +1,56 @@
 <x-layout>
-    <div class="max-w-2xl mx-auto py-10 px-4">
+    <div class="max-w-2xl mx-auto py-10 px-4 space-y-6">
         <div class="bg-white border rounded-2xl shadow-md p-8">
             <h1 class="text-3xl font-bold mb-4">Bedankt voor je antwoord</h1>
             <p class="text-gray-700 mb-6">
                 Je enquête is succesvol verzonden.
             </p>
 
+            @if (session('contactDetailsSaved'))
+                <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
+                    Je contactgegevens zijn opgeslagen.
+                </div>
+            @endif
+
+            <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p class="font-semibold text-gray-900">Contactgegevens</p>
+
+                @if ($response->hasSharedContactDetails())
+                    <p class="mt-2 text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn gehasht opgeslagen.</p>
+
+                    <ul class="mt-3 space-y-2 text-sm text-gray-700">
+                        @foreach ($response->sharedContactFieldLabels() as $fieldLabel)
+                            <li class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-green-800 mr-2 mb-2">
+                                {{ $fieldLabel }}
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="mt-2 text-gray-700">
+                        Wil je dat we contact met je opnemen? Laat hieronder optioneel je contactgegevens achter.
+                    </p>
+
+                    <form method="POST" action="{{ route('survey.contact-details.store', $response) }}" class="mt-4 space-y-4">
+                        @csrf
+                        <x-surveys.contact-details />
+
+                        <div class="flex items-center justify-end gap-3">
+                            <button
+                                type="submit"
+                                class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md border border-red-600 hover:bg-red-700 transition"
+                            >
+                                Contactgegevens opslaan
+                            </button>
+                        </div>
+                    </form>
+                @endif
+            </div>
+
             <div class="bg-gray-100 rounded-lg p-4">
                 <p class="font-semibold mb-2">Rechten intrekken</p>
                 <p class="mb-2">Via deze link kun je jouw toestemming of antwoorden laten intrekken:</p>
-                <a class="text-blue-600 underline break-all" href="{{ route('surveys.withdraw.show', $response->withdrawal_token) }}">
-                    {{ route('surveys.withdraw.show', $response->withdrawal_token) }}
+                <a class="text-blue-600 underline break-all" href="{{ route('survey.withdraw.show', $response->withdrawal_token) }}">
+                    {{ route('survey.withdraw.show', $response->withdrawal_token) }}
                 </a>
             </div>
         </div>

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SurveyResponse extends Model
 {
@@ -30,5 +31,28 @@ class SurveyResponse extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(SurveyAnswer::class);
+    }
+
+    public function contactInformationSubmission(): HasOne
+    {
+        return $this->hasOne(ContactInformationSubmission::class);
+    }
+
+    public function hasSharedContactDetails(): bool
+    {
+        $contactInformation = $this->contactInformationSubmission;
+
+        return (bool) ($contactInformation?->name || $contactInformation?->email || $contactInformation?->phone);
+    }
+
+    public function sharedContactFieldLabels(): array
+    {
+        $contactInformation = $this->contactInformationSubmission;
+
+        return array_values(array_filter([
+            $contactInformation?->name ? 'Naam opgeslagen' : null,
+            $contactInformation?->email ? 'E-mailadres opgeslagen' : null,
+            $contactInformation?->phone ? 'Telefoonnummer opgeslagen' : null,
+        ]));
     }
 }

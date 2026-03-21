@@ -1,22 +1,31 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "framework": null,
-    "installCommand": "composer install --no-dev --prefer-dist --optimize-autoloader && npm ci",
-    "buildCommand": "composer run vercel-build",
-    "functions": {
-        "vercel.php": {
-            "runtime": "vercel-php@0.8.0",
-            "maxDuration": 10
+    "regions": [
+        "hnd1"
+    ],
+    "builds": [
+        {
+            "src": "/api/index.php",
+            "use": "vercel-php@0.9.0"
+        },
+        {
+            "src": "/public/**",
+            "use": "@vercel/static"
         }
-    },
+    ],
     "routes": [
         {
             "src": "/build/(.*)",
             "dest": "/public/build/$1"
         },
         {
-            "src": "/favicon.ico",
-            "dest": "/public/favicon.ico"
+            "src": "/favicon.(.*)",
+            "dest": "/public/favicon.$1"
+        },
+        {
+            "src": "/apple-touch-icon.png",
+            "dest": "/public/apple-touch-icon.png"
         },
         {
             "src": "/robots.txt",
@@ -24,7 +33,22 @@
         },
         {
             "src": "/(.*)",
-            "dest": "/vercel.php"
+            "dest": "/api/index.php"
         }
-    ]
+    ],
+    "env": {
+        "APP_NAME": "Laravel Vercel",
+        "APP_DEBUG": "false",
+        "APP_CONFIG_CACHE": "/tmp/config.php",
+        "APP_EVENTS_CACHE": "/tmp/events.php",
+        "APP_PACKAGES_CACHE": "/tmp/packages.php",
+        "APP_ROUTES_CACHE": "/tmp/routes.php",
+        "APP_SERVICES_CACHE": "/tmp/services.php",
+        "CACHE_DRIVER": "array",
+        "CACHE_STORE": "array",
+        "QUEUE_CONNECTION": "sync",
+        "LOG_CHANNEL": "stderr",
+        "SESSION_DRIVER": "cookie",
+        "VIEW_COMPILED_PATH": "/tmp"
+    }
 }

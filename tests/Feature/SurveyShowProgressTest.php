@@ -39,7 +39,7 @@ test('survey show page renders the progress bar with question counts and percent
         ],
     ])->each(fn (array $question) => SurveyQuestion::factory()->for($survey)->create($question));
 
-    $this->get(route('surveys.show', $survey))
+    $this->get(route('survey.show', $survey))
         ->assertOk()
         ->assertSeeHtml('data-test="survey-progress-bar"')
         ->assertSee('Vraag 1 van 4')
