@@ -58,8 +58,8 @@ class SurveySeeder extends Seeder
                         'question' => 'Zou je deze opleiding aanraden aan andere studenten?',
                         'type' => 'swipe',
                         'options' => [
-                            'ja',
                             'nee',
+                            'ja',
                         ],
                         'required' => true,
                         'sort_order' => 4,
@@ -94,7 +94,7 @@ class SurveySeeder extends Seeder
                     [
                         'question' => 'Was de docent duidelijk in zijn uitleg?',
                         'type' => 'swipe',
-                        'options' => ['ja', 'nee'],
+                        'options' => ['nee', 'ja'],
                         'required' => true,
                         'sort_order' => 2,
                     ],
@@ -128,7 +128,7 @@ class SurveySeeder extends Seeder
                     [
                         'question' => 'Zijn de studieplekken voldoende?',
                         'type' => 'swipe',
-                        'options' => ['ja', 'nee'],
+                        'options' => ['nee', 'ja'],
                         'required' => true,
                         'sort_order' => 2,
                     ],
@@ -162,7 +162,7 @@ class SurveySeeder extends Seeder
                     [
                         'question' => 'Voel je je ondersteund door medestudenten?',
                         'type' => 'swipe',
-                        'options' => ['ja', 'nee'],
+                        'options' => ['nee', 'ja'],
                         'required' => true,
                         'sort_order' => 2,
                     ],

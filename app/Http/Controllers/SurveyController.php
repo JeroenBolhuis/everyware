@@ -18,9 +18,10 @@ class SurveyController extends Controller
         $query = Survey::query();
 
         // Filter by status
-        if ($request->filled('status')) {
-            $query->where('is_active', $request->status === 'active');
-        }
+            $status = $request->input('status');
+            if (in_array($status, ['active', 'inactive'], true)) {
+                $query->where('is_active', $status === 'active');
+            }
 
         // Search by title
         if ($request->filled('search')) {
