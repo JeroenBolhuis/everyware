@@ -1,21 +1,18 @@
 <?php
 
-it('renders the registration screen', function () {
-    $response = $this->get(route('register'));
+it('does not expose public registration', function () {
+    $response = $this->get('/register');
 
-    $response->assertOk();
+    $response->assertNotFound();
 });
 
-it('registers new users', function () {
-    $response = $this->post(route('register.store'), [
+it('does not accept registration posts', function () {
+    $response = $this->post('/register', [
         'name' => 'John Doe',
         'email' => 'test@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);
 
-    $response->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
-
-    $this->assertAuthenticated();
+    $response->assertNotFound();
 });

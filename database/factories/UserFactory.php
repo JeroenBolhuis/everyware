@@ -2,12 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Enums\Role;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
@@ -55,5 +57,22 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
             'two_factor_confirmed_at' => now(),
         ]);
+    }
+
+    /**
+     * @return $this
+     */
+    public function admin(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->syncRoles([Role::Admin->value]));
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            if ($user->roles->isEmpty()) {
+                $user->assignRole(Role::User->value);
+            }
+        });
     }
 }
