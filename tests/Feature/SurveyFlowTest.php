@@ -54,7 +54,7 @@ function createSurveyResponse(?Survey $survey = null, array $attributes = []): S
 }
 
 /* Survey page loads when active */
-it('can open the survey page', function () {
+it('opens the survey page', function () {
     $survey = createSurvey(['is_active' => true]);
 
     $response = $this->get('/survey/' . $survey->id);
@@ -64,7 +64,7 @@ it('can open the survey page', function () {
 });
 
 /* Inactive survey returns 404 */
-it('returns 404 for an inactive survey page', function () {
+it('returns 404 for inactive survey', function () {
     $survey = createSurvey(['is_active' => false]);
 
     $response = $this->get('/survey/' . $survey->id);
@@ -73,7 +73,7 @@ it('returns 404 for an inactive survey page', function () {
 });
 
 /* Survey can be submitted */
-it('can submit a survey', function () {
+it('submits a survey', function () {
     $survey = createSurvey();
     $question1 = $survey->questions[0];
     $question2 = $survey->questions[1];
@@ -95,7 +95,7 @@ it('can submit a survey', function () {
 });
 
 /* Required questions must be answered */
-it('requires an answer for required questions', function () {
+it('requires answers for required questions', function () {
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
@@ -113,7 +113,7 @@ it('requires an answer for required questions', function () {
 });
 
 /* Contact details can be stored and hashed */
-it('can save contact details after submission', function () {
+it('saves contact details after submission', function () {
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
@@ -181,7 +181,7 @@ it('shows shared contact details on the thank you page', function () {
 });
 
 /* Thank-you page shows form if no contact data */
-it('shows the contact form on the thank you page when no contact details were shared', function () {
+it('shows the contact form on the thank you page when no contact details exist', function () {
     $surveyResponse = createSurveyResponse();
 
     $response = $this->get(route('survey.thankyou', ['response' => $surveyResponse->id]));
@@ -191,7 +191,7 @@ it('shows the contact form on the thank you page when no contact details were sh
 });
 
 /* Withdrawal page opens with valid token */
-it('can open the withdrawal page with a valid token', function () {
+it('opens the withdrawal page with a valid token', function () {
     $surveyResponse = createSurveyResponse(null, [
         'withdrawal_token' => 'test-token-123',
     ]);
