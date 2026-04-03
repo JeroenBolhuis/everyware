@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Models\ContactInformationSubmission;
 use App\Models\Survey;
@@ -20,7 +20,7 @@ function createWithdrawableSurvey(): Survey
     return $survey;
 }
 
-test('withdrawing a survey response deletes related contact information', function () {
+it('deletes related contact information when withdrawing', function () {
     $survey = createWithdrawableSurvey();
     $question = $survey->questions()->firstOrFail();
 
@@ -51,7 +51,7 @@ test('withdrawing a survey response deletes related contact information', functi
     expect($response->withdrawn_at)->not->toBeNull();
 });
 
-test('withdrawing a survey response without contact information still succeeds', function () {
+it('withdraws successfully without contact information', function () {
     $survey = createWithdrawableSurvey();
     $question = $survey->questions()->firstOrFail();
 
@@ -72,4 +72,3 @@ test('withdrawing a survey response without contact information still succeeds',
     expect($response->withdrawn_at)->not->toBeNull()
         ->and(ContactInformationSubmission::count())->toBe(0);
 });
-

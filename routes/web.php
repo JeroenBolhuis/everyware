@@ -26,3 +26,4 @@ Route::prefix('survey-withdraw')->name('survey.withdraw.')->group(function () {
 Route::get('/surveys', [SurveyController::class, 'index'])->name('surveys.index');
 
 require __DIR__.'/settings.php';
+require __DIR__.'/admin.php';

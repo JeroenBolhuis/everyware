@@ -3,7 +3,7 @@
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 
-test('survey show page renders the progress bar with question counts and percentages', function () {
+it('renders the survey progress bar with question counts and percentages', function () {
     $survey = Survey::factory()->active()->create([
         'title' => 'Onderwijsevaluatie',
     ]);

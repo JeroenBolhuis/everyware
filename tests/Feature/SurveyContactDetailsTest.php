@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Models\ContactInformationSubmission;
 use App\Models\Survey;
@@ -21,7 +21,7 @@ function createSurveyWithQuestion(): Survey
     return $survey;
 }
 
-test('survey page no longer shows optional contact details fields', function () {
+it('hides optional contact fields on the survey page', function () {
     $survey = createSurveyWithQuestion();
 
     $this->get(route('survey.show', $survey))
@@ -31,7 +31,7 @@ test('survey page no longer shows optional contact details fields', function () 
         ->assertDontSee('Contactgegevens');
 });
 
-test('thank you page shows optional contact details fields', function () {
+it('shows optional contact fields on the thank you page', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -52,7 +52,7 @@ test('thank you page shows optional contact details fields', function () {
         ->assertSee('Contactgegevens opslaan');
 });
 
-test('survey can be submitted without contact details', function () {
+it('submits survey without contact details', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -72,7 +72,7 @@ test('survey can be submitted without contact details', function () {
         ->assertSee('Wil je dat we contact met je opnemen? Laat hieronder optioneel je contactgegevens achter.');
 });
 
-test('thank you page stores hashed contact details when provided', function () {
+it('stores hashed contact details on the thank you page when provided', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -113,7 +113,7 @@ test('thank you page stores hashed contact details when provided', function () {
         ->assertSee('gehasht opgeslagen');
 });
 
-test('thank you page validates optional contact details when they are provided', function () {
+it('validates optional contact details when provided', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -135,4 +135,3 @@ test('thank you page validates optional contact details when they are provided',
 
     expect(ContactInformationSubmission::count())->toBe(0);
 });
-
