@@ -4,7 +4,11 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+        <flux:sidebar
+            sticky
+            collapsible="mobile"
+            class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900"
+        >
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
@@ -12,12 +16,25 @@
 
             <flux:sidebar.nav>
                 <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
+                    <flux:sidebar.item
+                        icon="home"
+                        :href="route('dashboard')"
+                        :current="request()->routeIs('dashboard')"
+                        wire:navigate
+                    >
+                        Dashboard
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-list" :href="route('enquetes')" :current="request()->routeIs('enquetes')" wire:navigate>
-                        {{ __('Enquetes') }}
-                    </flux:sidebar.item>
+
+                    @if (auth()->user()->canManageSurveys())
+                        <flux:sidebar.item
+                            icon="clipboard-document-list"
+                            :href="route('enquetes')"
+                            :current="request()->routeIs('enquetes*')"
+                            wire:navigate
+                        >
+                            Enquêtes
+                        </flux:sidebar.item>
+                    @endif
                 </flux:sidebar.group>
 
                 @if (auth()->user()->isAdmin())
@@ -28,7 +45,7 @@
                             :current="request()->routeIs('admin.users.*')"
                             wire:navigate
                         >
-                            {{ __('Users') }}
+                            Users
                         </flux:sidebar.item>
                     </flux:sidebar.group>
                 @endif
@@ -38,14 +55,13 @@
 
             <flux:sidebar.nav>
                 <flux:sidebar.item icon="information-circle" :href="route('home')" wire:navigate>
-                    {{ __('Over Everyware') }}
+                    Over Everyware
                 </flux:sidebar.item>
             </flux:sidebar.nav>
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
-        <!-- Mobile User Menu -->
         <flux:header class="lg:hidden">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
@@ -78,7 +94,7 @@
 
                     <flux:menu.radio.group>
                         <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
-                            {{ __('Settings') }}
+                            Settings
                         </flux:menu.item>
                     </flux:menu.radio.group>
 
@@ -93,7 +109,7 @@
                             class="w-full cursor-pointer"
                             data-test="logout-button"
                         >
-                            {{ __('Log out') }}
+                            Log out
                         </flux:menu.item>
                     </form>
                 </flux:menu>

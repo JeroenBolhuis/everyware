@@ -69,4 +69,16 @@ class User extends Authenticatable
     {
         return $this->hasRole(RoleEnum::Admin->value);
     }
+    public function isLicMedewerker(): bool
+    {
+        return $this->hasRole(RoleEnum::LicMedewerker->value);
+    }
+
+    public function canManageSurveys(): bool
+    {
+        return $this->hasAnyRole([
+            RoleEnum::Admin->value,
+            RoleEnum::LicMedewerker->value,
+        ]);
+    }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyWithdrawalController;
+use App\Http\Controllers\SurveyManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -9,6 +10,14 @@ Route::view('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('enquetes', 'enquetes')->name('enquetes');
+});
+Route::middleware(['auth', 'verified', 'role:admin|lic-medewerker'])->group(function () {
+    Route::get('enquetes', [SurveyManagementController::class, 'index'])->name('enquetes');
+    Route::get('enquetes/nieuw', [SurveyManagementController::class, 'create'])->name('enquetes.create');
+    Route::post('enquetes', [SurveyManagementController::class, 'store'])->name('enquetes.store');
+    Route::get('enquetes/{survey}/bewerken', [SurveyManagementController::class, 'edit'])->name('enquetes.edit');
+    Route::put('enquetes/{survey}', [SurveyManagementController::class, 'update'])->name('enquetes.update');
+    Route::patch('enquetes/{survey}/sluiten', [SurveyManagementController::class, 'close'])->name('enquetes.close');
 });
 
 Route::prefix('survey')->name('survey.')->group(function () {
