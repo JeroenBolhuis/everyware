@@ -6,6 +6,7 @@ use App\Http\Requests\Surveys\StoreSurveyContactDetailsRequest;
 use App\Http\Requests\Surveys\StoreSurveyResponseRequest;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
+use App\Services\MailerService\SurveyConfirmationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -42,12 +43,16 @@ class SurveyController extends Controller
         return view('surveys.show', compact('survey'));
     }
 
-    public function store(StoreSurveyResponseRequest $request, Survey $survey)
+    public function store(StoreSurveyResponseRequest $request, Survey $survey, SurveyConfirmationService $surveyConfirmationService)
     {
         $validated = $request->validated();
+        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
+        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
 
         $response = DB::transaction(function () use ($validated, $survey) {
             $response = $survey->responses()->create([
+                'student_name' => $this->normalizeContactValue($validated['contact_name'] ?? null),
+                'student_email' => $this->normalizeEmailForHash($validated['contact_email'] ?? null),
                 'withdrawal_token' => Str::uuid(),
                 'submitted_at' => now(),
             ]);
@@ -65,12 +70,22 @@ class SurveyController extends Controller
             return $response;
         });
 
-        return to_route('survey.thankyou', $response);
+        if ($contactEmail !== null) {
+            $deliveryRequest = $surveyConfirmationService->sendForResponse($response, $contactName, $contactEmail);
+
+            return to_route('survey.thankyou', $response)->with([
+                'confirmationMailStatus' => $deliveryRequest->mail_status,
+            ]);
+        }
+
+        return to_route('survey.thankyou', $response)->with([
+            'confirmationMailStatus' => 'skipped',
+        ]);
     }
 
     public function thankYou(SurveyResponse $response)
     {
-        $response->loadMissing('contactInformationSubmission');
+        $response->loadMissing('contactInformationSubmission', 'mailDeliveryRequests');
 
         return view('surveys.thankyou', compact('response'));
     }

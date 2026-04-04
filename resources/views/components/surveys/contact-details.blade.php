@@ -1,6 +1,12 @@
-﻿<div class="grid gap-4 md:grid-cols-2">
+@props([
+    'showPhone' => true,
+    'nameOptional' => true,
+    'emailOptional' => true,
+])
+
+<div class="grid gap-4 md:grid-cols-2">
     <div class="md:col-span-2">
-        <label for="contact_name" class="mb-1 block text-sm font-medium text-gray-700">Naam <span class="text-gray-500">(optioneel)</span></label>
+        <label for="contact_name" class="mb-1 block text-sm font-medium text-gray-700">Naam <span class="text-gray-500">({{ $nameOptional ? 'optioneel' : 'verplicht' }})</span></label>
         <input
             id="contact_name"
             type="text"
@@ -16,7 +22,7 @@
     </div>
 
     <div>
-        <label for="contact_email" class="mb-1 block text-sm font-medium text-gray-700">E-mailadres <span class="text-gray-500">(optioneel)</span></label>
+        <label for="contact_email" class="mb-1 block text-sm font-medium text-gray-700">E-mailadres <span class="text-gray-500">({{ $emailOptional ? 'optioneel' : 'verplicht' }})</span></label>
         <input
             id="contact_email"
             type="email"
@@ -31,19 +37,21 @@
         @enderror
     </div>
 
-    <div>
-        <label for="contact_phone" class="mb-1 block text-sm font-medium text-gray-700">Telefoonnummer <span class="text-gray-500">(optioneel)</span></label>
-        <input
-            id="contact_phone"
-            type="tel"
-            name="contact_phone"
-            value="{{ old('contact_phone') }}"
-            autocomplete="tel"
-            class="w-full rounded-xl border border-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-red-300"
-            placeholder="06 12345678"
-        >
-        @error('contact_phone')
-            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-        @enderror
-    </div>
+    @if ($showPhone)
+        <div>
+            <label for="contact_phone" class="mb-1 block text-sm font-medium text-gray-700">Telefoonnummer <span class="text-gray-500">(optioneel)</span></label>
+            <input
+                id="contact_phone"
+                type="tel"
+                name="contact_phone"
+                value="{{ old('contact_phone') }}"
+                autocomplete="tel"
+                class="w-full rounded-xl border border-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-red-300"
+                placeholder="06 12345678"
+            >
+            @error('contact_phone')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
+    @endif
 </div>

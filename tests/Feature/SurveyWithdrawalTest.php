@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\ContactInformationSubmission;
+use App\Models\MailRecipient;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
+use Illuminate\Support\Facades\Mail;
 
 function createWithdrawableSurvey(): Survey
 {
@@ -20,7 +22,9 @@ function createWithdrawableSurvey(): Survey
     return $survey;
 }
 
-it('deletes related contact information when withdrawing', function () {
+it('deletes related contact information and revokes stored mail recipient data when withdrawing', function () {
+    Mail::fake();
+
     $survey = createWithdrawableSurvey();
     $question = $survey->questions()->firstOrFail();
 
@@ -28,6 +32,8 @@ it('deletes related contact information when withdrawing', function () {
         'answers' => [
             $question->id => 'Handige lesstof.',
         ],
+        'contact_name' => 'Jamie Jansen',
+        'contact_email' => 'jamie@example.com',
     ])->assertRedirect();
 
     $response = SurveyResponse::firstOrFail();
@@ -39,6 +45,7 @@ it('deletes related contact information when withdrawing', function () {
     ])->assertRedirect(route('survey.thankyou', $response));
 
     $contactSubmission = ContactInformationSubmission::firstOrFail();
+    $mailRecipient = MailRecipient::firstOrFail();
 
     $this->post(route('survey.withdraw.destroy', $response->withdrawal_token))
         ->assertOk()
@@ -47,8 +54,13 @@ it('deletes related contact information when withdrawing', function () {
     expect(ContactInformationSubmission::find($contactSubmission->id))->toBeNull();
 
     $response->refresh();
+    $mailRecipient->refresh();
 
-    expect($response->withdrawn_at)->not->toBeNull();
+    expect($response->withdrawn_at)->not->toBeNull()
+        ->and($mailRecipient->revoked_at)->not->toBeNull()
+        ->and($mailRecipient->full_name_encrypted)->toBeNull()
+        ->and($mailRecipient->email_encrypted)->toBeNull()
+        ->and($mailRecipient->email_hash)->toBeNull();
 });
 
 it('withdraws successfully without contact information', function () {
@@ -70,5 +82,6 @@ it('withdraws successfully without contact information', function () {
     $response->refresh();
 
     expect($response->withdrawn_at)->not->toBeNull()
-        ->and(ContactInformationSubmission::count())->toBe(0);
+        ->and(ContactInformationSubmission::count())->toBe(0)
+        ->and(MailRecipient::count())->toBe(0);
 });

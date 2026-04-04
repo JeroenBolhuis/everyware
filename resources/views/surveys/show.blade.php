@@ -3,6 +3,7 @@
 
     @php
         $totalQuestions = $survey->questions->count();
+        $totalSteps = $totalQuestions + 1;
         $initialStep = 0;
 
         if ($errors->any()) {
@@ -11,6 +12,10 @@
                     $initialStep = $errorIndex;
                     break;
                 }
+            }
+
+            if ($errors->has('contact_name') || $errors->has('contact_email')) {
+                $initialStep = $totalSteps - 1;
             }
         }
     @endphp
@@ -33,12 +38,12 @@
                 @foreach ($survey->questions as $index => $question)
                     @php
                         $isFirst = $index === 0;
-                        $isLast = $index === $totalQuestions - 1;
+                        $isLast = false;
                         $oldAnswer = old("answers.$question->id");
                         $leftOption = $question->options[0] ?? 'nee';
                         $rightOption = $question->options[1] ?? 'ja';
                         $currentQuestionNumber = $index + 1;
-                        $progressPercentage = (int) round(($currentQuestionNumber / $totalQuestions) * 100);
+                        $progressPercentage = (int) round(($currentQuestionNumber / $totalSteps) * 100);
                     @endphp
 
                     <x-surveys.question-step
@@ -50,7 +55,7 @@
                         :is-last="$isLast"
                         :question="$question->question"
                         :current-question-number="$currentQuestionNumber"
-                        :total-questions="$totalQuestions"
+                        :total-questions="$totalSteps"
                         :progress-percentage="$progressPercentage"
                     >
                         @if ($question->type === 'radio')
@@ -72,6 +77,31 @@
                         @endif
                     </x-surveys.question-step>
                 @endforeach
+
+                @php
+                    $contactStepIndex = $totalSteps - 1;
+                @endphp
+
+                <x-surveys.question-step
+                    :step="$contactStepIndex"
+                    question-id="contact-details"
+                    type="contact"
+                    :required="false"
+                    :is-first="$totalQuestions === 0"
+                    :is-last="true"
+                    question="Laat optioneel je naam en e-mailadres achter voor een bevestigingsmail"
+                    :current-question-number="$totalSteps"
+                    :total-questions="$totalSteps"
+                    :progress-percentage="100"
+                >
+                    <div class="space-y-4">
+                        <p class="text-gray-600">
+                            Als je een e-mailadres invult, sturen we direct na het verzenden een bevestigingsmail.
+                        </p>
+
+                        <x-surveys.contact-details :show-phone="false" />
+                    </div>
+                </x-surveys.question-step>
             </form>
         </main>
     </div>

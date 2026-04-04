@@ -21,17 +21,18 @@ function createSurveyWithQuestion(): Survey
     return $survey;
 }
 
-it('hides optional contact fields on the survey page', function () {
+it('shows the contact fields on the survey page', function () {
     $survey = createSurveyWithQuestion();
 
     $this->get(route('survey.show', $survey))
         ->assertOk()
-        ->assertDontSee('E-mailadres')
-        ->assertDontSee('Telefoonnummer')
-        ->assertDontSee('Contactgegevens');
+        ->assertSee('Laat optioneel je naam en e-mailadres achter voor een bevestigingsmail')
+        ->assertSee('Naam')
+        ->assertSee('E-mailadres')
+        ->assertDontSee('Telefoonnummer');
 });
 
-it('shows optional contact fields on the thank you page', function () {
+it('shows no inline contact form on the thank you page when no contact details exist', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -45,34 +46,12 @@ it('shows optional contact fields on the thank you page', function () {
 
     $this->get(route('survey.thankyou', $response))
         ->assertOk()
-        ->assertSee('Contactgegevens')
-        ->assertSee('(optioneel)')
-        ->assertSee('E-mailadres')
-        ->assertSee('Telefoonnummer')
-        ->assertSee('Contactgegevens opslaan');
+        ->assertSee('Je hebt geen contactgegevens meegestuurd tijdens het verzenden van de enquete.')
+        ->assertDontSee('Contactgegevens opslaan')
+        ->assertDontSee('Telefoonnummer');
 });
 
-it('submits survey without contact details', function () {
-    $survey = createSurveyWithQuestion();
-    $question = $survey->questions()->firstOrFail();
-
-    $this->post(route('survey.store', $survey), [
-        'answers' => [
-            $question->id => 'Prima module.',
-        ],
-    ])->assertRedirect();
-
-    $response = SurveyResponse::first();
-
-    expect($response)->not->toBeNull();
-    expect(ContactInformationSubmission::count())->toBe(0);
-
-    $this->get(route('survey.thankyou', $response))
-        ->assertOk()
-        ->assertSee('Wil je dat we contact met je opnemen? Laat hieronder optioneel je contactgegevens achter.');
-});
-
-it('stores hashed contact details on the thank you page when provided', function () {
+it('stores hashed legacy contact details when posted directly on the thank you route', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -103,17 +82,9 @@ it('stores hashed contact details on the thank you page when provided', function
     expect(Hash::check('Jamie Jansen', $contactSubmission->name))->toBeTrue();
     expect(Hash::check('jamie@example.com', $contactSubmission->email))->toBeTrue();
     expect(Hash::check('+31612345678', $contactSubmission->phone))->toBeTrue();
-
-    $this->get(route('survey.thankyou', $response))
-        ->assertOk()
-        ->assertSee('Je hebt contactgegevens gedeeld.')
-        ->assertSee('Naam opgeslagen')
-        ->assertSee('E-mailadres opgeslagen')
-        ->assertSee('Telefoonnummer opgeslagen')
-        ->assertSee('gehasht opgeslagen');
 });
 
-it('validates optional contact details when provided', function () {
+it('validates legacy optional contact details when provided', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 

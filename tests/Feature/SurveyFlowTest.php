@@ -1,17 +1,16 @@
 <?php
 
+use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\ContactInformationSubmission;
+use App\Models\MailDeliveryRequest;
+use App\Models\MailRecipient;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
-// Reset database between tests
-uses(RefreshDatabase::class);
-
-/* Create a test survey with 2 questions */
 function createSurvey(array $attributes = []): Survey
 {
     $survey = Survey::factory()->create(array_merge([
@@ -41,7 +40,6 @@ function createSurvey(array $attributes = []): Survey
     return $survey->fresh('questions');
 }
 
-/* Create a survey response manually */
 function createSurveyResponse(?Survey $survey = null, array $attributes = []): SurveyResponse
 {
     $survey ??= createSurvey();
@@ -53,27 +51,24 @@ function createSurveyResponse(?Survey $survey = null, array $attributes = []): S
     ], $attributes));
 }
 
-/* Survey page loads when active */
 it('opens the survey page', function () {
     $survey = createSurvey(['is_active' => true]);
 
-    $response = $this->get('/survey/' . $survey->id);
-
-    $response->assertOk();
-    $response->assertSee('Are you satisfied?');
+    $this->get('/survey/' . $survey->id)
+        ->assertOk()
+        ->assertSee('Are you satisfied?')
+        ->assertSee('Laat optioneel je naam en e-mailadres achter voor een bevestigingsmail');
 });
 
-/* Inactive survey returns 404 */
 it('returns 404 for inactive survey', function () {
     $survey = createSurvey(['is_active' => false]);
 
-    $response = $this->get('/survey/' . $survey->id);
-
-    $response->assertNotFound();
+    $this->get('/survey/' . $survey->id)->assertNotFound();
 });
 
-/* Survey can be submitted */
-it('submits a survey', function () {
+it('submits a survey and sends a confirmation email when an email address is provided', function () {
+    Mail::fake();
+
     $survey = createSurvey();
     $question1 = $survey->questions[0];
     $question2 = $survey->questions[1];
@@ -83,6 +78,8 @@ it('submits a survey', function () {
             $question1->id => 'yes',
             $question2->id => 'Because it works',
         ],
+        'contact_name' => 'Ali Test',
+        'contact_email' => 'Ali@Example.com',
     ]);
 
     $surveyResponse = SurveyResponse::latest()->first();
@@ -91,10 +88,56 @@ it('submits a survey', function () {
 
     $this->assertDatabaseHas('survey_responses', [
         'survey_id' => $survey->id,
+        'student_name' => 'Ali Test',
+        'student_email' => 'ali@example.com',
     ]);
+
+    $this->assertDatabaseHas('mail_recipients', [
+        'survey_id' => $survey->id,
+        'survey_response_id' => $surveyResponse->id,
+    ]);
+
+    $this->assertDatabaseHas('mail_delivery_requests', [
+        'survey_id' => $survey->id,
+        'survey_response_id' => $surveyResponse->id,
+        'mail_status' => 'sent',
+    ]);
+
+    Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) use ($surveyResponse) {
+        return $mail->response->is($surveyResponse)
+            && $mail->hasTo('ali@example.com');
+    });
 });
 
-/* Required questions must be answered */
+it('submits a survey without creating mail records when no email address is provided', function () {
+    Mail::fake();
+
+    $survey = createSurvey();
+    $question1 = $survey->questions[0];
+
+    $response = $this->post('/survey/' . $survey->id, [
+        'answers' => [
+            $question1->id => 'yes',
+        ],
+        'contact_name' => '',
+        'contact_email' => '',
+    ]);
+
+    $surveyResponse = SurveyResponse::latest()->first();
+
+    $response->assertRedirect(route('survey.thankyou', ['response' => $surveyResponse->id]));
+
+    $this->assertDatabaseMissing('mail_recipients', [
+        'survey_response_id' => $surveyResponse->id,
+    ]);
+
+    $this->assertDatabaseMissing('mail_delivery_requests', [
+        'survey_response_id' => $surveyResponse->id,
+    ]);
+
+    Mail::assertNothingSent();
+});
+
 it('requires answers for required questions', function () {
     $survey = createSurvey();
     $question1 = $survey->questions[0];
@@ -112,8 +155,7 @@ it('requires answers for required questions', function () {
     ]);
 });
 
-/* Contact details can be stored and hashed */
-it('saves contact details after submission', function () {
+it('saves legacy contact details after submission for compatibility', function () {
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
@@ -145,8 +187,7 @@ it('saves contact details after submission', function () {
     expect(Hash::check('0612345678', $contactSubmission->phone))->toBeTrue();
 });
 
-/* Empty contact form should not store data */
-it('skips saving contact details when all fields are empty', function () {
+it('skips saving legacy contact details when all fields are empty', function () {
     $surveyResponse = createSurveyResponse();
 
     $response = $this->post('/survey/response/' . $surveyResponse->id . '/contact-details', [
@@ -162,69 +203,37 @@ it('skips saving contact details when all fields are empty', function () {
     ]);
 });
 
-/* Thank-you page shows shared contact fields */
-it('shows shared contact details on the thank you page', function () {
-    $surveyResponse = createSurveyResponse();
+it('shows the mail confirmation state on the thank you page', function () {
+    $surveyResponse = createSurveyResponse(null, [
+        'student_name' => 'Ali Test',
+        'student_email' => 'ali@example.com',
+    ]);
 
-    ContactInformationSubmission::create([
+    $recipient = MailRecipient::create([
         'survey_id' => $surveyResponse->survey_id,
         'survey_response_id' => $surveyResponse->id,
-        'name' => Hash::make('Ali Test'),
-        'email' => Hash::make('ali@example.com'),
-        'phone' => null,
+        'pseudonym_uuid' => (string) Str::uuid(),
+        'full_name_encrypted' => 'Ali Test',
+        'email_encrypted' => 'ali@example.com',
+        'email_hash' => hash('sha256', 'ali@example.com'),
+        'consent_source' => 'survey_submit',
     ]);
 
-    $response = $this->get(route('survey.thankyou', ['response' => $surveyResponse->id]));
-
-    $response->assertOk();
-    $response->assertSee('Je hebt contactgegevens gedeeld');
-});
-
-/* Thank-you page shows form if no contact data */
-it('shows the contact form on the thank you page when no contact details exist', function () {
-    $surveyResponse = createSurveyResponse();
-
-    $response = $this->get(route('survey.thankyou', ['response' => $surveyResponse->id]));
-
-    $response->assertOk();
-    $response->assertSee('Contactgegevens opslaan');
-});
-
-/* Withdrawal page opens with valid token */
-it('opens the withdrawal page with a valid token', function () {
-    $surveyResponse = createSurveyResponse(null, [
-        'withdrawal_token' => 'test-token-123',
-    ]);
-
-    $response = $this->get('/survey-withdraw/' . $surveyResponse->withdrawal_token);
-
-    $response->assertOk();
-});
-
-/* Withdrawal removes contact info and marks response */
-it('removes contact details and marks the response as withdrawn', function () {
-    $surveyResponse = createSurveyResponse(null, [
-        'withdrawal_token' => 'test-token-123',
-        'withdrawn_at' => null,
-    ]);
-
-    ContactInformationSubmission::create([
+    MailDeliveryRequest::create([
+        'mail_recipient_id' => $recipient->id,
         'survey_id' => $surveyResponse->survey_id,
         'survey_response_id' => $surveyResponse->id,
-        'name' => Hash::make('Ali Test'),
-        'email' => Hash::make('ali@example.com'),
-        'phone' => Hash::make('0612345678'),
+        'pseudonym_uuid' => $recipient->pseudonym_uuid,
+        'mail_template' => 'survey_submission_confirmation',
+        'mail_status' => 'sent',
+        'provider' => 'resend_smtp',
+        'mail_requested_at' => now(),
+        'mail_sent_at' => now(),
     ]);
 
-    $response = $this->post('/survey-withdraw/' . $surveyResponse->withdrawal_token);
-
-    $response->assertOk();
-
-    // Response still exists but is marked withdrawn
-    expect($surveyResponse->fresh()->withdrawn_at)->not->toBeNull();
-
-    // Contact data must be removed
-    $this->assertDatabaseMissing('contact_information_submissions', [
-        'survey_response_id' => $surveyResponse->id,
-    ]);
+    $this->get(route('survey.thankyou', ['response' => $surveyResponse->id]))
+        ->assertOk()
+        ->assertSee('Er is een bevestigingsmail verstuurd')
+        ->assertSee('Naam opgeslagen')
+        ->assertSee('E-mailadres opgeslagen');
 });

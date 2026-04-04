@@ -55,6 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return textarea ? textarea.value.trim() : '';
         }
 
+        if (type === 'contact') {
+            const email = step.querySelector('input[name="contact_email"]');
+            const name = step.querySelector('input[name="contact_name"]');
+
+            return [email?.value.trim() ?? '', name?.value.trim() ?? ''].join('');
+        }
+
         return '';
     }
 
@@ -128,8 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.querySelectorAll('textarea').forEach((textarea) => {
-        textarea.addEventListener('input', hideValidationMessage);
+    document.querySelectorAll('textarea, input[type="text"], input[type="email"], input[type="tel"]').forEach((field) => {
+        field.addEventListener('input', hideValidationMessage);
     });
 
     document.querySelectorAll('.swipe-choice').forEach((button) => {
