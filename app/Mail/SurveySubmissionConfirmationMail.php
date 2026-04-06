@@ -28,7 +28,7 @@ class SurveySubmissionConfirmationMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.surveys.submission-confirmation',
+            markdown: 'emails.surveys.submission-confirmation',
         );
     }
 }
