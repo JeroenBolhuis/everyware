@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\ContactInformationSubmission;
-use App\Models\MailRecipient;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
@@ -22,7 +21,7 @@ function createWithdrawableSurvey(): Survey
     return $survey;
 }
 
-it('deletes related contact information and revokes stored mail recipient data when withdrawing', function () {
+it('deletes related contact information and clears stored survey contact details when withdrawing', function () {
     Mail::fake();
 
     $survey = createWithdrawableSurvey();
@@ -45,7 +44,6 @@ it('deletes related contact information and revokes stored mail recipient data w
     ])->assertRedirect(route('survey.thankyou', $response));
 
     $contactSubmission = ContactInformationSubmission::firstOrFail();
-    $mailRecipient = MailRecipient::firstOrFail();
 
     $this->post(route('survey.withdraw.destroy', $response->withdrawal_token))
         ->assertOk()
@@ -54,13 +52,9 @@ it('deletes related contact information and revokes stored mail recipient data w
     expect(ContactInformationSubmission::find($contactSubmission->id))->toBeNull();
 
     $response->refresh();
-    $mailRecipient->refresh();
-
     expect($response->withdrawn_at)->not->toBeNull()
-        ->and($mailRecipient->revoked_at)->not->toBeNull()
-        ->and($mailRecipient->full_name_encrypted)->toBeNull()
-        ->and($mailRecipient->email_encrypted)->toBeNull()
-        ->and($mailRecipient->email_hash)->toBeNull();
+        ->and($response->student_name)->toBeNull()
+        ->and($response->student_email)->toBeNull();
 });
 
 it('withdraws successfully without contact information', function () {
@@ -83,5 +77,6 @@ it('withdraws successfully without contact information', function () {
 
     expect($response->withdrawn_at)->not->toBeNull()
         ->and(ContactInformationSubmission::count())->toBe(0)
-        ->and(MailRecipient::count())->toBe(0);
+        ->and($response->student_name)->toBeNull()
+        ->and($response->student_email)->toBeNull();
 });

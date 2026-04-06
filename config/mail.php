@@ -49,18 +49,6 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
-        'survey_confirmations_smtp' => [
-            'transport' => 'smtp',
-            'scheme' => env('SURVEY_MAILING_SCHEME', 'smtps'),
-            'url' => env('SURVEY_MAILING_URL'),
-            'host' => env('SURVEY_MAILING_HOST', 'smtp.resend.com'),
-            'port' => env('SURVEY_MAILING_PORT', 465),
-            'username' => env('SURVEY_MAILING_USERNAME', 'resend'),
-            'password' => env('SURVEY_MAILING_PASSWORD'),
-            'timeout' => 10,
-            'local_domain' => env('SURVEY_MAILING_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
-        ],
-
         'ses' => [
             'transport' => 'ses',
         ],

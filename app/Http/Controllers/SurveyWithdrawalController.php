@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\SurveyResponse;
-use App\Services\MailerService\SurveyConfirmationService;
 use Illuminate\Support\Facades\DB;
 
 class SurveyWithdrawalController extends Controller
@@ -15,19 +14,18 @@ class SurveyWithdrawalController extends Controller
         return view('surveys.withdraw', compact('response'));
     }
 
-    public function destroy(string $token, SurveyConfirmationService $surveyConfirmationService)
+    public function destroy(string $token)
     {
         $response = SurveyResponse::where('withdrawal_token', $token)->firstOrFail();
 
-        DB::transaction(function () use ($response, $surveyConfirmationService) {
+        DB::transaction(function () use ($response) {
             $response->contactInformationSubmission()->delete();
-            $surveyConfirmationService->revokeForResponse($response);
 
-            if (! $response->withdrawn_at) {
-                $response->update([
-                    'withdrawn_at' => now(),
-                ]);
-            }
+            $response->forceFill([
+                'student_name' => null,
+                'student_email' => null,
+                'withdrawn_at' => $response->withdrawn_at ?? now(),
+            ])->save();
         });
 
         return view('surveys.withdraw-confirmed');

@@ -39,16 +39,6 @@ class SurveyResponse extends Model
         return $this->hasOne(ContactInformationSubmission::class);
     }
 
-    public function mailRecipient(): HasOne
-    {
-        return $this->hasOne(MailRecipient::class);
-    }
-
-    public function mailDeliveryRequests(): HasMany
-    {
-        return $this->hasMany(MailDeliveryRequest::class);
-    }
-
     public function hasSharedContactDetails(): bool
     {
         $contactInformation = $this->contactInformationSubmission;
@@ -73,15 +63,6 @@ class SurveyResponse extends Model
             $contactInformation?->email && ! $this->student_email ? 'E-mailadres opgeslagen' : null,
             $contactInformation?->phone ? 'Telefoonnummer opgeslagen' : null,
         ]));
-    }
-
-    public function latestMailDeliveryRequest(): ?MailDeliveryRequest
-    {
-        if ($this->relationLoaded('mailDeliveryRequests')) {
-            return $this->mailDeliveryRequests->sortByDesc('id')->first();
-        }
-
-        return $this->mailDeliveryRequests()->latest('id')->first();
     }
 
     public function maskedStudentEmail(): ?string

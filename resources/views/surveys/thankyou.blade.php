@@ -1,9 +1,4 @@
 <x-layout>
-    @php
-        $latestMailDeliveryRequest = $response->latestMailDeliveryRequest();
-        $confirmationMailStatus = $latestMailDeliveryRequest?->mail_status ?? session('confirmationMailStatus');
-    @endphp
-
     <div class="max-w-2xl mx-auto py-10 px-4 space-y-6">
         <div class="bg-white border rounded-2xl shadow-md p-8">
             <h1 class="text-3xl font-bold mb-4">Bedankt voor je antwoord</h1>
@@ -11,13 +6,13 @@
                 Je enquete is succesvol verzonden.
             </p>
 
-            @if ($confirmationMailStatus === 'sent' && $response->maskedStudentEmail())
+            @if (session('confirmationMailStatus') === 'sent' && $response->maskedStudentEmail())
                 <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
                     Er is een bevestigingsmail verstuurd naar {{ $response->maskedStudentEmail() }}.
                 </div>
             @endif
 
-            @if ($confirmationMailStatus === 'failed')
+            @if (session('confirmationMailStatus') === 'failed')
                 <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
                     Je enquete is opgeslagen, maar de bevestigingsmail kon niet direct worden verstuurd.
                 </div>

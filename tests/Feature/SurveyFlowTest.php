@@ -2,8 +2,6 @@
 
 use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\ContactInformationSubmission;
-use App\Models\MailDeliveryRequest;
-use App\Models\MailRecipient;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
@@ -73,7 +71,7 @@ it('submits a survey and sends a confirmation email when an email address is pro
     $question1 = $survey->questions[0];
     $question2 = $survey->questions[1];
 
-    $response = $this->post('/survey/' . $survey->id, [
+    $response = $this->followingRedirects()->post('/survey/' . $survey->id, [
         'answers' => [
             $question1->id => 'yes',
             $question2->id => 'Because it works',
@@ -84,23 +82,14 @@ it('submits a survey and sends a confirmation email when an email address is pro
 
     $surveyResponse = SurveyResponse::latest()->first();
 
-    $response->assertRedirect(route('survey.thankyou', ['response' => $surveyResponse->id]));
+    $response->assertOk()
+        ->assertSee('Er is een bevestigingsmail verstuurd')
+        ->assertSee('a*i@example.com');
 
     $this->assertDatabaseHas('survey_responses', [
         'survey_id' => $survey->id,
         'student_name' => 'Ali Test',
         'student_email' => 'ali@example.com',
-    ]);
-
-    $this->assertDatabaseHas('mail_recipients', [
-        'survey_id' => $survey->id,
-        'survey_response_id' => $surveyResponse->id,
-    ]);
-
-    $this->assertDatabaseHas('mail_delivery_requests', [
-        'survey_id' => $survey->id,
-        'survey_response_id' => $surveyResponse->id,
-        'mail_status' => 'sent',
     ]);
 
     Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) use ($surveyResponse) {
@@ -109,7 +98,7 @@ it('submits a survey and sends a confirmation email when an email address is pro
     });
 });
 
-it('submits a survey without creating mail records when no email address is provided', function () {
+it('submits a survey without sending an email when no email address is provided', function () {
     Mail::fake();
 
     $survey = createSurvey();
@@ -127,12 +116,10 @@ it('submits a survey without creating mail records when no email address is prov
 
     $response->assertRedirect(route('survey.thankyou', ['response' => $surveyResponse->id]));
 
-    $this->assertDatabaseMissing('mail_recipients', [
-        'survey_response_id' => $surveyResponse->id,
-    ]);
-
-    $this->assertDatabaseMissing('mail_delivery_requests', [
-        'survey_response_id' => $surveyResponse->id,
+    $this->assertDatabaseHas('survey_responses', [
+        'id' => $surveyResponse->id,
+        'student_name' => null,
+        'student_email' => null,
     ]);
 
     Mail::assertNothingSent();
@@ -209,29 +196,8 @@ it('shows the mail confirmation state on the thank you page', function () {
         'student_email' => 'ali@example.com',
     ]);
 
-    $recipient = MailRecipient::create([
-        'survey_id' => $surveyResponse->survey_id,
-        'survey_response_id' => $surveyResponse->id,
-        'pseudonym_uuid' => (string) Str::uuid(),
-        'full_name_encrypted' => 'Ali Test',
-        'email_encrypted' => 'ali@example.com',
-        'email_hash' => hash('sha256', 'ali@example.com'),
-        'consent_source' => 'survey_submit',
-    ]);
-
-    MailDeliveryRequest::create([
-        'mail_recipient_id' => $recipient->id,
-        'survey_id' => $surveyResponse->survey_id,
-        'survey_response_id' => $surveyResponse->id,
-        'pseudonym_uuid' => $recipient->pseudonym_uuid,
-        'mail_template' => 'survey_submission_confirmation',
-        'mail_status' => 'sent',
-        'provider' => 'resend_smtp',
-        'mail_requested_at' => now(),
-        'mail_sent_at' => now(),
-    ]);
-
-    $this->get(route('survey.thankyou', ['response' => $surveyResponse->id]))
+    $this->withSession(['confirmationMailStatus' => 'sent'])
+        ->get(route('survey.thankyou', ['response' => $surveyResponse->id]))
         ->assertOk()
         ->assertSee('Er is een bevestigingsmail verstuurd')
         ->assertSee('Naam opgeslagen')

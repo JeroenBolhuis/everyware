@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Surveys\StoreSurveyContactDetailsRequest;
 use App\Http\Requests\Surveys\StoreSurveyResponseRequest;
+use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
-use App\Services\MailerService\SurveyConfirmationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Throwable;
 
 class SurveyController extends Controller
 {
@@ -43,10 +46,9 @@ class SurveyController extends Controller
         return view('surveys.show', compact('survey'));
     }
 
-    public function store(StoreSurveyResponseRequest $request, Survey $survey, SurveyConfirmationService $surveyConfirmationService)
+    public function store(StoreSurveyResponseRequest $request, Survey $survey)
     {
         $validated = $request->validated();
-        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
         $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
 
         $response = DB::transaction(function () use ($validated, $survey) {
@@ -70,22 +72,31 @@ class SurveyController extends Controller
             return $response;
         });
 
-        if ($contactEmail !== null) {
-            $deliveryRequest = $surveyConfirmationService->sendForResponse($response, $contactName, $contactEmail);
+        $confirmationMailStatus = 'skipped';
 
-            return to_route('survey.thankyou', $response)->with([
-                'confirmationMailStatus' => $deliveryRequest->mail_status,
-            ]);
+        if ($contactEmail !== null) {
+            try {
+                Mail::to($contactEmail)->send(new SurveySubmissionConfirmationMail($response->fresh('survey')));
+
+                $confirmationMailStatus = 'sent';
+            } catch (Throwable $exception) {
+                Log::warning('Survey confirmation email could not be sent.', [
+                    'survey_response_id' => $response->id,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                $confirmationMailStatus = 'failed';
+            }
         }
 
         return to_route('survey.thankyou', $response)->with([
-            'confirmationMailStatus' => 'skipped',
+            'confirmationMailStatus' => $confirmationMailStatus,
         ]);
     }
 
     public function thankYou(SurveyResponse $response)
     {
-        $response->loadMissing('contactInformationSubmission', 'mailDeliveryRequests');
+        $response->loadMissing('contactInformationSubmission');
 
         return view('surveys.thankyou', compact('response'));
     }
