@@ -5,7 +5,7 @@ namespace App\Enums;
 enum Role: string
 {
     case Admin = 'admin';
-    case LICEmployee = 'LICEmployee';
+    case LicMedewerker = 'lic-medewerker';
     case User = 'user';
 
     public function label(): string
