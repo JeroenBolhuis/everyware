@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.querySelectorAll('textarea, input[type="text"], input[type="email"], input[type="tel"]').forEach((field) => {
+    document.querySelectorAll('textarea, input[type="text"], input[type="email"]').forEach((field) => {
         field.addEventListener('input', hideValidationMessage);
     });
 

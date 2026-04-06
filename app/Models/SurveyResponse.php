@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Str;
 
 class SurveyResponse extends Model
 {
@@ -43,13 +42,7 @@ class SurveyResponse extends Model
     {
         $contactInformation = $this->contactInformationSubmission;
 
-        return (bool) (
-            filled($this->student_name)
-            || filled($this->student_email)
-            || $contactInformation?->name
-            || $contactInformation?->email
-            || $contactInformation?->phone
-        );
+        return (bool) ($contactInformation?->name || $contactInformation?->email || $contactInformation?->phone);
     }
 
     public function sharedContactFieldLabels(): array
@@ -57,23 +50,9 @@ class SurveyResponse extends Model
         $contactInformation = $this->contactInformationSubmission;
 
         return array_values(array_filter([
-            $this->student_name ? 'Naam opgeslagen' : null,
-            $this->student_email ? 'E-mailadres opgeslagen' : null,
-            $contactInformation?->name && ! $this->student_name ? 'Naam opgeslagen' : null,
-            $contactInformation?->email && ! $this->student_email ? 'E-mailadres opgeslagen' : null,
+            $contactInformation?->name ? 'Naam opgeslagen' : null,
+            $contactInformation?->email ? 'E-mailadres opgeslagen' : null,
             $contactInformation?->phone ? 'Telefoonnummer opgeslagen' : null,
         ]));
-    }
-
-    public function maskedStudentEmail(): ?string
-    {
-        if (! filled($this->student_email) || ! str_contains($this->student_email, '@')) {
-            return null;
-        }
-
-        [$localPart, $domain] = explode('@', $this->student_email, 2);
-        $maskedLocal = Str::mask($localPart, '*', 1, max(strlen($localPart) - 2, 1));
-
-        return "{$maskedLocal}@{$domain}";
     }
 }

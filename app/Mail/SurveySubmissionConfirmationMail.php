@@ -14,7 +14,10 @@ class SurveySubmissionConfirmationMail extends Mailable
     use Queueable;
     use SerializesModels;
 
-    public function __construct(public SurveyResponse $response)
+    public function __construct(
+        public SurveyResponse $response,
+        public ?string $recipientName = null,
+    )
     {
     }
 

@@ -9,7 +9,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Edit user')] class extends Component {
+new #[Title('Gebruiker bewerken')] class extends Component {
     use PasswordValidationRules, ProfileValidationRules;
 
     public User $user;
@@ -22,14 +22,18 @@ new #[Title('Edit user')] class extends Component {
 
     public string $password_confirmation = '';
 
-    public string $role = '';
+    public array $roles = [];
 
     public function mount(): void
     {
         $this->authorize('update', $this->user);
         $this->name = $this->user->name;
         $this->email = $this->user->email;
-        $this->role = $this->user->roles->first()?->name ?? RoleEnum::User->value;
+        $this->roles = $this->user->getRoleNames()->values()->all();
+
+        if ($this->roles === []) {
+            $this->roles = [RoleEnum::User->value];
+        }
     }
 
     public function save(): void
@@ -39,16 +43,17 @@ new #[Title('Edit user')] class extends Component {
         $validated = $this->validate([
             ...$this->profileRules($this->user->id),
             'password' => $this->optionalPasswordRules(),
-            'role' => ['required', Rule::enum(RoleEnum::class)],
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => ['required', Rule::enum(RoleEnum::class)],
         ]);
 
         if (
             $this->user->hasRole(RoleEnum::Admin->value)
-            && $validated['role'] !== RoleEnum::Admin->value
+            && ! in_array(RoleEnum::Admin->value, $validated['roles'], true)
             && User::role(RoleEnum::Admin->value)->count() <= 1
         ) {
             throw ValidationException::withMessages([
-                'role' => __('There must be at least one administrator.'),
+                'roles' => __('Er moet minimaal een beheerder zijn.'),
             ]);
         }
 
@@ -67,7 +72,7 @@ new #[Title('Edit user')] class extends Component {
 
         $this->user->save();
 
-        $this->user->syncRoles([$validated['role']]);
+        $this->user->syncRoles($validated['roles']);
 
         $this->dispatch('user-saved');
     }
@@ -85,16 +90,16 @@ new #[Title('Edit user')] class extends Component {
 <section class="w-full">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Edit user') }}</flux:heading>
+    <flux:heading class="sr-only">{{ __('Gebruiker bewerken') }}</flux:heading>
 
     <x-pages::admin.layout
-        :heading="__('Edit user')"
-        :subheading="__('Update account details, role, or password.')"
+        :heading="__('Gebruiker bewerken')"
+        :subheading="__('Werk accountgegevens, rollen of wachtwoord bij.')"
     >
         <div class="my-6 w-full max-w-lg space-y-6">
             <div>
                 <flux:button variant="ghost" :href="route('admin.users.index')" icon="arrow-left" wire:navigate>
-                    {{ __('Back to users') }}
+                    {{ __('Terug naar gebruikers') }}
                 </flux:button>
             </div>
 
@@ -105,26 +110,34 @@ new #[Title('Edit user')] class extends Component {
 
                 <flux:separator />
 
-                <flux:heading size="lg">{{ __('Change password') }}</flux:heading>
-                <flux:text class="text-sm text-zinc-500">{{ __('Leave blank to keep the current password.') }}</flux:text>
+                <flux:heading size="lg">{{ __('Wachtwoord wijzigen') }}</flux:heading>
+                <flux:text class="text-sm text-zinc-500">{{ __('Laat leeg om het huidige wachtwoord te behouden.') }}</flux:text>
 
-                <flux:input wire:model="password" :label="__('New password')" type="password" viewable autocomplete="new-password" />
+                <flux:input wire:model="password" :label="__('Nieuw wachtwoord')" type="password" viewable autocomplete="new-password" />
 
-                <flux:input wire:model="password_confirmation" :label="__('Confirm new password')" type="password" viewable autocomplete="new-password" />
+                <flux:input wire:model="password_confirmation" :label="__('Bevestig nieuw wachtwoord')" type="password" viewable autocomplete="new-password" />
 
-                <flux:select wire:model="role" :label="__('Role')">
-                    @foreach (RoleEnum::cases() as $roleOption)
-                        <flux:select.option :value="$roleOption->value">{{ $roleOption->label() }}</flux:select.option>
-                    @endforeach
-                </flux:select>
+                <flux:field>
+                    <flux:label>{{ __('Rollen') }}</flux:label>
 
-                <flux:error name="role" />
+                    <div class="mt-3 space-y-3">
+                        @foreach (RoleEnum::cases() as $roleOption)
+                            <label class="flex items-center gap-3 rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-700">
+                                <input type="checkbox" wire:model="roles" value="{{ $roleOption->value }}" class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500" />
+                                <span>{{ $roleOption->label() }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+
+                    <flux:error name="roles" />
+                    <flux:error name="roles.*" />
+                </flux:field>
 
                 <div class="flex flex-wrap items-center gap-4">
-                    <flux:button variant="primary" type="submit">{{ __('Save changes') }}</flux:button>
+                    <flux:button variant="primary" type="submit">{{ __('Wijzigingen opslaan') }}</flux:button>
 
                     <x-action-message on="user-saved">
-                        {{ __('Saved.') }}
+                        {{ __('Opgeslagen.') }}
                     </x-action-message>
                 </div>
             </form>
@@ -133,16 +146,16 @@ new #[Title('Edit user')] class extends Component {
                 <flux:separator class="my-8" />
 
                 <div class="space-y-3">
-                    <flux:heading size="lg">{{ __('Delete user') }}</flux:heading>
-                    <flux:text class="text-sm text-zinc-500">{{ __('This permanently removes the account.') }}</flux:text>
+                    <flux:heading size="lg">{{ __('Gebruiker verwijderen') }}</flux:heading>
+                    <flux:text class="text-sm text-zinc-500">{{ __('Dit verwijdert het account definitief.') }}</flux:text>
                     <flux:error name="delete" />
                     <flux:button
                         variant="danger"
                         type="button"
                         wire:click="deleteUser"
-                        wire:confirm="{{ __('Are you sure you want to delete this user?') }}"
+                        wire:confirm="{{ __('Weet je zeker dat je deze gebruiker wilt verwijderen?') }}"
                     >
-                        {{ __('Delete user') }}
+                        {{ __('Gebruiker verwijderen') }}
                     </flux:button>
                 </div>
             @endif

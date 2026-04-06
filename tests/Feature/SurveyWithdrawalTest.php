@@ -4,7 +4,6 @@ use App\Models\ContactInformationSubmission;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
-use Illuminate\Support\Facades\Mail;
 
 function createWithdrawableSurvey(): Survey
 {
@@ -21,9 +20,7 @@ function createWithdrawableSurvey(): Survey
     return $survey;
 }
 
-it('deletes related contact information and clears stored survey contact details when withdrawing', function () {
-    Mail::fake();
-
+it('deletes related contact information when withdrawing', function () {
     $survey = createWithdrawableSurvey();
     $question = $survey->questions()->firstOrFail();
 
@@ -31,8 +28,6 @@ it('deletes related contact information and clears stored survey contact details
         'answers' => [
             $question->id => 'Handige lesstof.',
         ],
-        'contact_name' => 'Jamie Jansen',
-        'contact_email' => 'jamie@example.com',
     ])->assertRedirect();
 
     $response = SurveyResponse::firstOrFail();
@@ -52,9 +47,8 @@ it('deletes related contact information and clears stored survey contact details
     expect(ContactInformationSubmission::find($contactSubmission->id))->toBeNull();
 
     $response->refresh();
-    expect($response->withdrawn_at)->not->toBeNull()
-        ->and($response->student_name)->toBeNull()
-        ->and($response->student_email)->toBeNull();
+
+    expect($response->withdrawn_at)->not->toBeNull();
 });
 
 it('withdraws successfully without contact information', function () {
@@ -76,7 +70,5 @@ it('withdraws successfully without contact information', function () {
     $response->refresh();
 
     expect($response->withdrawn_at)->not->toBeNull()
-        ->and(ContactInformationSubmission::count())->toBe(0)
-        ->and($response->student_name)->toBeNull()
-        ->and($response->student_email)->toBeNull();
+        ->and(ContactInformationSubmission::count())->toBe(0);
 });

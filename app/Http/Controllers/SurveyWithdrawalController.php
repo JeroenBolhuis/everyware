@@ -21,11 +21,11 @@ class SurveyWithdrawalController extends Controller
         DB::transaction(function () use ($response) {
             $response->contactInformationSubmission()->delete();
 
-            $response->forceFill([
-                'student_name' => null,
-                'student_email' => null,
-                'withdrawn_at' => $response->withdrawn_at ?? now(),
-            ])->save();
+            if (! $response->withdrawn_at) {
+                $response->update([
+                    'withdrawn_at' => now(),
+                ]);
+            }
         });
 
         return view('surveys.withdraw-confirmed');

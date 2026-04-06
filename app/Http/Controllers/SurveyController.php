@@ -9,7 +9,6 @@ use App\Models\Survey;
 use App\Models\SurveyResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -49,12 +48,11 @@ class SurveyController extends Controller
     public function store(StoreSurveyResponseRequest $request, Survey $survey)
     {
         $validated = $request->validated();
+        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
         $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
 
         $response = DB::transaction(function () use ($validated, $survey) {
             $response = $survey->responses()->create([
-                'student_name' => $this->normalizeContactValue($validated['contact_name'] ?? null),
-                'student_email' => $this->normalizeEmailForHash($validated['contact_email'] ?? null),
                 'withdrawal_token' => Str::uuid(),
                 'submitted_at' => now(),
             ]);
@@ -69,6 +67,15 @@ class SurveyController extends Controller
 
             $response->answers()->createMany($answers);
 
+            $contactInformationPayload = $this->buildContactInformationPayload($validated, $response);
+
+            if ($contactInformationPayload !== null) {
+                $response->contactInformationSubmission()->updateOrCreate(
+                    ['survey_response_id' => $response->id],
+                    $contactInformationPayload,
+                );
+            }
+
             return $response;
         });
 
@@ -76,7 +83,9 @@ class SurveyController extends Controller
 
         if ($contactEmail !== null) {
             try {
-                Mail::to($contactEmail)->send(new SurveySubmissionConfirmationMail($response->fresh('survey')));
+                Mail::to($contactEmail)->send(
+                    new SurveySubmissionConfirmationMail($response->fresh('survey'), $contactName)
+                );
 
                 $confirmationMailStatus = 'sent';
             } catch (Throwable $exception) {
@@ -134,9 +143,9 @@ class SurveyController extends Controller
         return [
             'survey_id' => $response->survey_id,
             'survey_response_id' => $response->id,
-            'name' => $this->hashContactValue($contactName),
-            'email' => $this->hashContactValue($contactEmail),
-            'phone' => $this->hashContactValue($contactPhone),
+            'name' => $contactName,
+            'email' => $contactEmail,
+            'phone' => $contactPhone,
         ];
     }
 
@@ -172,10 +181,5 @@ class SurveyController extends Controller
         }
 
         return $hasLeadingPlus ? '+' . $digitsOnly : $digitsOnly;
-    }
-
-    private function hashContactValue(?string $value): ?string
-    {
-        return filled($value) ? Hash::make($value) : null;
     }
 }

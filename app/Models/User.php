@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role as RoleEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
@@ -68,5 +68,28 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool
     {
         return $this->hasRole(RoleEnum::Admin->value);
+    }
+
+    public function isLicEmployee(): bool
+    {
+        return $this->hasRole(RoleEnum::LICEmployee->value);
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function canReviewSurveyResponses(): bool
+    {
+        return $this->hasAnyRole([
+            RoleEnum::Admin->value,
+            RoleEnum::LICEmployee->value,
+        ]);
+    }
+
+    public function canAccessAdminArea(): bool
+    {
+        return $this->canManageUsers() || $this->canReviewSurveyResponses();
     }
 }

@@ -5,8 +5,8 @@ Je feedback voor
 `{{ $response->survey->title }}`
 is succesvol ontvangen.
 
-@if ($response->student_name)
-Hallo {{ $response->student_name }},
+@if ($recipientName)
+Hallo {{ $recipientName }},
 @endif
 
 Fijn dat je de tijd hebt genomen om de enquete in te vullen. Je hoeft nu niets meer te doen.
