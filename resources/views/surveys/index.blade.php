@@ -14,7 +14,7 @@
                     <div>
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                         <select name="status" id="status" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">Alle</option>
+                            <option value="">Alles</option>
                             <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Actief</option>
                             <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactief</option>
                         </select>

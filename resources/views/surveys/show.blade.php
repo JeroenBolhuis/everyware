@@ -20,10 +20,12 @@
         }
     @endphp
 
-    <div class="min-h-screen bg-gray-100">
-        <x-surveys.page-header />
+    <div class="survey-page">
+        <div class="avans-header">
+            <x-surveys.page-header />
+        </div>
 
-        <main class="max-w-3xl mx-auto mt-8 px-4 pb-10">
+        <main class="survey-main max-w-3xl mx-auto w-full px-4 pb-10 pt-0">
             <x-surveys.validation-notices />
 
             <form

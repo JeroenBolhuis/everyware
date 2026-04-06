@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role as RoleEnum;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,25 +13,14 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'two_factor_secret',
@@ -40,11 +28,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -53,9 +36,6 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Get the user's initials
-     */
     public function initials(): string
     {
         return Str::of($this->name)
@@ -70,9 +50,9 @@ class User extends Authenticatable
         return $this->hasRole(RoleEnum::Admin->value);
     }
 
-    public function isLicEmployee(): bool
+    public function isLicMedewerker(): bool
     {
-        return $this->hasRole(RoleEnum::LICEmployee->value);
+        return $this->hasRole(RoleEnum::LicMedewerker->value);
     }
 
     public function canManageUsers(): bool
@@ -80,11 +60,19 @@ class User extends Authenticatable
         return $this->isAdmin();
     }
 
+    public function canManageSurveys(): bool
+    {
+        return $this->hasAnyRole([
+            RoleEnum::Admin->value,
+            RoleEnum::LicMedewerker->value,
+        ]);
+    }
+
     public function canReviewSurveyResponses(): bool
     {
         return $this->hasAnyRole([
             RoleEnum::Admin->value,
-            RoleEnum::LICEmployee->value,
+            RoleEnum::LicMedewerker->value,
         ]);
     }
 

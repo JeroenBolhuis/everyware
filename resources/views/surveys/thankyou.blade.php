@@ -39,9 +39,8 @@
                     </ul>
                 @else
                     <p class="mt-2 text-gray-700">
-                        Wil je dat we contact met je opnemen? Laat hieronder optioneel je contactgegevens achter.
+                        Wil je dat we contact met je opnemen? Vul hieronder je naam en e-mailadres in. Je telefoonnummer is optioneel.
                     </p>
-
                     <form method="POST" action="{{ route('survey.contact-details.store', $response) }}" class="mt-4 space-y-4">
                         @csrf
                         <x-surveys.contact-details />
@@ -49,7 +48,7 @@
                         <div class="flex items-center justify-end gap-3">
                             <button
                                 type="submit"
-                                class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md border border-red-600 hover:bg-red-700 transition"
+                                class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gray-600 text-white font-semibold shadow-md border border-gray-600 hover:bg-gray-700 transition"
                             >
                                 Contactgegevens opslaan
                             </button>
