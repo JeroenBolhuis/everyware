@@ -1,11 +1,12 @@
 <?php
 
+use App\Enums\Role as RoleEnum;
 use App\Models\User;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Title('Users')] class extends Component {
+new #[Title('Gebruikers')] class extends Component {
     use WithPagination;
 
     public function mount(): void
@@ -25,16 +26,16 @@ new #[Title('Users')] class extends Component {
 <section class="w-full">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Users') }}</flux:heading>
+    <flux:heading class="sr-only">{{ __('Gebruikers') }}</flux:heading>
 
     <x-pages::admin.layout
-        :heading="__('Users')"
-        :subheading="__('Create accounts and assign roles. Self-registration is disabled.')"
+        :heading="__('Gebruikers')"
+        :subheading="__('Maak accounts aan en wijs rollen toe. Zelfregistratie staat uit.')"
     >
         <div class="my-6 flex flex-col gap-4">
             <div class="flex justify-end">
                 <flux:button variant="primary" :href="route('admin.users.create')" icon="plus" wire:navigate>
-                    {{ __('Add user') }}
+                    {{ __('Gebruiker toevoegen') }}
                 </flux:button>
             </div>
 
@@ -42,8 +43,8 @@ new #[Title('Users')] class extends Component {
                 <flux:table.columns>
                     <flux:table.column>{{ __('Name') }}</flux:table.column>
                     <flux:table.column>{{ __('Email') }}</flux:table.column>
-                    <flux:table.column>{{ __('Role') }}</flux:table.column>
-                    <flux:table.column align="end">{{ __('Actions') }}</flux:table.column>
+                    <flux:table.column>{{ __('Rollen') }}</flux:table.column>
+                    <flux:table.column align="end">{{ __('Acties') }}</flux:table.column>
                 </flux:table.columns>
                 <flux:table.rows>
                     @foreach ($this->users as $user)
@@ -51,9 +52,13 @@ new #[Title('Users')] class extends Component {
                             <flux:table.cell variant="strong">{{ $user->name }}</flux:table.cell>
                             <flux:table.cell>{{ $user->email }}</flux:table.cell>
                             <flux:table.cell>
-                                <flux:badge color="zinc" size="sm">
-                                    {{ $user->getRoleNames()->first() ?? '—' }}
-                                </flux:badge>
+                                <div class="flex flex-wrap gap-2">
+                                    @forelse ($user->getRoleNames() as $roleName)
+                                        <flux:badge color="zinc" size="sm">{{ RoleEnum::tryFrom($roleName)?->label() ?? $roleName }}</flux:badge>
+                                    @empty
+                                        <span>&mdash;</span>
+                                    @endforelse
+                                </div>
                             </flux:table.cell>
                             <flux:table.cell align="end">
                                 <flux:button
@@ -63,7 +68,7 @@ new #[Title('Users')] class extends Component {
                                     icon="pencil-square"
                                     wire:navigate
                                 >
-                                    {{ __('Edit') }}
+                                    {{ __('Bewerken') }}
                                 </flux:button>
                             </flux:table.cell>
                         </flux:table.row>

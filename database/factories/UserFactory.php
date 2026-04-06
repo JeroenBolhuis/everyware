@@ -67,6 +67,14 @@ class UserFactory extends Factory
         return $this->afterCreating(fn (User $user) => $user->syncRoles([Role::Admin->value]));
     }
 
+    /**
+     * @return $this
+     */
+    public function licEmployee(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->syncRoles([Role::LICEmployee->value]));
+    }
+
     public function configure(): static
     {
         return $this->afterCreating(function (User $user) {

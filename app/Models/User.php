@@ -69,4 +69,27 @@ class User extends Authenticatable
     {
         return $this->hasRole(RoleEnum::Admin->value);
     }
+
+    public function isLicEmployee(): bool
+    {
+        return $this->hasRole(RoleEnum::LICEmployee->value);
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function canReviewSurveyResponses(): bool
+    {
+        return $this->hasAnyRole([
+            RoleEnum::Admin->value,
+            RoleEnum::LICEmployee->value,
+        ]);
+    }
+
+    public function canAccessAdminArea(): bool
+    {
+        return $this->canManageUsers() || $this->canReviewSurveyResponses();
+    }
 }

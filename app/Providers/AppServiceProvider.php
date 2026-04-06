@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Compiler\CacheManager;
+use Livewire\Compiler\Compiler;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->configureLivewireCompilerCache();
     }
 
     /**
@@ -63,5 +65,20 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function configureLivewireCompilerCache(): void
+    {
+        if (! $this->app->environment('local')) {
+            return;
+        }
+
+        $this->app->singleton('livewire.compiler', function () {
+            $cacheDirectory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'everyware-livewire-'.md5(base_path());
+
+            return new Compiler(
+                new CacheManager($cacheDirectory)
+            );
+        });
     }
 }

@@ -16,7 +16,7 @@
                 <p class="font-semibold text-gray-900">Contactgegevens</p>
 
                 @if ($response->hasSharedContactDetails())
-                    <p class="mt-2 text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn gehasht opgeslagen.</p>
+                    <p class="mt-2 text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn versleuteld opgeslagen.</p>
 
                     <ul class="mt-3 space-y-2 text-sm text-gray-700">
                         @foreach ($response->sharedContactFieldLabels() as $fieldLabel)
