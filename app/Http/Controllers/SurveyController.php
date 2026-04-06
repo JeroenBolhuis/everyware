@@ -8,7 +8,6 @@ use App\Models\Survey;
 use App\Models\SurveyResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class SurveyController extends Controller
@@ -108,9 +107,9 @@ class SurveyController extends Controller
         return [
             'survey_id' => $response->survey_id,
             'survey_response_id' => $response->id,
-            'name' => $this->hashContactValue($contactName),
-            'email' => $this->hashContactValue($contactEmail),
-            'phone' => $this->hashContactValue($contactPhone),
+            'name' => $contactName,
+            'email' => $contactEmail,
+            'phone' => $contactPhone,
         ];
     }
 
@@ -146,10 +145,5 @@ class SurveyController extends Controller
         }
 
         return $hasLeadingPlus ? '+' . $digitsOnly : $digitsOnly;
-    }
-
-    private function hashContactValue(?string $value): ?string
-    {
-        return filled($value) ? Hash::make($value) : null;
     }
 }

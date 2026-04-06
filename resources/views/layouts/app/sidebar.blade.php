@@ -37,16 +37,29 @@
                     @endif
                 </flux:sidebar.group>
 
-                @if (auth()->user()->isAdmin())
-                    <flux:sidebar.group :heading="__('Administration')" class="grid">
-                        <flux:sidebar.item
-                            icon="users"
-                            :href="route('admin.users.index')"
-                            :current="request()->routeIs('admin.users.*')"
-                            wire:navigate
-                        >
-                            Users
-                        </flux:sidebar.item>
+                @if (auth()->user()->canAccessAdminArea())
+                    <flux:sidebar.group :heading="__('Beheer')" class="grid">
+                        @if (auth()->user()->canReviewSurveyResponses())
+                            <flux:sidebar.item
+                                icon="clipboard-document-list"
+                                :href="route('admin.surveys.index')"
+                                :current="request()->routeIs('admin.surveys.*') || request()->routeIs('admin.responses.*')"
+                                wire:navigate
+                            >
+                                {{ __('Enquete-inzendingen') }}
+                            </flux:sidebar.item>
+                        @endif
+
+                        @if (auth()->user()->canManageUsers())
+                            <flux:sidebar.item
+                                icon="users"
+                                :href="route('admin.users.index')"
+                                :current="request()->routeIs('admin.users.*')"
+                                wire:navigate
+                            >
+                                {{ __('Gebruikers') }}
+                            </flux:sidebar.item>
+                        @endif
                     </flux:sidebar.group>
                 @endif
             </flux:sidebar.nav>
@@ -94,7 +107,7 @@
 
                     <flux:menu.radio.group>
                         <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
-                            Settings
+                            {{ __('Instellingen') }}
                         </flux:menu.item>
                     </flux:menu.radio.group>
 
@@ -109,7 +122,7 @@
                             class="w-full cursor-pointer"
                             data-test="logout-button"
                         >
-                            Log out
+                            {{ __('Uitloggen') }}
                         </flux:menu.item>
                     </form>
                 </flux:menu>
