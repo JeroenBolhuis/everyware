@@ -1,26 +1,26 @@
 ﻿<x-layout>
     <div class="max-w-7xl mx-auto py-10 px-4">
         <div class="bg-white border rounded-2xl shadow-md p-8">
-            <h1 class="text-3xl font-bold mb-6">Surveys Dashboard</h1>
+            <h1 class="text-3xl font-bold mb-6">Enqueteoverzicht</h1>
 
             <!-- Filters -->
             <div class="mb-6 flex flex-wrap gap-4">
                 <div class="flex flex-wrap gap-4 items-end">
                     <div>
-                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search by Title</label>
-                        <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Search..." class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Zoeken op titel</label>
+                        <input type="text" name="search" id="search" value="{{ request('search') }}" placeholder="Zoeken..." class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
                     <div>
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                         <select name="status" id="status" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                            <option value="">All</option>
-                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            <option value="">Alle</option>
+                            <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Actief</option>
+                            <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactief</option>
                         </select>
                     </div>
 
-                    <button id="clear-btn" type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 self-end h-[38px]">Clear</button>
+                    <button id="clear-btn" type="button" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 self-end h-[38px]">Wissen</button>
                 </div>
             </div>
 
@@ -35,21 +35,21 @@
                                 <p class="text-gray-600 mt-1">{{ $survey->description }}</p>
                                 <div class="mt-2">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $survey->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                        {{ $survey->is_active ? 'Active' : 'Inactive' }}
+                                        {{ $survey->is_active ? 'Actief' : 'Inactief' }}
                                     </span>
                                     <span class="ml-2 text-sm text-gray-500">
-                                        {{ $survey->questions->count() }} questions
+                                        {{ $survey->questions->count() }} vragen
                                     </span>
                                 </div>
                             </div>
                             <div class="ml-4">
                                 @if ($survey->is_active)
                                     <a href="{{ route('survey.show', $survey) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-                                        Take Survey
+                                        Enquete invullen
                                     </a>
                                 @else
                                     <span class="inline-flex items-center px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-md cursor-not-allowed">
-                                        Inactive
+                                        Inactief
                                     </span>
                                 @endif
                             </div>
@@ -57,7 +57,7 @@
                     </div>
                 @empty
                     <div class="text-center py-12">
-                        <p class="text-gray-500">No surveys found matching your criteria.</p>
+                        <p class="text-gray-500">Geen enquetes gevonden die overeenkomen met je criteria.</p>
                     </div>
                 @endforelse
             </div>
