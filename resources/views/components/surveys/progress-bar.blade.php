@@ -10,9 +10,7 @@
             Vraag {{ $currentQuestionNumber }} van {{ $totalQuestions }}
         </div>
 
-        <div class="text-sm text-gray-500">
-            {{ $progressPercentage }}% voltooid
-        </div>
+
     </div>
 
     <div class="h-2 w-full overflow-hidden rounded-full bg-red-100" aria-hidden="true">
