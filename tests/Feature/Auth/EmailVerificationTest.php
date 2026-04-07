@@ -5,7 +5,7 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 
-test('email verification screen can be rendered', function () {
+it('renders the email verification notice', function () {
     $user = User::factory()->unverified()->create();
 
     $response = $this->actingAs($user)->get(route('verification.notice'));
@@ -13,7 +13,7 @@ test('email verification screen can be rendered', function () {
     $response->assertOk();
 });
 
-test('email can be verified', function () {
+it('verifies email from signed link', function () {
     $user = User::factory()->unverified()->create();
 
     Event::fake();
@@ -32,7 +32,7 @@ test('email can be verified', function () {
     $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
 });
 
-test('email is not verified with invalid hash', function () {
+it('does not verify email with invalid hash', function () {
     $user = User::factory()->unverified()->create();
 
     $verificationUrl = URL::temporarySignedRoute(
@@ -46,7 +46,7 @@ test('email is not verified with invalid hash', function () {
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
 
-test('already verified user visiting verification link is redirected without firing event again', function () {
+it('redirects already verified users without dispatching verified again', function () {
     $user = User::factory()->create([
         'email_verified_at' => now(),
     ]);
