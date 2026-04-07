@@ -31,7 +31,8 @@ new #[Title('Enquete-inzendingen')] class extends Component {
         :heading="__('Enquete-inzendingen')"
         :subheading="__('Bekijk enquetes en open individuele inzendingen, inclusief gedeelde contactgegevens.')"
     >
-        <div class="my-6">
+        <div
+            class="my-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <flux:table :paginate="$this->surveys">
                 <flux:table.columns>
                     <flux:table.column>{{ __('Enquete') }}</flux:table.column>
@@ -51,15 +52,8 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                             </flux:table.cell>
                             <flux:table.cell>{{ $survey->responses_count }}</flux:table.cell>
                             <flux:table.cell align="end">
-                                <flux:button
-                                    size="sm"
-                                    variant="ghost"
-                                    :href="route('admin.surveys.show', $survey)"
-                                    icon="eye"
-                                    wire:navigate
-                                >
-                                    {{ __('Bekijk inzendingen') }}
-                                </flux:button>
+                                <a href="{{ route('admin.surveys.show', $survey) }}" class="btn-secondary"
+                                   wire:navigate>{{ __('Bekijk inzendingen') }}</a>
                             </flux:table.cell>
                         </flux:table.row>
                     @endforeach
