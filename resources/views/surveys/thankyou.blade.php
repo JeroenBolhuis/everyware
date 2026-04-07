@@ -16,7 +16,8 @@
                 <p class="font-semibold text-gray-900">Contactgegevens</p>
 
                 @if ($response->hasSharedContactDetails())
-                    <p class="mt-2 text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn versleuteld opgeslagen.</p>
+                    <p class="mt-2 text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn versleuteld
+                        opgeslagen.</p>
 
                     <ul class="mt-3 space-y-2 text-sm text-gray-700">
                         @foreach ($response->sharedContactFieldLabels() as $fieldLabel)
@@ -27,17 +28,16 @@
                     </ul>
                 @else
                     <p class="mt-2 text-gray-700">
-                        Wil je dat we contact met je opnemen? Vul hieronder je naam en e-mailadres in. Je telefoonnummer is optioneel.
+                        Wil je dat we contact met je opnemen? Vul hieronder je naam en e-mailadres in. Je telefoonnummer
+                        is optioneel.
                     </p>
-                    <form method="POST" action="{{ route('survey.contact-details.store', $response) }}" class="mt-4 space-y-4">
+                    <form method="POST" action="{{ route('survey.contact-details.store', $response) }}"
+                          class="mt-4 space-y-4">
                         @csrf
-                        <x-surveys.contact-details />
+                        <x-surveys.contact-details/>
 
                         <div class="flex items-center justify-end gap-3">
-                            <button
-                                type="submit"
-                                class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gray-600 text-white font-semibold shadow-md border border-gray-600 hover:bg-gray-700 transition"
-                            >
+                            <button type="submit" class="btn-secondary">
                                 Contactgegevens opslaan
                             </button>
                         </div>
@@ -48,7 +48,8 @@
             <div class="bg-gray-100 rounded-lg p-4">
                 <p class="font-semibold mb-2">Rechten intrekken</p>
                 <p class="mb-2">Via deze link kun je jouw toestemming of antwoorden laten intrekken:</p>
-                <a class="text-blue-600 underline break-all" href="{{ route('survey.withdraw.show', $response->withdrawal_token) }}">
+                <a class="text-blue-600 underline break-all"
+                   href="{{ route('survey.withdraw.show', $response->withdrawal_token) }}">
                     {{ route('survey.withdraw.show', $response->withdrawal_token) }}
                 </a>
             </div>
