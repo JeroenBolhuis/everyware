@@ -2,9 +2,12 @@
 
 use App\Models\ContactInformationSubmission;
 use App\Models\Survey;
+use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\User;
+use Livewire\Livewire;
+use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
@@ -92,4 +95,35 @@ it('shows when no contact information was provided', function () {
     get(route('admin.responses.show', $response))
         ->assertOk()
         ->assertSee('Er zijn geen contactgegevens gedeeld voor deze inzending.');
+});
+
+it('lets lic employees delete answers and shows a success message', function () {
+    $employee = User::factory()->licEmployee()->create();
+    $survey = createReviewableSurvey();
+    $response = createReviewableResponse($survey);
+
+    $answerToKeep = $response->answers()->create([
+        'survey_question_id' => $survey->questions()->firstOrFail()->id,
+        'answer' => 'Dit antwoord blijft staan.',
+    ]);
+
+    $answerToDelete = SurveyAnswer::query()
+        ->where('survey_response_id', $response->id)
+        ->where('answer', 'Very helpful and practical.')
+        ->firstOrFail();
+
+    actingAs($employee);
+
+    Livewire::test('pages::admin.responses.show', ['response' => $response])
+        ->call('deleteAnswer', $answerToDelete->id)
+        ->assertSet('statusMessage', 'Het antwoord is succesvol verwijderd.')
+        ->assertDontSee('Very helpful and practical.')
+        ->assertSee('Dit antwoord blijft staan.')
+        ->assertSee('Het antwoord is succesvol verwijderd.');
+
+    assertDatabaseMissing('survey_answers', [
+        'id' => $answerToDelete->id,
+    ]);
+
+    expect($answerToKeep->fresh())->not->toBeNull();
 });
