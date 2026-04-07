@@ -9,7 +9,7 @@
             </div>
 
             <a
-                href="{{ route('enquetes.create') }}"
+                href="{{ route('survey-manager.create') }}"
                 class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
             >
                 Nieuwe enquête
@@ -48,7 +48,7 @@
         </div>
 
         <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-            <form method="GET" action="{{ route('enquetes') }}" class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
+            <form method="GET" action="{{ route('survey-manager.index') }}" class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
                 <div>
                     <label for="search" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Zoek op titel</label>
                     <input
@@ -78,7 +78,7 @@
                     <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
                         Filteren
                     </button>
-                    <a href="{{ route('enquetes') }}" class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                    <a href="{{ route('survey-manager.index') }}" class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
                         Reset
                     </a>
                 </div>
@@ -115,7 +115,7 @@
 
                         <div class="flex flex-wrap gap-2">
                             <a
-                                href="{{ route('enquetes.edit', $survey) }}"
+                                href="{{ route('survey-manager.edit', $survey) }}"
                                 class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
                             >
                                 Bewerken
@@ -130,7 +130,7 @@
                                     Open enquête
                                 </a>
 
-                                <form method="POST" action="{{ route('enquetes.close', $survey) }}" onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
+                               <form method="POST" action="{{ route('survey-manager.close', $survey) }}"  onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
                                     @csrf
                                     @method('PATCH')
                                     <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700">

@@ -29,7 +29,7 @@
                     </p>
                 </div>
 
-                <a href="{{ route('enquetes') }}" class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+               <a href="{{ route('survey-manager.index') }}" class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
                     Terug naar overzicht
                 </a>
             </div>
@@ -46,7 +46,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ $isEdit ? route('enquetes.update', $survey) : route('enquetes.store') }}" class="space-y-4">
+        <form method="POST" action="{{ $isEdit ? route('survey-manager.update', $survey) : route('survey-manager.store') }}" class="space-y-4">
             @csrf
             @if ($isEdit)
                 @method('PUT')
@@ -173,7 +173,7 @@
             </div>
 
             <div class="flex flex-wrap justify-end gap-3">
-                <a href="{{ route('enquetes') }}" class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                <a href="{{ route('survey-manager.index') }}" class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
                     Annuleren
                 </a>
                 <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
