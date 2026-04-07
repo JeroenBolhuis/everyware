@@ -1,6 +1,7 @@
 <x-layouts::app :title="__('Enquetes')">
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900 md:flex-row md:items-center md:justify-between">
+        <div
+            class="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900 md:flex-row md:items-center md:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-zinc-900 dark:text-white">Enquête-overzicht</h1>
                 <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
@@ -8,65 +9,72 @@
                 </p>
             </div>
 
-            <a
-                href="{{ route('enquetes.create') }}"
-                class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
-            >
+            <a href="{{ route('enquetes.create') }}" class="btn-primary">
                 Nieuwe enquête
             </a>
         </div>
 
         @if (session('status'))
-            <div class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900/50 dark:bg-green-950/40 dark:text-green-200">
+            <div
+                class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900/50 dark:bg-green-950/40 dark:text-green-200">
                 {{ session('status') }}
             </div>
         @endif
 
         @if ($errors->has('questions'))
-            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+            <div
+                class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
                 {{ $errors->first('questions') }}
             </div>
         @endif
 
         <div class="grid gap-4 md:grid-cols-4">
-            <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <div
+                class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">Totaal</p>
                 <p class="mt-2 text-3xl font-semibold text-zinc-900 dark:text-white">{{ $stats['total'] }}</p>
             </div>
-            <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <div
+                class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">Actief</p>
-                <p class="mt-2 text-3xl font-semibold text-green-600">{{ $stats['active'] }}</p>
+                <p class="mt-2 text-3xl font-semibold text-zinc-900 dark:text-white">{{ $stats['active'] }}</p>
             </div>
-            <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <div
+                class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">Gesloten</p>
-                <p class="mt-2 text-3xl font-semibold text-red-500">{{ $stats['closed'] }}</p>
+                <p class="mt-2 text-3xl font-semibold text-zinc-900 dark:text-white">{{ $stats['closed'] }}</p>
             </div>
-            <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <div
+                class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">Reacties</p>
                 <p class="mt-2 text-3xl font-semibold text-zinc-900 dark:text-white">{{ $stats['responses'] }}</p>
             </div>
         </div>
 
-        <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-            <form method="GET" action="{{ route('enquetes') }}" class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
+        <div
+            class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <form method="GET" action="{{ route('enquetes') }}"
+                  class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
                 <div>
-                    <label for="search" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Zoek op titel</label>
+                    <label for="search" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Zoek op
+                        titel</label>
                     <input
                         id="search"
                         name="search"
                         type="text"
                         value="{{ request('search') }}"
                         placeholder="Bijvoorbeeld: studentfeedback"
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                        class="w-full rounded-full px-4 py-3 border border-zinc-300 bg-white text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                     >
                 </div>
 
                 <div>
-                    <label for="status" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Status</label>
+                    <label for="status"
+                           class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Status</label>
                     <select
                         id="status"
                         name="status"
-                        class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                        class="w-full rounded-full px-4 py-3 border border-zinc-300 bg-white text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                     >
                         <option value="">Alles</option>
                         <option value="active" @selected(request('status') === 'active')>Actief</option>
@@ -75,10 +83,10 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
+                    <button type="submit" class="btn-secondary">
                         Filteren
                     </button>
-                    <a href="{{ route('enquetes') }}" class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800">
+                    <a href="{{ route('enquetes') }}" class="btn-secondary">
                         Reset
                     </a>
                 </div>
@@ -98,9 +106,11 @@
                                 <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">{{ $survey->title }}</h3>
 
                                 @if ($survey->is_active)
-                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950/50 dark:text-green-200">Actief</span>
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950/50 dark:text-green-200">Actief</span>
                                 @else
-                                    <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200">Gesloten</span>
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200">Gesloten</span>
                                 @endif
                             </div>
 
@@ -114,31 +124,25 @@
                         </div>
 
                         <div class="flex flex-wrap gap-2">
-                            <a
-                                href="{{ route('enquetes.edit', $survey) }}"
-                                class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                            >
+                            <a href="{{ route('enquetes.edit', $survey) }}" class="btn-secondary">
                                 Bewerken
                             </a>
 
                             @if ($survey->is_active)
-                                <a
-                                    href="{{ route('survey.show', $survey) }}"
-                                    target="_blank"
-                                    class="inline-flex items-center justify-center rounded-lg border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
-                                >
+                                <a href="{{ route('survey.show', $survey) }}" target="_blank" class="btn-secondary">
                                     Open enquête
                                 </a>
 
-                                <form method="POST" action="{{ route('enquetes.close', $survey) }}" onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
+                                <form method="POST" action="{{ route('enquetes.close', $survey) }}"
+                                      onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
                                     @csrf
                                     @method('PATCH')
-                                    <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700">
+                                    <button type="submit" class="btn-primary">
                                         Sluiten
                                     </button>
                                 </form>
                             @else
-                                <span class="inline-flex items-center justify-center rounded-lg bg-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                                <span class="btn-disabled">
                                     Niet meer invulbaar
                                 </span>
                             @endif
@@ -159,3 +163,7 @@
         </div>
     </div>
 </x-layouts::app>
+
+
+
+
