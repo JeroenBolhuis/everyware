@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyWithdrawalController;
-use App\Http\Controllers\SurveyManagementController;
+use App\Http\Controllers\SurveyManagerController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -11,14 +11,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('enquetes', 'enquetes')->name('enquetes');
 });
-Route::middleware(['auth', 'verified', 'role:admin|lic-medewerker'])->group(function () {
-    Route::get('enquetes', [SurveyManagementController::class, 'index'])->name('enquetes');
-    Route::get('enquetes/nieuw', [SurveyManagementController::class, 'create'])->name('enquetes.create');
-    Route::post('enquetes', [SurveyManagementController::class, 'store'])->name('enquetes.store');
-    Route::get('enquetes/{survey}/bewerken', [SurveyManagementController::class, 'edit'])->name('enquetes.edit');
-    Route::put('enquetes/{survey}', [SurveyManagementController::class, 'update'])->name('enquetes.update');
-    Route::patch('enquetes/{survey}/sluiten', [SurveyManagementController::class, 'close'])->name('enquetes.close');
-});
+Route::middleware(['auth', 'verified', 'role:admin|lic-medewerker'])
+    ->prefix('enquetes')
+    ->name('survey-manager.')
+    ->group(function () {
+        Route::get('/', [SurveyManagerController::class, 'index'])->name('index');
+        Route::get('/nieuw', [SurveyManagerController::class, 'create'])->name('create');
+        Route::post('/', [SurveyManagerController::class, 'store'])->name('store');
+        Route::get('/{survey}/bewerken', [SurveyManagerController::class, 'edit'])->name('edit');
+        Route::put('/{survey}', [SurveyManagerController::class, 'update'])->name('update');
+        Route::patch('/{survey}/sluiten', [SurveyManagerController::class, 'close'])->name('close');
+    });
 
 Route::prefix('survey')->name('survey.')->group(function () {
     Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
