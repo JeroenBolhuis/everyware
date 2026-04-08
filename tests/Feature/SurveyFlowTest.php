@@ -1,10 +1,12 @@
 <?php
 
+use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\ContactInformationSubmission;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
@@ -65,6 +67,7 @@ it('opens the survey page', function () {
 
     $response->assertOk();
     $response->assertSee('Are you satisfied?');
+    $response->assertSee('Laat optioneel je naam en e-mailadres achter voor een bevestigingsmail');
 });
 
 /* Inactive survey returns 404 */
@@ -76,8 +79,9 @@ it('returns 404 for inactive survey', function () {
     $response->assertNotFound();
 });
 
-/* Survey can be submitted */
-it('submits a survey', function () {
+it('submits a survey and sends a confirmation email when an email address is provided', function () {
+    Mail::fake();
+
     $survey = createSurvey();
     $question1 = $survey->questions[0];
     $question2 = $survey->questions[1];
@@ -87,6 +91,8 @@ it('submits a survey', function () {
             $question1->id => 'yes',
             $question2->id => 'Because it works',
         ],
+        'contact_name' => 'Ali Test',
+        'contact_email' => 'Ali@Example.com',
     ]);
 
     $surveyResponse = SurveyResponse::latest()->first();
@@ -96,6 +102,48 @@ it('submits a survey', function () {
     assertDatabaseHas('survey_responses', [
         'survey_id' => $survey->id,
     ]);
+
+    assertDatabaseHas('contact_information_submissions', [
+        'survey_id' => $survey->id,
+        'survey_response_id' => $surveyResponse->id,
+    ]);
+
+    $contactSubmission = ContactInformationSubmission::where('survey_response_id', $surveyResponse->id)->first();
+
+    expect($contactSubmission)->not->toBeNull()
+        ->and($contactSubmission->name)->toBe('Ali Test')
+        ->and($contactSubmission->email)->toBe('ali@example.com');
+
+    Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) use ($surveyResponse) {
+        return $mail->response->is($surveyResponse)
+            && $mail->recipientName === 'Ali Test'
+            && $mail->hasTo('ali@example.com');
+    });
+});
+
+it('submits a survey without sending a confirmation email when no email address is provided', function () {
+    Mail::fake();
+
+    $survey = createSurvey();
+    $question1 = $survey->questions[0];
+
+    $response = post('/survey/' . $survey->id, [
+        'answers' => [
+            $question1->id => 'yes',
+        ],
+        'contact_name' => '',
+        'contact_email' => '',
+    ]);
+
+    $surveyResponse = SurveyResponse::latest()->first();
+
+    $response->assertRedirect(route('survey.thankyou', ['response' => $surveyResponse->id]));
+
+    assertDatabaseMissing('contact_information_submissions', [
+        'survey_response_id' => $surveyResponse->id,
+    ]);
+
+    Mail::assertNothingSent();
 });
 
 /* Required questions must be answered */
@@ -183,6 +231,16 @@ it('shows shared contact details on the thank you page', function () {
 
     $response->assertOk();
     $response->assertSee('Je hebt contactgegevens gedeeld');
+});
+
+it('shows the mail confirmation state on the thank you page', function () {
+    $surveyResponse = createSurveyResponse();
+
+    $response = $this->withSession(['confirmationMailStatus' => 'sent'])
+        ->get(route('survey.thankyou', ['response' => $surveyResponse->id]));
+
+    $response->assertOk();
+    $response->assertSee('Er is een bevestigingsmail verstuurd.');
 });
 
 /* Thank-you page shows form if no contact data */

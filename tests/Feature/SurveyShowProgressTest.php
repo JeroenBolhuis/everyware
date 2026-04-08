@@ -3,7 +3,7 @@
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 
-it('renders the survey progress bar with question counts and percentages', function () {
+it('renders the survey progress bar with question counts and percentages including the contact step', function () {
     $survey = Survey::factory()->active()->create([
         'title' => 'Onderwijsevaluatie',
     ]);
@@ -42,16 +42,14 @@ it('renders the survey progress bar with question counts and percentages', funct
     $this->get(route('survey.show', $survey))
         ->assertOk()
         ->assertSeeHtml('data-test="survey-progress-bar"')
-        ->assertSee('Vraag 1 van 4')
-        ->assertSee('Vraag 2 van 4')
-        ->assertSee('Vraag 3 van 4')
-        ->assertSee('Vraag 4 van 4')
-        ->assertSee('25% voltooid')
-        ->assertSee('50% voltooid')
-        ->assertSee('75% voltooid')
-        ->assertSee('100% voltooid')
-        ->assertSeeHtml('style="width: 25%"')
-        ->assertSeeHtml('style="width: 50%"')
-        ->assertSeeHtml('style="width: 75%"')
+        ->assertSee('Vraag 1 van 5')
+        ->assertSee('Vraag 2 van 5')
+        ->assertSee('Vraag 3 van 5')
+        ->assertSee('Vraag 4 van 5')
+        ->assertSee('Vraag 5 van 5')
+        ->assertSeeHtml('style="width: 20%"')
+        ->assertSeeHtml('style="width: 40%"')
+        ->assertSeeHtml('style="width: 60%"')
+        ->assertSeeHtml('style="width: 80%"')
         ->assertSeeHtml('style="width: 100%"');
 });

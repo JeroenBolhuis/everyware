@@ -6,6 +6,18 @@
                 Je enquête is succesvol verzonden.
             </p>
 
+            @if (session('confirmationMailStatus') === 'sent')
+                <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
+                    Er is een bevestigingsmail verstuurd.
+                </div>
+            @endif
+
+            @if (session('confirmationMailStatus') === 'failed')
+                <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                    Je enquête is opgeslagen, maar de bevestigingsmail kon niet direct worden verstuurd.
+                </div>
+            @endif
+
             @if (session('contactDetailsSaved'))
                 <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
                     Je contactgegevens zijn opgeslagen.

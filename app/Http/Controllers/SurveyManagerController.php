@@ -9,7 +9,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-class SurveyManagementController extends Controller
+class SurveyManagerController extends Controller
 {
     public function index(Request $request)
     {
@@ -40,12 +40,12 @@ class SurveyManagementController extends Controller
             'responses' => DB::table('survey_responses')->count(),
         ];
 
-        return view('enquetes', compact('surveys', 'stats'));
+        return view('survey-manager.index', compact('surveys', 'stats'));
     }
 
     public function create()
     {
-        return view('enquetes.create');
+        return view('survey-manager.create');
     }
 
     public function store(UpsertSurveyRequest $request)
@@ -67,14 +67,14 @@ class SurveyManagementController extends Controller
             );
         });
 
-        return to_route('enquetes')->with('status', 'Enquête succesvol aangemaakt.');
+        return to_route('survey-manager.index')->with('status', 'Enquête succesvol aangemaakt.');
     }
 
     public function edit(Survey $survey)
     {
         $survey->load('questions');
 
-        return view('enquetes.edit', compact('survey'));
+        return view('survey-manager.edit', compact('survey'));
     }
 
     public function update(UpsertSurveyRequest $request, Survey $survey)
@@ -129,14 +129,14 @@ class SurveyManagementController extends Controller
             }
         });
 
-        return to_route('enquetes')->with('status', 'Enquête succesvol bijgewerkt.');
+        return to_route('survey-manager.index')->with('status', 'Enquête succesvol bijgewerkt.');
     }
 
     public function close(Survey $survey)
     {
         $survey->update(['is_active' => false]);
 
-        return to_route('enquetes')->with('status', 'De enquête is gesloten en kan niet meer worden ingevuld.');
+        return to_route('survey-manager.index')->with('status', 'De enquête is gesloten en kan niet meer worden ingevuld.');
     }
 
     private function buildQuestionsPayload(array $questions): array

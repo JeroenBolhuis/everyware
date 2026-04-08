@@ -1,1 +1,0 @@
-@include('enquetes._form', ['survey' => $survey])

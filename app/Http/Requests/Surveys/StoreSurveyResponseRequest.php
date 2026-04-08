@@ -16,6 +16,8 @@ class StoreSurveyResponseRequest extends FormRequest
     {
         $rules = [
             'answers' => ['required', 'array'],
+            'contact_name' => ['nullable', 'string', 'max:255'],
+            'contact_email' => ['nullable', 'email', 'max:255'],
         ];
 
         $survey = $this->route('survey');
@@ -29,5 +31,12 @@ class StoreSurveyResponseRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'contact_email.email' => 'Vul een geldig e-mailadres in.',
+        ];
     }
 }
