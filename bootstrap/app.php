@@ -29,6 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->report(function (\Throwable $exception): void {
+            logger()->error('Unhandled exception summary', [
+                'exception_class' => $exception::class,
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+                'previous_exception_class' => $exception->getPrevious() ? $exception->getPrevious()::class : null,
+                'previous_message' => $exception->getPrevious()?->getMessage(),
+            ]);
+        });
     })
     ->create();

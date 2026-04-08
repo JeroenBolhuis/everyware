@@ -6,7 +6,7 @@ Route::middleware(['auth', 'verified'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::middleware('role:admin|LICEmployee')->group(function () {
+        Route::middleware('role:admin|lic-medewerker')->group(function () {
             Route::livewire('surveys', 'pages::admin.surveys.index')->name('surveys.index');
             Route::livewire('surveys/{survey}', 'pages::admin.surveys.show')->name('surveys.show');
             Route::livewire('responses/{response}', 'pages::admin.responses.show')->name('responses.show');

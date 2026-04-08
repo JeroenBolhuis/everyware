@@ -50,9 +50,14 @@ class User extends Authenticatable
         return $this->hasRole(RoleEnum::Admin->value);
     }
 
+    public function isLicEmployee(): bool
+    {
+        return $this->hasRole(RoleEnum::LicEmployee->value);
+    }
+
     public function isLicMedewerker(): bool
     {
-        return $this->hasRole(RoleEnum::LicMedewerker->value);
+        return $this->isLicEmployee();
     }
 
     public function canManageUsers(): bool
@@ -64,7 +69,7 @@ class User extends Authenticatable
     {
         return $this->hasAnyRole([
             RoleEnum::Admin->value,
-            RoleEnum::LicMedewerker->value,
+            RoleEnum::LicEmployee->value,
         ]);
     }
 
@@ -72,7 +77,7 @@ class User extends Authenticatable
     {
         return $this->hasAnyRole([
             RoleEnum::Admin->value,
-            RoleEnum::LicMedewerker->value,
+            RoleEnum::LicEmployee->value,
         ]);
     }
 

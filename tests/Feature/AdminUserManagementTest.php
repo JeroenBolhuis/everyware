@@ -29,7 +29,7 @@ it('lets admins create users with roles', function () {
         ->set('email', 'jane@example.com')
         ->set('password', 'password')
         ->set('password_confirmation', 'password')
-        ->set('roles', [Role::User->value, Role::LICEmployee->value])
+        ->set('roles', [Role::User->value, Role::LicEmployee->value])
         ->call('save')
         ->assertHasNoErrors()
         ->assertRedirect(route('admin.users.index', absolute: false));
@@ -37,7 +37,7 @@ it('lets admins create users with roles', function () {
     $created = User::query()->where('email', 'jane@example.com')->first();
     expect($created)->not->toBeNull()
         ->and($created->hasRole(Role::User->value))->toBeTrue()
-        ->and($created->hasRole(Role::LICEmployee->value))->toBeTrue();
+        ->and($created->hasRole(Role::LicEmployee->value))->toBeTrue();
 });
 
 it('forbids non-admins from creating users via livewire', function () {

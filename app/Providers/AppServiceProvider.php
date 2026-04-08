@@ -69,13 +69,13 @@ class AppServiceProvider extends ServiceProvider
 
     protected function configureLivewireCompilerCache(): void
     {
-        if (! $this->app->environment('local')) {
-            return;
+        $cacheDirectory = storage_path('framework/views/livewire');
+
+        if (getenv('VERCEL')) {
+            $cacheDirectory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'everyware-livewire-'.md5(base_path());
         }
 
-        $this->app->singleton('livewire.compiler', function () {
-            $cacheDirectory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'everyware-livewire-'.md5(base_path());
-
+        $this->app->singleton('livewire.compiler', function () use ($cacheDirectory) {
             return new Compiler(
                 new CacheManager($cacheDirectory)
             );
