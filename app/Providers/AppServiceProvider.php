@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Compiler\CacheManager;
+use Livewire\Compiler\Compiler;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->configureLivewireCompilerCache();
     }
 
     /**
@@ -23,7 +25,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureVercelServerless();
         $this->configureDefaults();
+    }
+
+    /**
+     * When VERCEL=1, avoid database-backed session/cache/queue if dashboard env copies .env.
+     */
+    protected function configureVercelServerless(): void
+    {
+        if (! getenv('VERCEL')) {
+            return;
+        }
+
+        config([
+            'cache.default' => 'array',
+            'queue.default' => 'sync',
+            'session.driver' => 'cookie',
+        ]);
     }
 
     /**
@@ -46,5 +65,20 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    protected function configureLivewireCompilerCache(): void
+    {
+        $cacheDirectory = storage_path('framework/views/livewire');
+
+        if (getenv('VERCEL')) {
+            $cacheDirectory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'everyware-livewire-'.md5(base_path());
+        }
+
+        $this->app->singleton('livewire.compiler', function () use ($cacheDirectory) {
+            return new Compiler(
+                new CacheManager($cacheDirectory)
+            );
+        });
     }
 }

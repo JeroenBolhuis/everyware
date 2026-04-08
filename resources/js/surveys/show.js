@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    const requestedInitialStep = Number.parseInt(form.dataset.initialStep ?? '0', 10);
+    const initialStep = Number.isNaN(requestedInitialStep)
+        ? 0
+        : Math.min(Math.max(requestedInitialStep, 0), steps.length - 1);
+
     let currentStep = 0;
     let isSubmitting = false;
 
@@ -55,6 +60,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return textarea ? textarea.value.trim() : '';
         }
 
+        if (type === 'contact') {
+            const email = step.querySelector('input[name="contact_email"]');
+            const name = step.querySelector('input[name="contact_name"]');
+
+            return [email?.value.trim() ?? '', name?.value.trim() ?? ''].join('');
+        }
+
         return '';
     }
 
@@ -78,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (step.dataset.type === 'email') {
             return 'Vul een geldig e-mailadres in om verder te gaan.';
         }
+
         return 'Geef eerst een antwoord op deze verplichte vraag.';
     }
 
@@ -141,8 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.querySelectorAll('textarea').forEach((textarea) => {
-        textarea.addEventListener('input', hideValidationMessage);
+    document.querySelectorAll('textarea, input[type="text"], input[type="email"]').forEach((field) => {
+        field.addEventListener('input', hideValidationMessage);
     });
 
     document.querySelectorAll('.swipe-choice').forEach((button) => {
@@ -266,5 +279,5 @@ document.addEventListener('DOMContentLoaded', () => {
         resetCard();
     });
 
-    showStep(0);
+    showStep(initialStep);
 });

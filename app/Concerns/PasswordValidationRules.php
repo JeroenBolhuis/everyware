@@ -26,4 +26,12 @@ trait PasswordValidationRules
     {
         return ['required', 'string', 'current_password'];
     }
+
+    /**
+     * @return array<int, Rule|array<mixed>|string>
+     */
+    protected function optionalPasswordRules(): array
+    {
+        return ['nullable', 'string', Password::default(), 'confirmed'];
+    }
 }

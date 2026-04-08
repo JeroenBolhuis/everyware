@@ -2,16 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Surveys\StoreSurveyContactDetailsRequest;
+use App\Http\Requests\Surveys\StoreSurveyResponseRequest;
+use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\Survey;
-use App\Models\SurveyAnswer;
 use App\Models\SurveyResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
+use Throwable;
 
 class SurveyController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = Survey::query();
+
+        $status = $request->input('status');
+
+        if (in_array($status, ['active', 'inactive'], true)) {
+            $query->where('is_active', $status === 'active');
+        }
+
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%'.$request->search.'%');
+        }
+
+        $surveys = $query->paginate(10);
+
+        return view('surveys.index', compact('surveys'));
+    }
+
     public function show(Survey $survey)
     {
         $survey->load('questions');
@@ -21,59 +44,143 @@ class SurveyController extends Controller
         return view('surveys.show', compact('survey'));
     }
 
-    public function store(Request $request, Survey $survey)
+    public function store(StoreSurveyResponseRequest $request, Survey $survey)
     {
-        $survey->load('questions');
+        $validated = $request->validated();
+        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
+        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
+        $studentEmail = $this->normalizeEmailForHash($validated['student_email'] ?? null);
 
-        $rules = [
-            'student_name' => ['nullable', 'string', 'max:255'],
-            'student_email' => [
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('survey_responses', 'student_email')->where('survey_id', $survey->id),
-            ],
-            'answers' => ['required', 'array'],
-        ];
-
-        foreach ($survey->questions as $question) {
-            if ($question->required) {
-                $rules["answers.{$question->id}"] = ['required'];
-            } else {
-                $rules["answers.{$question->id}"] = ['nullable'];
-            }
-        }
-
-        $validated = $request->validate($rules, [
-            'student_email.required' => 'Vul je e-mailadres in om de enquête te versturen.',
-            'student_email.unique' => 'Je hebt deze enquête al ingevuld met dit e-mailadres.',
-        ]);
-
-        $response = DB::transaction(function () use ($validated, $survey) {
-            $response = SurveyResponse::create([
-                'survey_id' => $survey->id,
-                'student_name' => $validated['student_name'] ?? null,
-                'student_email' => $validated['student_email'] ?? null,
+        $response = DB::transaction(function () use ($validated, $survey, $studentEmail) {
+            $response = $survey->responses()->create([
+                'student_email' => $studentEmail,
                 'withdrawal_token' => Str::uuid(),
                 'submitted_at' => now(),
             ]);
 
-            foreach ($validated['answers'] as $questionId => $answer) {
-                SurveyAnswer::create([
-                    'survey_response_id' => $response->id,
+            $answers = collect($validated['answers'])
+                ->map(fn ($answer, $questionId) => [
                     'survey_question_id' => $questionId,
                     'answer' => $answer,
-                ]);
+                ])
+                ->values()
+                ->all();
+
+            $response->answers()->createMany($answers);
+
+            $contactInformationPayload = $this->buildContactInformationPayload($validated, $response);
+
+            if ($contactInformationPayload !== null) {
+                $response->contactInformationSubmission()->updateOrCreate(
+                    ['survey_response_id' => $response->id],
+                    $contactInformationPayload,
+                );
             }
 
             return $response;
         });
 
-        return redirect()->route('surveys.thankyou', $response);
+        $confirmationMailStatus = 'skipped';
+
+        if ($contactEmail !== null) {
+            try {
+                Mail::to($contactEmail)->send(
+                    new SurveySubmissionConfirmationMail($response->fresh('survey'), $contactName)
+                );
+
+                $confirmationMailStatus = 'sent';
+            } catch (Throwable $exception) {
+                Log::warning('Survey confirmation email could not be sent.', [
+                    'survey_response_id' => $response->id,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                $confirmationMailStatus = 'failed';
+            }
+        }
+
+        return to_route('survey.thankyou', $response)->with([
+            'confirmationMailStatus' => $confirmationMailStatus,
+        ]);
     }
 
     public function thankYou(SurveyResponse $response)
     {
+        $response->loadMissing('contactInformationSubmission');
+
         return view('surveys.thankyou', compact('response'));
+    }
+
+    public function storeContactDetails(StoreSurveyContactDetailsRequest $request, SurveyResponse $response)
+    {
+        $validated = $request->validated();
+
+        $contactInformationPayload = $this->buildContactInformationPayload($validated, $response);
+
+        if ($contactInformationPayload === null) {
+            return to_route('survey.thankyou', $response)
+                ->with('contactDetailsSkipped', true);
+        }
+
+        $response->contactInformationSubmission()->updateOrCreate(
+            ['survey_response_id' => $response->id],
+            $contactInformationPayload,
+        );
+
+        return to_route('survey.thankyou', $response)
+            ->with('contactDetailsSaved', true);
+    }
+
+    private function buildContactInformationPayload(array $validated, SurveyResponse $response): ?array
+    {
+        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
+        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
+        $contactPhone = $this->normalizePhoneForHash($validated['contact_phone'] ?? null);
+
+        if (! filled($contactName) && ! filled($contactEmail) && ! filled($contactPhone)) {
+            return null;
+        }
+
+        return [
+            'survey_id' => $response->survey_id,
+            'survey_response_id' => $response->id,
+            'name' => $contactName,
+            'email' => $contactEmail,
+            'phone' => $contactPhone,
+        ];
+    }
+
+    private function normalizeContactValue(?string $value): ?string
+    {
+        if (! filled($value)) {
+            return null;
+        }
+
+        return trim($value);
+    }
+
+    private function normalizeEmailForHash(?string $value): ?string
+    {
+        $normalizedValue = $this->normalizeContactValue($value);
+
+        return $normalizedValue !== null ? Str::lower($normalizedValue) : null;
+    }
+
+    private function normalizePhoneForHash(?string $value): ?string
+    {
+        $normalizedValue = $this->normalizeContactValue($value);
+
+        if ($normalizedValue === null) {
+            return null;
+        }
+
+        $hasLeadingPlus = str_starts_with($normalizedValue, '+');
+        $digitsOnly = preg_replace('/\D+/', '', $normalizedValue) ?? '';
+
+        if ($digitsOnly === '') {
+            return null;
+        }
+
+        return $hasLeadingPlus ? '+'.$digitsOnly : $digitsOnly;
     }
 }

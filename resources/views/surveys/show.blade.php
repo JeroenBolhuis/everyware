@@ -1,33 +1,46 @@
 <x-layout>
     @vite(['resources/css/surveys/show.css', 'resources/js/surveys/show.js'])
 
-    <div class="min-h-screen bg-gray-100">
-        <header class="bg-white border-b px-6 py-4 flex justify-between items-center">
-            <div class="text-red-600 font-bold text-xl">avans</div>
-            <div class="font-semibold text-red-600">LIC Feedback Demo</div>
-            <div class="text-sm text-gray-500">Verlaat demo</div>
-        </header>
+    @php
+        $totalQuestions = $survey->questions->count();
+        $totalSteps = $totalQuestions + 2;
+        $initialStep = 0;
 
-        <main class="max-w-3xl mx-auto mt-8 px-4 pb-10">
-            @if ($errors->any())
-                <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
-                    <ul class="list-disc pl-5 space-y-1">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+        if ($errors->any()) {
+            if ($errors->has('student_email')) {
+                $initialStep = 0;
+            }
 
-            <div
-                id="surveyValidationMessage"
-                class="hidden mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700"
-            ></div>
+            foreach ($survey->questions as $errorIndex => $errorQuestion) {
+                if ($errors->has("answers.{$errorQuestion->id}")) {
+                    $initialStep = $errorIndex + 1;
+                    break;
+                }
+            }
 
-            <form method="POST" action="{{ route('surveys.store', $survey) }}" id="surveyForm" novalidate>
+            if ($errors->has('contact_name') || $errors->has('contact_email')) {
+                $initialStep = $totalSteps - 1;
+            }
+        }
+    @endphp
+
+    <div class="survey-page">
+        <div class="avans-header">
+            <x-surveys.page-header />
+        </div>
+
+        <main class="survey-main max-w-3xl mx-auto w-full px-4 pb-10 pt-0">
+            <x-surveys.validation-notices />
+
+            <form
+                method="POST"
+                action="{{ route('survey.store', $survey) }}"
+                id="surveyForm"
+                data-initial-step="{{ $initialStep }}"
+                novalidate
+            >
                 @csrf
 
-                {{-- Email step (always first) --}}
                 <section
                     class="question-step"
                     data-step="0"
@@ -35,11 +48,20 @@
                     data-required="1"
                     aria-hidden="false"
                 >
+                    <x-surveys.progress-bar
+                        :current-question-number="1"
+                        :total-questions="$totalSteps"
+                        :progress-percentage="(int) round((1 / $totalSteps) * 100)"
+                    />
+
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                         <h2 class="text-3xl font-semibold text-gray-900 mb-3">
                             Wat is je e-mailadres?
                         </h2>
-                        <p class="text-sm text-gray-500 mb-8">Verplicht — je kunt de enquête maar één keer invullen per e-mailadres.</p>
+
+                        <p class="text-sm text-gray-500 mb-8">
+                            Verplicht - je kunt de enquete maar een keer invullen per e-mailadres.
+                        </p>
 
                         <input
                             type="email"
@@ -50,6 +72,10 @@
                             class="w-full rounded-xl border border-gray-200 p-4 focus:outline-none focus:ring-2 focus:ring-red-300"
                             autocomplete="email"
                         >
+
+                        @error('student_email')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
 
                         <div class="flex justify-end mt-8">
                             <button
@@ -64,161 +90,106 @@
 
                 @foreach ($survey->questions as $index => $question)
                     @php
-                        $isFirst = $index === 0;
-                        $isLast = $index === $survey->questions->count() - 1;
+                        $stepNumber = $index + 1;
                         $oldAnswer = old("answers.$question->id");
                         $leftOption = $question->options[0] ?? 'nee';
                         $rightOption = $question->options[1] ?? 'ja';
-                        $currentQuestionNumber = $index + 1;
-                        $totalQuestions = $survey->questions->count();
-                        $progressPercentage = (int) round(($currentQuestionNumber / $totalQuestions) * 100);
+                        $currentQuestionNumber = $stepNumber + 1;
+                        $progressPercentage = (int) round(($currentQuestionNumber / $totalSteps) * 100);
                     @endphp
 
-                    <section
-                        class="question-step {{ $isFirst ? '' : 'hidden' }}"
-                        data-step="{{ $index }}"
-                        data-question-id="{{ $question->id }}"
-                        data-type="{{ $question->type }}"
-                        data-required="{{ $question->required ? '1' : '0' }}"
-                        aria-hidden="{{ $isFirst ? 'false' : 'true' }}"
+                    <x-surveys.question-step
+                        :step="$stepNumber"
+                        :question-id="$question->id"
+                        :type="$question->type"
+                        :required="$question->required"
+                        :is-first="false"
+                        :is-last="false"
+                        :question="$question->question"
+                        :current-question-number="$currentQuestionNumber"
+                        :total-questions="$totalSteps"
+                        :progress-percentage="$progressPercentage"
                     >
-                        <x-surveys.progress-bar
-                            :current-question-number="$currentQuestionNumber"
-                            :total-questions="$totalQuestions"
-                            :progress-percentage="$progressPercentage"
-                        />
+                        @if ($question->type === 'radio')
+                            <x-surveys.radio-answer :question="$question" :old-answer="$oldAnswer" />
+                        @endif
 
-                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                            <h2 class="text-3xl font-semibold text-gray-900 mb-3">
-                                {{ $question->question }}
-                            </h2>
+                        @if ($question->type === 'swipe')
+                            <x-surveys.swipe-answer
+                                :question="$question"
+                                :old-answer="$oldAnswer"
+                                :left-option="$leftOption"
+                                :right-option="$rightOption"
+                                :index="$index"
+                            />
+                        @endif
 
-                            <p class="text-sm text-gray-500 mb-8">
-                                {{ $question->required ? 'Verplicht' : 'Optioneel' }}
-                            </p>
+                        @if ($question->type === 'textarea')
+                            <x-surveys.textarea-answer :question="$question" :old-answer="$oldAnswer" />
+                        @endif
+                    </x-surveys.question-step>
+                @endforeach
 
-                            @if ($question->type === 'radio')
-                                <div class="space-y-3">
-                                    @foreach (($question->options ?? []) as $optionIndex => $option)
-                                        <label
-                                            for="question-{{ $question->id }}-option-{{ $optionIndex }}"
-                                            class="survey-option flex items-center justify-between rounded-xl border border-gray-200 px-5 py-4 cursor-pointer hover:bg-gray-50 transition"
-                                        >
-                                            <span class="font-medium text-gray-900">
-                                                {{ $option }}
-                                            </span>
+                @php
+                    $contactStepIndex = $totalSteps - 1;
+                @endphp
 
-                                            <input
-                                                id="question-{{ $question->id }}-option-{{ $optionIndex }}"
-                                                type="radio"
-                                                name="answers[{{ $question->id }}]"
-                                                value="{{ $option }}"
-                                                class="h-5 w-5"
-                                                {{ $oldAnswer === $option ? 'checked' : '' }}
-                                            >
-                                        </label>
-                                    @endforeach
-                                </div>
-                            @endif
+                <x-surveys.question-step
+                    :step="$contactStepIndex"
+                    question-id="contact-details"
+                    type="contact"
+                    :required="false"
+                    :is-first="false"
+                    :is-last="true"
+                    question="Laat optioneel je naam en e-mailadres achter voor een bevestigingsmail"
+                    :current-question-number="$totalSteps"
+                    :total-questions="$totalSteps"
+                    :progress-percentage="100"
+                >
+                    <div class="space-y-4">
+                        <p class="text-gray-600">
+                            Als je een e-mailadres invult, sturen we direct na het verzenden een bevestigingsmail.
+                        </p>
 
-                            @if ($question->type === 'swipe')
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="md:col-span-2">
+                                <label for="contact_name" class="mb-1 block text-sm font-medium text-gray-700">
+                                    Naam <span class="text-gray-500">(optioneel)</span>
+                                </label>
                                 <input
-                                    type="hidden"
-                                    name="answers[{{ $question->id }}]"
-                                    id="answer-{{ $question->id }}"
-                                    value="{{ $oldAnswer }}"
+                                    id="contact_name"
+                                    type="text"
+                                    name="contact_name"
+                                    value="{{ old('contact_name') }}"
+                                    autocomplete="name"
+                                    class="w-full rounded-xl border border-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-red-300"
+                                    placeholder="Bijvoorbeeld: Jamie Jansen"
                                 >
+                                @error('contact_name')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
-                                <div class="mb-4 text-center text-sm text-gray-500">
-                                    Swipe naar links of rechts, of gebruik de knoppen
-                                </div>
-
-                                <div class="flex justify-center">
-                                    <div
-                                        class="swipe-card relative w-full max-w-md rounded-2xl border border-gray-200 bg-gray-50 p-10 text-center select-none"
-                                        data-question-id="{{ $question->id }}"
-                                        data-left="{{ $leftOption }}"
-                                        data-right="{{ $rightOption }}"
-                                        tabindex="0"
-                                        role="button"
-                                        aria-label="Swipe keuze voor vraag {{ $index + 1 }}"
-                                    >
-                                        <div class="absolute inset-0 pointer-events-none">
-                                            <div class="swipe-badge-left absolute top-4 left-4 rounded-lg border-2 border-red-500 px-3 py-1 text-red-500 font-bold opacity-0">
-                                                {{ strtoupper($leftOption) }}
-                                            </div>
-                                            <div class="swipe-badge-right absolute top-4 right-4 rounded-lg border-2 border-green-500 px-3 py-1 text-green-500 font-bold opacity-0">
-                                                {{ strtoupper($rightOption) }}
-                                            </div>
-                                        </div>
-
-                                            <div class="flex justify-center gap-4 mb-4">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                                                </svg>
-
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                                                </svg>
-                                            </div>
-                                            <p class="text-lg font-medium text-gray-800">
-                                            Geef snel je antwoord
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="flex justify-center gap-4 mt-6">
-                                    <button
-                                        type="button"
-                                        class="swipe-choice px-8 py-3 rounded-xl bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition"
-                                        data-question-id="{{ $question->id }}"
-                                        data-value="{{ $leftOption }}"
-                                    >
-                                        {{ ucfirst($leftOption) }}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        class="swipe-choice px-8 py-3 rounded-xl bg-green-100 text-green-700 font-semibold hover:bg-green-200 transition"
-                                        data-question-id="{{ $question->id }}"
-                                        data-value="{{ $rightOption }}"
-                                    >
-                                        {{ ucfirst($rightOption) }}
-                                    </button>
-                                </div>
-                            @endif
-
-                            @if ($question->type === 'textarea')
-                                <textarea
-                                    name="answers[{{ $question->id }}]"
-                                    rows="6"
-                                    class="w-full rounded-xl border border-gray-200 p-4 focus:outline-none focus:ring-2 focus:ring-red-300"
-                                    placeholder="Typ hier je opmerking of suggestie..."
-                                >{{ $oldAnswer }}</textarea>
-                            @endif
-
-                            <div class="flex justify-between items-center mt-8">
-                                <div>
-                                    @if (! $isFirst)
-                                        <button
-                                            type="button"
-                                            class="prev-btn inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 transition"
-                                        >
-                                            Vorige
-                                        </button>
-                                    @endif
-                                </div>
-
-                                <button
-                                    type="button"
-                                    class="next-btn inline-flex items-center justify-center min-w-[140px] px-8 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md border border-red-600 hover:bg-red-700 transition"
+                            <div class="md:col-span-2">
+                                <label for="contact_email" class="mb-1 block text-sm font-medium text-gray-700">
+                                    E-mailadres <span class="text-gray-500">(optioneel)</span>
+                                </label>
+                                <input
+                                    id="contact_email"
+                                    type="email"
+                                    name="contact_email"
+                                    value="{{ old('contact_email') }}"
+                                    autocomplete="email"
+                                    class="w-full rounded-xl border border-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-red-300"
+                                    placeholder="naam@voorbeeld.nl"
                                 >
-                                    {{ $isLast ? 'Verzenden' : 'Volgende' }}
-                                </button>
+                                @error('contact_email')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
-                    </section>
-                @endforeach
+                    </div>
+                </x-surveys.question-step>
             </form>
         </main>
     </div>
