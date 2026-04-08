@@ -35,6 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function getStepAnswer(step) {
         const type = step.dataset.type;
 
+        if (type === 'email') {
+            const input = step.querySelector('input[type="email"]');
+            return input ? input.value.trim() : '';
+        }
+
         if (type === 'radio') {
             const checked = step.querySelector('input[type="radio"]:checked');
             return checked ? checked.value.trim() : '';
@@ -55,19 +60,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateStep(step) {
         const required = step.dataset.required === '1';
+        const type = step.dataset.type;
 
         if (!required) {
             return true;
         }
 
+        if (type === 'email') {
+            const value = getStepAnswer(step);
+            return value !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        }
+
         return getStepAnswer(step) !== '';
+    }
+
+    function getValidationMessage(step) {
+        if (step.dataset.type === 'email') {
+            return 'Vul een geldig e-mailadres in om verder te gaan.';
+        }
+        return 'Geef eerst een antwoord op deze verplichte vraag.';
     }
 
     function goToNextStep() {
         const current = steps[currentStep];
 
         if (!validateStep(current)) {
-            showValidationMessage('Geef eerst een antwoord op deze verplichte vraag.');
+            showValidationMessage(getValidationMessage(current));
             return;
         }
 

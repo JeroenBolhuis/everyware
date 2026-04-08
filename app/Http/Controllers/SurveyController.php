@@ -8,6 +8,7 @@ use App\Models\SurveyResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SurveyController extends Controller
 {
@@ -26,7 +27,12 @@ class SurveyController extends Controller
 
         $rules = [
             'student_name' => ['nullable', 'string', 'max:255'],
-            'student_email' => ['nullable', 'email', 'max:255'],
+            'student_email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('survey_responses', 'student_email')->where('survey_id', $survey->id),
+            ],
             'answers' => ['required', 'array'],
         ];
 
@@ -38,7 +44,10 @@ class SurveyController extends Controller
             }
         }
 
-        $validated = $request->validate($rules);
+        $validated = $request->validate($rules, [
+            'student_email.required' => 'Vul je e-mailadres in om de enquête te versturen.',
+            'student_email.unique' => 'Je hebt deze enquête al ingevuld met dit e-mailadres.',
+        ]);
 
         $response = DB::transaction(function () use ($validated, $survey) {
             $response = SurveyResponse::create([

@@ -14,7 +14,13 @@ class Survey extends Model
         'title',
         'description',
         'is_active',
+        'share_token',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'share_token';
+    }
 
     public function questions(): HasMany
     {

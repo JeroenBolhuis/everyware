@@ -8,7 +8,7 @@ Route::view('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
-    Route::view('enquetes', 'enquetes')->name('enquetes');
+    Route::livewire('enquetes', 'pages::enquetes')->name('enquetes');
 });
 
 Route::name('surveys.')->group(function () {
