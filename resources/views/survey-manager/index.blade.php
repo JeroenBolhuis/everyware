@@ -9,7 +9,10 @@
                 </p>
             </div>
 
-            <a href="{{ route('enquetes.create') }}" class="btn-primary">
+            <a
+                href="{{ route('survey-manager.create') }}"
+                class="btn-primary"
+            >
                 Nieuwe enquête
             </a>
         </div>
@@ -51,10 +54,8 @@
             </div>
         </div>
 
-        <div
-            class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-            <form method="GET" action="{{ route('enquetes') }}"
-                  class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
+        <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <form method="GET" action="{{ route('survey-manager.index') }}" class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
                 <div>
                     <label for="search" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Zoek op
                         titel</label>
@@ -86,7 +87,7 @@
                     <button type="submit" class="btn-secondary">
                         Filteren
                     </button>
-                    <a href="{{ route('enquetes') }}" class="btn-secondary">
+                    <a href="{{ route('survey-manager.index') }}" class="btn-secondary">
                         Reset
                     </a>
                 </div>
@@ -124,7 +125,10 @@
                         </div>
 
                         <div class="flex flex-wrap gap-2">
-                            <a href="{{ route('enquetes.edit', $survey) }}" class="btn-secondary">
+                            <a
+                                href="{{ route('survey-manager.edit', $survey) }}"
+                                class="btn-secondary"
+                            >
                                 Bewerken
                             </a>
 
@@ -133,8 +137,7 @@
                                     Open enquête
                                 </a>
 
-                                <form method="POST" action="{{ route('enquetes.close', $survey) }}"
-                                      onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
+                               <form method="POST" action="{{ route('survey-manager.close', $survey) }}"  onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
                                     @csrf
                                     @method('PATCH')
                                     <button type="submit" class="btn-primary">

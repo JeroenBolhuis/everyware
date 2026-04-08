@@ -30,7 +30,7 @@
                     </p>
                 </div>
 
-                <a href="{{ route('enquetes') }}" class="btn-primary">
+               <a href="{{ route('survey-manager.index') }}" class="btn-primary">
                     Terug naar overzicht
                 </a>
             </div>
@@ -48,8 +48,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ $isEdit ? route('enquetes.update', $survey) : route('enquetes.store') }}"
-              class="space-y-4">
+        <form method="POST" action="{{ $isEdit ? route('survey-manager.update', $survey) : route('survey-manager.store') }}" class="space-y-4">
             @csrf
             @if ($isEdit)
                 @method('PUT')
@@ -200,7 +199,7 @@
             </div>
 
             <div class="flex flex-wrap justify-end gap-3">
-                <a href="{{ route('enquetes') }}" class="btn-secondary">
+                <a href="{{ route('survey-manager.index') }}" class="btn-secondary">
                     Annuleren
                 </a>
                 <button type="submit" class="btn-primary">

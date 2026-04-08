@@ -28,8 +28,8 @@
                     @if (auth()->user()->canManageSurveys())
                         <flux:sidebar.item
                             icon="clipboard-document-list"
-                            :href="route('enquetes')"
-                            :current="request()->routeIs('enquetes*')"
+                            :href="route('survey-manager.index')"
+                            :current="request()->routeIs('survey-manager.*')"
                             wire:navigate
                         >
                             Enquêtes
