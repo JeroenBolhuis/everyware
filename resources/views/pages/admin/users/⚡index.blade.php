@@ -32,11 +32,12 @@ new #[Title('Gebruikers')] class extends Component {
         :heading="__('Gebruikers')"
         :subheading="__('Maak accounts aan en wijs rollen toe. Zelfregistratie staat uit.')"
     >
-        <div class="my-6 flex flex-col gap-4">
+        <div
+            class="my-6 flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <div class="flex justify-end">
-                <flux:button variant="primary" :href="route('admin.users.create')" icon="plus" wire:navigate>
+                <a href="{{ route('admin.users.create') }}" class="btn-primary" wire:navigate>
                     {{ __('Gebruiker toevoegen') }}
-                </flux:button>
+                </a>
             </div>
 
             <flux:table :paginate="$this->users">
@@ -54,22 +55,17 @@ new #[Title('Gebruikers')] class extends Component {
                             <flux:table.cell>
                                 <div class="flex flex-wrap gap-2">
                                     @forelse ($user->getRoleNames() as $roleName)
-                                        <flux:badge color="zinc" size="sm">{{ RoleEnum::tryFrom($roleName)?->label() ?? $roleName }}</flux:badge>
+                                        <flux:badge color="zinc"
+                                                    size="sm">{{ RoleEnum::tryFrom($roleName)?->label() ?? $roleName }}</flux:badge>
                                     @empty
                                         <span>&mdash;</span>
                                     @endforelse
                                 </div>
                             </flux:table.cell>
                             <flux:table.cell align="end">
-                                <flux:button
-                                    size="sm"
-                                    variant="ghost"
-                                    :href="route('admin.users.edit', $user)"
-                                    icon="pencil-square"
-                                    wire:navigate
-                                >
+                                <a href="{{ route('admin.users.edit', $user) }}" class="btn-secondary" wire:navigate>
                                     {{ __('Bewerken') }}
-                                </flux:button>
+                                </a>
                             </flux:table.cell>
                         </flux:table.row>
                     @endforeach

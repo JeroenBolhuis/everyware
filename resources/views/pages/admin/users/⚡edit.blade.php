@@ -49,7 +49,7 @@ new #[Title('Gebruiker bewerken')] class extends Component {
 
         if (
             $this->user->hasRole(RoleEnum::Admin->value)
-            && ! in_array(RoleEnum::Admin->value, $validated['roles'], true)
+            && !in_array(RoleEnum::Admin->value, $validated['roles'], true)
             && User::role(RoleEnum::Admin->value)->count() <= 1
         ) {
             throw ValidationException::withMessages([
@@ -66,7 +66,7 @@ new #[Title('Gebruiker bewerken')] class extends Component {
             $this->user->email_verified_at = null;
         }
 
-        if (! empty($validated['password'])) {
+        if (!empty($validated['password'])) {
             $this->user->password = $validated['password'];
         }
 
@@ -96,45 +96,51 @@ new #[Title('Gebruiker bewerken')] class extends Component {
         :heading="__('Gebruiker bewerken')"
         :subheading="__('Werk accountgegevens, rollen of wachtwoord bij.')"
     >
-        <div class="my-6 w-full max-w-lg space-y-6">
+        <div
+            class="my-6 w-full max-w-lg space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <div>
-                <flux:button variant="ghost" :href="route('admin.users.index')" icon="arrow-left" wire:navigate>
+                <a href="{{ route('admin.users.index') }}" class="btn-secondary" wire:navigate>
                     {{ __('Terug naar gebruikers') }}
-                </flux:button>
+                </a>
             </div>
 
             <form wire:submit="save" class="space-y-6">
-                <flux:input wire:model="name" :label="__('Name')" type="text" required autocomplete="name" />
+                <flux:input wire:model="name" :label="__('Name')" type="text" required autocomplete="name"/>
 
-                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email"/>
 
-                <flux:separator />
+                <flux:separator/>
 
                 <flux:heading size="lg">{{ __('Wachtwoord wijzigen') }}</flux:heading>
-                <flux:text class="text-sm text-zinc-500">{{ __('Laat leeg om het huidige wachtwoord te behouden.') }}</flux:text>
+                <flux:text
+                    class="text-sm text-zinc-500">{{ __('Laat leeg om het huidige wachtwoord te behouden.') }}</flux:text>
 
-                <flux:input wire:model="password" :label="__('Nieuw wachtwoord')" type="password" viewable autocomplete="new-password" />
+                <flux:input wire:model="password" :label="__('Nieuw wachtwoord')" type="password" viewable
+                            autocomplete="new-password"/>
 
-                <flux:input wire:model="password_confirmation" :label="__('Bevestig nieuw wachtwoord')" type="password" viewable autocomplete="new-password" />
+                <flux:input wire:model="password_confirmation" :label="__('Bevestig nieuw wachtwoord')" type="password"
+                            viewable autocomplete="new-password"/>
 
                 <flux:field>
                     <flux:label>{{ __('Rollen') }}</flux:label>
 
                     <div class="mt-3 space-y-3">
                         @foreach (RoleEnum::cases() as $roleOption)
-                            <label class="flex items-center gap-3 rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-700">
-                                <input type="checkbox" wire:model="roles" value="{{ $roleOption->value }}" class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500" />
+                            <label
+                                class="flex items-center gap-3 rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-700">
+                                <input type="checkbox" wire:model="roles" value="{{ $roleOption->value }}"
+                                       class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"/>
                                 <span>{{ $roleOption->label() }}</span>
                             </label>
                         @endforeach
                     </div>
 
-                    <flux:error name="roles" />
-                    <flux:error name="roles.*" />
+                    <flux:error name="roles"/>
+                    <flux:error name="roles.*"/>
                 </flux:field>
 
                 <div class="flex flex-wrap items-center gap-4">
-                    <flux:button variant="primary" type="submit">{{ __('Wijzigingen opslaan') }}</flux:button>
+                    <button type="submit" class="btn-primary">{{ __('Wijzigingen opslaan') }}</button>
 
                     <x-action-message on="user-saved">
                         {{ __('Opgeslagen.') }}
@@ -143,20 +149,21 @@ new #[Title('Gebruiker bewerken')] class extends Component {
             </form>
 
             @if ($this->user->isNot(auth()->user()))
-                <flux:separator class="my-8" />
+                <flux:separator class="my-8"/>
 
                 <div class="space-y-3">
                     <flux:heading size="lg">{{ __('Gebruiker verwijderen') }}</flux:heading>
-                    <flux:text class="text-sm text-zinc-500">{{ __('Dit verwijdert het account definitief.') }}</flux:text>
-                    <flux:error name="delete" />
-                    <flux:button
-                        variant="danger"
+                    <flux:text
+                        class="text-sm text-zinc-500">{{ __('Dit verwijdert het account definitief.') }}</flux:text>
+                    <flux:error name="delete"/>
+                    <button
                         type="button"
+                        class="btn-primary"
                         wire:click="deleteUser"
                         wire:confirm="{{ __('Weet je zeker dat je deze gebruiker wilt verwijderen?') }}"
                     >
                         {{ __('Gebruiker verwijderen') }}
-                    </flux:button>
+                    </button>
                 </div>
             @endif
         </div>

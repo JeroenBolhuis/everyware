@@ -48,11 +48,9 @@ new #[Title('Enquete-inzending')] class extends Component {
         :heading="__('Inzending #:id', ['id' => $response->id])"
         :subheading="$response->survey->title"
     >
-        <div class="my-6 space-y-6">
+        <div class="my-6 space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <div>
-                <flux:button variant="ghost" :href="route('admin.surveys.show', $response->survey)" icon="arrow-left" wire:navigate>
-                    {{ __('Terug naar enquete-inzendingen') }}
-                </flux:button>
+                <a href="{{ route('admin.surveys.show', $response->survey) }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquete-inzendingen') }}</a>
             </div>
 
             @if ($statusMessage)

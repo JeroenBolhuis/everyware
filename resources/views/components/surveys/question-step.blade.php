@@ -50,7 +50,7 @@
 
             <button
                 type="button"
-                class="next-btn inline-flex items-center justify-center min-w-[140px] px-8 py-3 rounded-xl bg-red-600 text-white font-semibold shadow-md border border-red-600 hover:bg-red-700 transition"
+                class="next-btn btn-primary min-w-[140px]"
             >
                 {{ $isLast ? 'Verzenden' : 'Volgende' }}
             </button>

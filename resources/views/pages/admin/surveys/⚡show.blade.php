@@ -33,11 +33,9 @@ new #[Title('Enquete-inzendingen')] class extends Component {
         :heading="$survey->title"
         :subheading="__('Bekijk ingestuurde inzendingen en open contactgegevens wanneer die zijn gedeeld.')"
     >
-        <div class="my-6 space-y-6">
+        <div class="my-6 space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <div>
-                <flux:button variant="ghost" :href="route('admin.surveys.index')" icon="arrow-left" wire:navigate>
-                    {{ __('Terug naar enquetes') }}
-                </flux:button>
+                <a href="{{ route('admin.surveys.index') }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquetes') }}</a>
             </div>
 
             <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
@@ -63,15 +61,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                                 </flux:badge>
                             </flux:table.cell>
                             <flux:table.cell align="end">
-                                <flux:button
-                                    size="sm"
-                                    variant="ghost"
-                                    :href="route('admin.responses.show', $response)"
-                                    icon="eye"
-                                    wire:navigate
-                                >
-                                    {{ __('Open inzending') }}
-                                </flux:button>
+                                <a href="{{ route('admin.responses.show', $response) }}" class="btn-primary" wire:navigate>{{ __('Open inzending') }}</a>
                             </flux:table.cell>
                         </flux:table.row>
                     @endforeach
