@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\SurveyController;
-use App\Http\Controllers\SurveyWithdrawalController;
 use App\Http\Controllers\SurveyManagerController;
+use App\Http\Controllers\SurveyWithdrawalController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');

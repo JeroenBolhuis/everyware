@@ -21,12 +21,12 @@ class SurveyController extends Controller
         $query = Survey::query();
 
         $status = $request->input('status');
-            if (in_array($status, ['active', 'inactive'], true)) {
-                $query->where('is_active', $status === 'active');
-            }
+        if (in_array($status, ['active', 'inactive'], true)) {
+            $query->where('is_active', $status === 'active');
+        }
 
         if ($request->filled('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%');
+            $query->where('title', 'like', '%'.$request->search.'%');
         }
 
         $surveys = $query->paginate(10);
@@ -197,6 +197,6 @@ class SurveyController extends Controller
             return null;
         }
 
-        return $hasLeadingPlus ? '+' . $digitsOnly : $digitsOnly;
+        return $hasLeadingPlus ? '+'.$digitsOnly : $digitsOnly;
     }
 }
