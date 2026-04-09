@@ -20,13 +20,11 @@ class SurveyController extends Controller
     {
         $query = Survey::query();
 
-        // Filter by status
-            $status = $request->input('status');
+        $status = $request->input('status');
             if (in_array($status, ['active', 'inactive'], true)) {
                 $query->where('is_active', $status === 'active');
             }
 
-        // Search by title
         if ($request->filled('search')) {
             $query->where('title', 'like', '%' . $request->search . '%');
         }
@@ -45,9 +43,6 @@ class SurveyController extends Controller
         return view('surveys.show', compact('survey'));
     }
 
-    /**
-     * Show a survey via its public share token (no auth required – SCRUM-42).
-     */
     public function showByToken(string $token)
     {
         $survey = Survey::where('share_token', $token)->firstOrFail();
@@ -58,9 +53,6 @@ class SurveyController extends Controller
         return view('surveys.show', compact('survey'));
     }
 
-    /**
-     * Accept a survey submission via the public share token (no auth required – SCRUM-42).
-     */
     public function storeByToken(StoreSurveyResponseRequest $request, string $token)
     {
         $survey = Survey::where('share_token', $token)->firstOrFail();
