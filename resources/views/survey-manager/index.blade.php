@@ -130,13 +130,13 @@
                                     <input
                                         type="text"
                                         readonly
-                                        value="{{ route('survey.show', $survey) }}"
+                                        value="{{ route('survey.share.show', $survey->share_token) }}"
                                         class="min-w-0 flex-1 bg-transparent text-xs text-zinc-600 focus:outline-none dark:text-zinc-300"
                                         id="share-link-{{ $survey->id }}"
                                     >
                                     <button
                                         type="button"
-                                        onclick="navigator.clipboard.writeText('{{ route('survey.show', $survey) }}').then(() => { this.textContent = 'Gekopieerd!'; setTimeout(() => this.textContent = 'Kopieer', 2000); })"
+                                        onclick="navigator.clipboard.writeText('{{ route('survey.share.show', $survey->share_token) }}').then(() => { this.textContent = 'Gekopieerd!'; setTimeout(() => this.textContent = 'Kopieer', 2000); })"
                                         class="shrink-0 text-xs text-indigo-600 hover:underline dark:text-indigo-400"
                                     >Kopieer</button>
                                 </div>
@@ -150,7 +150,7 @@
                             </a>
 
                             @if ($survey->is_active)
-                                <a href="{{ route('survey.show', $survey) }}" target="_blank" class="btn-secondary">
+                                <a href="{{ route('survey.share.show', $survey->share_token) }}" target="_blank" class="btn-secondary">
                                     Open enquête
                                 </a>
 
