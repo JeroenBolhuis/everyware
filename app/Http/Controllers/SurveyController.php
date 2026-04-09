@@ -20,15 +20,13 @@ class SurveyController extends Controller
     {
         $query = Survey::query();
 
-        // Filter by status
-            $status = $request->input('status');
-            if (in_array($status, ['active', 'inactive'], true)) {
-                $query->where('is_active', $status === 'active');
-            }
+        $status = $request->input('status');
+        if (in_array($status, ['active', 'inactive'], true)) {
+            $query->where('is_active', $status === 'active');
+        }
 
-        // Search by title
         if ($request->filled('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%');
+            $query->where('title', 'like', '%'.$request->search.'%');
         }
 
         $surveys = $query->paginate(10);
@@ -43,6 +41,25 @@ class SurveyController extends Controller
         abort_unless($survey->is_active, 404);
 
         return view('surveys.show', compact('survey'));
+    }
+
+    public function showByToken(string $token)
+    {
+        $survey = Survey::where('share_token', $token)->firstOrFail();
+        $survey->load('questions');
+
+        abort_unless($survey->is_active, 404);
+
+        return view('surveys.show', compact('survey'));
+    }
+
+    public function storeByToken(StoreSurveyResponseRequest $request, string $token)
+    {
+        $survey = Survey::where('share_token', $token)->firstOrFail();
+
+        abort_unless($survey->is_active, 404);
+
+        return $this->store($request, $survey);
     }
 
     public function store(StoreSurveyResponseRequest $request, Survey $survey)
@@ -180,6 +197,6 @@ class SurveyController extends Controller
             return null;
         }
 
-        return $hasLeadingPlus ? '+' . $digitsOnly : $digitsOnly;
+        return $hasLeadingPlus ? '+'.$digitsOnly : $digitsOnly;
     }
 }

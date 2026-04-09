@@ -4,6 +4,7 @@ namespace App\Http\Requests\Surveys;
 
 use App\Models\Survey;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class StoreSurveyResponseRequest extends FormRequest
 {
@@ -12,15 +13,25 @@ class StoreSurveyResponseRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->filled('contact_email')) {
+            $this->merge([
+                'contact_email' => Str::lower(trim($this->input('contact_email'))),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
+        $survey = $this->route('survey');
+
         $rules = [
             'answers' => ['required', 'array'],
             'contact_name' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['nullable', 'email', 'max:255'],
+            'contact_phone' => ['nullable', 'string', 'max:50'],
         ];
-
-        $survey = $this->route('survey');
 
         if ($survey instanceof Survey) {
             $survey->loadMissing('questions');

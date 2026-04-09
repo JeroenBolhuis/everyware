@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\SurveyController;
-use App\Http\Controllers\SurveyWithdrawalController;
 use App\Http\Controllers\SurveyManagerController;
+use App\Http\Controllers\SurveyWithdrawalController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -28,6 +28,11 @@ Route::prefix('survey')->name('survey.')->group(function () {
     Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
     Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');
     Route::post('/response/{response}/contact-details', [SurveyController::class, 'storeContactDetails'])->name('contact-details.store');
+});
+
+Route::prefix('s')->name('survey.share.')->group(function () {
+    Route::get('/{token}', [SurveyController::class, 'showByToken'])->name('show');
+    Route::post('/{token}', [SurveyController::class, 'storeByToken'])->middleware('throttle:5,1')->name('store');
 });
 
 Route::prefix('survey-withdraw')->name('survey.withdraw.')->group(function () {
