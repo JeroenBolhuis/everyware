@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Survey extends Model
 {
@@ -14,7 +15,17 @@ class Survey extends Model
         'title',
         'description',
         'is_active',
+        'share_token',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Survey $survey): void {
+            if (empty($survey->share_token)) {
+                $survey->share_token = (string) Str::uuid();
+            }
+        });
+    }
 
     public function questions(): HasMany
     {

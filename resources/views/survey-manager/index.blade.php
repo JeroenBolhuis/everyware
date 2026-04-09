@@ -125,6 +125,23 @@
                         </div>
 
                         <div class="flex flex-wrap gap-2">
+                            @if ($survey->is_active)
+                                <div class="flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-neutral-700 dark:bg-zinc-800">
+                                    <input
+                                        type="text"
+                                        readonly
+                                        value="{{ route('survey.show', $survey) }}"
+                                        class="min-w-0 flex-1 bg-transparent text-xs text-zinc-600 focus:outline-none dark:text-zinc-300"
+                                        id="share-link-{{ $survey->id }}"
+                                    >
+                                    <button
+                                        type="button"
+                                        onclick="navigator.clipboard.writeText('{{ route('survey.show', $survey) }}').then(() => { this.textContent = 'Gekopieerd!'; setTimeout(() => this.textContent = 'Kopieer', 2000); })"
+                                        class="shrink-0 text-xs text-indigo-600 hover:underline dark:text-indigo-400"
+                                    >Kopieer</button>
+                                </div>
+                            @endif
+
                             <a
                                 href="{{ route('survey-manager.edit', $survey) }}"
                                 class="btn-secondary"

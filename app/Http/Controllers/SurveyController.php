@@ -45,6 +45,31 @@ class SurveyController extends Controller
         return view('surveys.show', compact('survey'));
     }
 
+    /**
+     * Show a survey via its public share token (no auth required – SCRUM-42).
+     */
+    public function showByToken(string $token)
+    {
+        $survey = Survey::where('share_token', $token)->firstOrFail();
+        $survey->load('questions');
+
+        abort_unless($survey->is_active, 404);
+
+        return view('surveys.show', compact('survey'));
+    }
+
+    /**
+     * Accept a survey submission via the public share token (no auth required – SCRUM-42).
+     */
+    public function storeByToken(StoreSurveyResponseRequest $request, string $token)
+    {
+        $survey = Survey::where('share_token', $token)->firstOrFail();
+
+        abort_unless($survey->is_active, 404);
+
+        return $this->store($request, $survey);
+    }
+
     public function store(StoreSurveyResponseRequest $request, Survey $survey)
     {
         $validated = $request->validated();

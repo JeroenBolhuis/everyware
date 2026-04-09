@@ -30,6 +30,12 @@ Route::prefix('survey')->name('survey.')->group(function () {
     Route::post('/response/{response}/contact-details', [SurveyController::class, 'storeContactDetails'])->name('contact-details.store');
 });
 
+// Public share link — students can open without logging in (SCRUM-42)
+Route::prefix('s')->name('survey.share.')->group(function () {
+    Route::get('/{token}', [SurveyController::class, 'showByToken'])->name('show');
+    Route::post('/{token}', [SurveyController::class, 'storeByToken'])->name('store');
+});
+
 Route::prefix('survey-withdraw')->name('survey.withdraw.')->group(function () {
     Route::get('/{token}', [SurveyWithdrawalController::class, 'show'])->name('show');
     Route::post('/{token}', [SurveyWithdrawalController::class, 'destroy'])->name('destroy');
