@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\SurveyObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 
+#[ObservedBy(SurveyObserver::class)]
 class Survey extends Model
 {
     use HasFactory;
@@ -17,15 +19,6 @@ class Survey extends Model
         'is_active',
         'share_token',
     ];
-
-    protected static function booted(): void
-    {
-        static::creating(function (Survey $survey): void {
-            if (empty($survey->share_token)) {
-                $survey->share_token = (string) Str::uuid();
-            }
-        });
-    }
 
     public function questions(): HasMany
     {
