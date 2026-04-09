@@ -91,14 +91,14 @@
                     :required="false"
                     :is-first="$totalQuestions === 0"
                     :is-last="true"
-                    question="Vul je e-mailadres in om de enquête in te dienen"
+                    question="Laat optioneel je naam en e-mailadres achter voor een bevestigingsmail"
                     :current-question-number="$totalSteps"
                     :total-questions="$totalSteps"
                     :progress-percentage="100"
                 >
                     <div class="space-y-4">
                         <p class="text-gray-600">
-                            Je e-mailadres is verplicht. Je kunt de enquête maar <strong>één keer</strong> per e-mailadres invullen.
+                            Als je een e-mailadres invult, sturen we direct na het verzenden een bevestigingsmail.
                         </p>
 
                         <div class="grid gap-4 md:grid-cols-2">
@@ -119,9 +119,7 @@
                             </div>
 
                             <div class="md:col-span-2">
-                                <label for="contact_email" class="mb-1 block text-sm font-medium text-gray-700">
-                                    E-mailadres <span class="text-red-600">*</span>
-                                </label>
+                                <label for="contact_email" class="mb-1 block text-sm font-medium text-gray-700">E-mailadres <span class="text-gray-500">(optioneel)</span></label>
                                 <input
                                     id="contact_email"
                                     type="email"
@@ -129,8 +127,7 @@
                                     value="{{ old('contact_email') }}"
                                     autocomplete="email"
                                     class="w-full rounded-xl border border-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-red-300"
-                                    placeholder="naam@student.avans.nl"
-                                    required
+                                    placeholder="naam@voorbeeld.nl"
                                 >
                                 @error('contact_email')
                                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
