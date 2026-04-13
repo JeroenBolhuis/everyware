@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Surveys\StoreSurveyContactDetailsRequest;
 use App\Http\Requests\Surveys\StoreSurveyResponseRequest;
 use App\Mail\SurveySubmissionConfirmationMail;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
 use Illuminate\Http\Request;
@@ -68,7 +69,7 @@ class SurveyController extends Controller
         $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
         $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
 
-        $response = DB::transaction(function () use ($validated, $survey) {
+        $response = DB::transaction(function () use ($validated, $survey, $contactEmail, $contactName) {
             $response = $survey->responses()->create([
                 'withdrawal_token' => Str::uuid(),
                 'submitted_at' => now(),
@@ -92,6 +93,8 @@ class SurveyController extends Controller
                     $contactInformationPayload,
                 );
             }
+
+            $this->syncParticipantForResponse($response, $contactEmail, $contactName);
 
             return $response;
         });
@@ -142,6 +145,10 @@ class SurveyController extends Controller
             ['survey_response_id' => $response->id],
             $contactInformationPayload,
         );
+
+        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
+        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
+        $this->syncParticipantForResponse($response, $contactEmail, $contactName);
 
         return to_route('survey.thankyou', $response)
             ->with('contactDetailsSaved', true);
@@ -198,5 +205,25 @@ class SurveyController extends Controller
         }
 
         return $hasLeadingPlus ? '+'.$digitsOnly : $digitsOnly;
+    }
+
+    private function syncParticipantForResponse(SurveyResponse $response, ?string $contactEmail, ?string $contactName): void
+    {
+        if ($contactEmail === null) {
+            return;
+        }
+
+        $participant = Participant::firstOrCreate(
+            ['email' => $contactEmail],
+            ['name' => $contactName],
+        );
+
+        if ($contactName !== null && $participant->name !== $contactName) {
+            $participant->forceFill(['name' => $contactName])->save();
+        }
+
+        if ($response->participant_id !== $participant->id) {
+            $response->update(['participant_id' => $participant->id]);
+        }
     }
 }
