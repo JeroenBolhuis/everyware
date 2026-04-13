@@ -67,7 +67,7 @@ it('opens the survey page', function () {
 
     $response->assertOk();
     $response->assertSee('Are you satisfied?');
-    $response->assertSee('Laat optioneel je naam en e-mailadres achter voor een bevestigingsmail');
+    $response->assertSee('Volgende');
 });
 
 /* Inactive survey returns 404 */

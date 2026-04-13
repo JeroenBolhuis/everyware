@@ -28,8 +28,7 @@
                 <p class="font-semibold text-gray-900">Contactgegevens</p>
 
                 @if ($response->hasSharedContactDetails())
-                    <p class="mt-2 text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn versleuteld
-                        opgeslagen.</p>
+                    <p class="mt-2 text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn versleuteld opgeslagen.</p>
 
                     <ul class="mt-3 space-y-2 text-sm text-gray-700">
                         @foreach ($response->sharedContactFieldLabels() as $fieldLabel)
@@ -40,8 +39,7 @@
                     </ul>
                 @else
                     <p class="mt-2 text-gray-700">
-                        Wil je dat we contact met je opnemen? Vul hieronder je naam en e-mailadres in. Je telefoonnummer
-                        is optioneel.
+                        Wil je dat we contact met je opnemen? Vul hieronder je naam en e-mailadres in. Je telefoonnummer is optioneel.
                     </p>
                     <form method="POST" action="{{ route('survey.contact-details.store', $response) }}"
                           class="mt-4 space-y-4">

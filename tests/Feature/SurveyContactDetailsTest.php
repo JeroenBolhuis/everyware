@@ -23,15 +23,12 @@ function createSurveyWithQuestion(): Survey
     return $survey;
 }
 
-it('shows survey confirmation contact fields on the survey page', function () {
+it('does not show the thank-you contact form on the survey page', function () {
     $survey = createSurveyWithQuestion();
 
     get(route('survey.show', $survey))
         ->assertOk()
-        ->assertSee('Laat optioneel je naam en e-mailadres achter voor een bevestigingsmail')
-        ->assertSee('Naam')
-        ->assertSee('E-mailadres')
-        ->assertDontSee('Telefoonnummer')
+        ->assertSee('Wat vind je van deze module?')
         ->assertDontSee('Contactgegevens opslaan');
 });
 
@@ -50,9 +47,8 @@ it('shows optional contact fields on the thank you page', function () {
     get(route('survey.thankyou', $response))
         ->assertOk()
         ->assertSee('Contactgegevens')
-        ->assertSee('(optioneel)')
         ->assertSee('E-mailadres')
-        ->assertSee('Telefoonnummer')
+        ->assertSee('Je telefoonnummer is optioneel')
         ->assertSee('Contactgegevens opslaan');
 });
 
