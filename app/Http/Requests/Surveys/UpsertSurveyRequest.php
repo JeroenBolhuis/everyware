@@ -27,7 +27,6 @@ class UpsertSurveyRequest extends FormRequest
             'questions.*.required' => ['nullable', 'boolean'],
 
             'questions.*.options' => ['nullable', 'array'],
-
             'questions.*.options.*' => ['nullable'],
             'questions.*.options.*.label' => ['nullable', 'string', 'max:255'],
             'questions.*.options.*.existing_image' => ['nullable', 'string', 'max:2048'],
@@ -36,22 +35,22 @@ class UpsertSurveyRequest extends FormRequest
     }
 
     public function withValidator(Validator $validator): void
-{
-    $validator->after(function (Validator $validator) {
-        foreach ($this->input('questions', []) as $index => $question) {
-            $type = $question['type'] ?? null;
-            $rawOptions = $question['options'] ?? [];
+    {
+        $validator->after(function (Validator $validator) {
+            foreach ($this->input('questions', []) as $index => $question) {
+                $type = $question['type'] ?? null;
+                $rawOptions = $question['options'] ?? [];
 
-            $filledOptions = collect($rawOptions)
-                ->map(function ($option) {
-                    if (is_array($option)) {
-                        return trim((string) ($option['label'] ?? ''));
-                    }
+                $filledOptions = collect($rawOptions)
+                    ->map(function ($option) {
+                        if (is_array($option)) {
+                            return trim((string) ($option['label'] ?? ''));
+                        }
 
-                    return trim((string) $option);
-                })
-                ->filter()
-                ->values();
+                        return trim((string) $option);
+                    })
+                    ->filter()
+                    ->values();
 
                 if ($type === 'radio' && $filledOptions->count() < 2) {
                     $validator->errors()->add(
@@ -65,30 +64,29 @@ class UpsertSurveyRequest extends FormRequest
                         "questions.$index.options",
                         'Een swipe-vraag moet precies 2 opties hebben.'
                     );
-                };
-            }
-        }
-
-        $totalUploadSize = 0;
-
-        foreach ($this->allFiles()['questions'] ?? [] as $questionFiles) {
-            foreach (($questionFiles['options'] ?? []) as $optionFiles) {
-                if (!empty($optionFiles['image'])) {
-                    $totalUploadSize += $optionFiles['image']->getSize();
                 }
             }
-        }
 
-        $maxTotalSize = 5 * 1024 * 1024;
+            $totalUploadSize = 0;
 
-        if ($totalUploadSize > $maxTotalSize) {
-            $validator->errors()->add(
-                'questions',
-                'De totale grootte van de geüploade afbeeldingen mag maximaal 5 MB zijn.'
-            );
-        }
-    });
-}
+            foreach ($this->allFiles()['questions'] ?? [] as $questionFiles) {
+                foreach (($questionFiles['options'] ?? []) as $optionFiles) {
+                    if (!empty($optionFiles['image'])) {
+                        $totalUploadSize += $optionFiles['image']->getSize();
+                    }
+                }
+            }
+
+            $maxTotalSize = 5 * 1024 * 1024;
+
+            if ($totalUploadSize > $maxTotalSize) {
+                $validator->errors()->add(
+                    'questions',
+                    'De totale grootte van de geüploade afbeeldingen mag maximaal 5 MB zijn.'
+                );
+            }
+        });
+    }
 
     public function messages(): array
     {
