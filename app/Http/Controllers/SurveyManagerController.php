@@ -7,6 +7,7 @@ use App\Models\Survey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class SurveyManagerController extends Controller
@@ -51,7 +52,7 @@ class SurveyManagerController extends Controller
     public function store(UpsertSurveyRequest $request)
     {
         $validated = $request->validated();
-        $questions = $this->buildQuestionsPayload($validated['questions']);
+        $questions = $this->buildQuestionsPayload($request, $validated['questions']);
 
         DB::transaction(function () use ($validated, $questions): void {
             $survey = Survey::create([
@@ -80,7 +81,7 @@ class SurveyManagerController extends Controller
     public function update(UpsertSurveyRequest $request, Survey $survey)
     {
         $validated = $request->validated();
-        $questions = $this->buildQuestionsPayload($validated['questions']);
+        $questions = $this->buildQuestionsPayload($request, $validated['questions']);
 
         DB::transaction(function () use ($survey, $validated, $questions): void {
             $survey->update([
@@ -125,6 +126,14 @@ class SurveyManagerController extends Controller
                     ]);
                 }
 
+                foreach ($survey->questions()->whereIn('id', $questionIdsToDelete)->get() as $questionToDelete) {
+                    foreach ($questionToDelete->options ?? [] as $option) {
+                        if (is_array($option) && !empty($option['image'])) {
+                            Storage::disk('public')->delete($option['image']);
+                        }
+                    }
+                }
+
                 $survey->questions()->whereIn('id', $questionIdsToDelete)->delete();
             }
         });
@@ -139,16 +148,21 @@ class SurveyManagerController extends Controller
         return to_route('survey-manager.index')->with('status', 'De enquête is gesloten en kan niet meer worden ingevuld.');
     }
 
-    private function buildQuestionsPayload(array $questions): array
+    private function buildQuestionsPayload(UpsertSurveyRequest $request, array $questions): array
     {
         return collect($questions)
             ->values()
-            ->map(function (array $question, int $index): array {
+            ->map(function (array $question, int $index) use ($request): array {
                 return [
-                    'id' => isset($question['id']) ? (int) $question['id'] : null,
+                    'id' => isset($question['id']) && $question['id'] !== '' ? (int) $question['id'] : null,
                     'question' => trim($question['question']),
                     'type' => $question['type'],
-                    'options' => $this->normalizeOptions($question['type'], $question['options'] ?? null),
+                    'options' => $this->normalizeOptions(
+                        $request,
+                        $index,
+                        $question['type'],
+                        $question['options'] ?? []
+                    ),
                     'required' => (bool) ($question['required'] ?? false),
                     'sort_order' => $index + 1,
                 ];
@@ -156,22 +170,65 @@ class SurveyManagerController extends Controller
             ->all();
     }
 
-    private function normalizeOptions(string $type, ?string $options): ?array
-    {
+    private function normalizeOptions(
+        UpsertSurveyRequest $request,
+        int $questionIndex,
+        string $type,
+        array $options
+    ): ?array {
         if ($type === 'textarea') {
             return null;
         }
 
-        $parsedOptions = collect(explode(',', (string) $options))
-            ->map(fn (string $option) => trim($option))
+        $normalized = collect($options)
+            ->values()
+            ->map(function ($option, int $optionIndex) use ($request, $questionIndex, $type) {
+                $label = '';
+                $existingImage = null;
+
+                if (is_array($option)) {
+                    $label = trim((string) ($option['label'] ?? ''));
+                    $existingImage = $option['existing_image'] ?? null;
+                } else {
+                    $label = trim((string) $option);
+                }
+
+                if ($label === '') {
+                    return null;
+                }
+
+                $imagePath = $existingImage;
+
+                if ($type === 'swipe' && $request->hasFile("questions.$questionIndex.options.$optionIndex.image")) {
+                    $uploadedImage = $request->file("questions.$questionIndex.options.$optionIndex.image");
+
+                    if ($existingImage) {
+                        Storage::disk('public')->delete($existingImage);
+                    }
+
+                    $imagePath = $uploadedImage->store('survey-options', 'public');
+                }
+
+                if ($type === 'swipe') {
+                    return [
+                        'label' => $label,
+                        'image' => $imagePath,
+                    ];
+                }
+
+                return $label;
+            })
             ->filter()
             ->values()
             ->all();
 
-        if ($type === 'swipe' && count($parsedOptions) < 2) {
-            return ['nee', 'ja'];
+        if ($type === 'swipe' && count($normalized) < 2) {
+            return [
+                ['label' => 'Nee', 'image' => null],
+                ['label' => 'Ja', 'image' => null],
+            ];
         }
 
-        return $parsedOptions;
+        return $normalized;
     }
 }
