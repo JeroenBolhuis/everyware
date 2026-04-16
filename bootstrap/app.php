@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -28,6 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
     })
+    ->withExceptions(function ($exceptions): void {
+    $exceptions->render(function (PostTooLargeException $e, Request $request) {
+        return back()
+            ->withInput($request->except([]))
+            ->withErrors([
+                'questions' => 'De upload is te groot. Gebruik kleinere afbeeldingen. Per afbeelding geldt maximaal 2 MB en in totaal maximaal 5 MB.',
+            ]);
+        });
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (\Throwable $exception): void {
             logger()->error('Unhandled exception summary', [
@@ -41,3 +51,4 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->create();
+    

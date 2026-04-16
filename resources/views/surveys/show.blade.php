@@ -13,7 +13,6 @@
                     break;
                 }
             }
-
         }
     @endphp
 
@@ -39,8 +38,26 @@
                         $isFirst = $index === 0;
                         $isLast = false;
                         $oldAnswer = old("answers.$question->id");
-                        $leftOption = $question->options[0] ?? 'nee';
-                        $rightOption = $question->options[1] ?? 'ja';
+
+                        $leftRawOption = $question->options[0] ?? ['label' => 'Nee', 'image' => null];
+                        $rightRawOption = $question->options[1] ?? ['label' => 'Ja', 'image' => null];
+
+                        $leftOptionLabel = is_array($leftRawOption)
+                            ? ($leftRawOption['label'] ?? 'Nee')
+                            : $leftRawOption;
+
+                        $rightOptionLabel = is_array($rightRawOption)
+                            ? ($rightRawOption['label'] ?? 'Ja')
+                            : $rightRawOption;
+
+                        $leftOptionImage = is_array($leftRawOption) && !empty($leftRawOption['image'])
+                            ? asset('storage/' . $leftRawOption['image'])
+                            : null;
+
+                        $rightOptionImage = is_array($rightRawOption) && !empty($rightRawOption['image'])
+                            ? asset('storage/' . $rightRawOption['image'])
+                            : null;
+
                         $currentQuestionNumber = $index + 1;
                         $progressPercentage = (int) round(($currentQuestionNumber / $totalSteps) * 100);
                     @endphp
@@ -65,8 +82,10 @@
                             <x-surveys.swipe-answer
                                 :question="$question"
                                 :old-answer="$oldAnswer"
-                                :left-option="$leftOption"
-                                :right-option="$rightOption"
+                                :left-option="$leftOptionLabel"
+                                :right-option="$rightOptionLabel"
+                                :left-image="$leftOptionImage"
+                                :right-image="$rightOptionImage"
                                 :index="$index"
                             />
                         @endif
@@ -76,7 +95,6 @@
                         @endif
                     </x-surveys.question-step>
                 @endforeach
-
             </form>
         </main>
     </div>

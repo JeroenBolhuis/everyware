@@ -31,7 +31,7 @@
             </div>
         @endif
 
-        <div class="grid gap-4 md:grid-cols-4">
+        <div class="grid gap-4 md:grid-cols-3">
             <div
                 class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">Totaal</p>
@@ -46,11 +46,6 @@
                 class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">Gesloten</p>
                 <p class="mt-2 text-3xl font-semibold text-zinc-900 dark:text-white">{{ $stats['closed'] }}</p>
-            </div>
-            <div
-                class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                <p class="text-sm text-zinc-500 dark:text-zinc-400">Reacties</p>
-                <p class="mt-2 text-3xl font-semibold text-zinc-900 dark:text-white">{{ $stats['responses'] }}</p>
             </div>
         </div>
 
