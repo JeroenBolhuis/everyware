@@ -7,6 +7,7 @@ use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\User;
 use Livewire\Livewire;
+use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -180,4 +181,41 @@ it('lets lic employees delete a full submission and shows a success message', fu
     get(route('admin.surveys.show', $survey))
         ->assertOk()
         ->assertSee('De inzending is succesvol verwijderd.');
+});
+
+it('lets lic employees block an email address and delete the current submission', function () {
+    $employee = User::factory()->licEmployee()->createOne();
+    $survey = createReviewableSurvey();
+    $response = createReviewableResponse($survey);
+
+    ContactInformationSubmission::create([
+        'survey_id' => $survey->id,
+        'survey_response_id' => $response->id,
+        'name' => 'Jamie Jansen',
+        'email' => 'jamie@example.com',
+        'phone' => '+31612345678',
+    ]);
+
+    actingAs($employee);
+
+    get(route('admin.responses.show', $response))
+        ->assertOk()
+        ->assertSee('E-mailadres blokkeren')
+        ->assertSee('Blokkeren en verwijderen');
+
+    Livewire::test('pages::admin.responses.show', ['response' => $response])
+        ->call('blockRespondent')
+        ->assertRedirect(route('admin.surveys.show', $survey));
+
+    expect(session('status'))->toBe('De inzending is verwijderd en het e-mailadres is geblokkeerd.');
+
+    assertDatabaseHas('participants', [
+        'email' => 'jamie@example.com',
+    ]);
+
+    assertDatabaseMissing('survey_responses', [
+        'id' => $response->id,
+    ]);
+
+    expect(Participant::where('email', 'jamie@example.com')->firstOrFail()->blocked_at)->not->toBeNull();
 });

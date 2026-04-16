@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Surveys\DeleteSurveySubmission;
 use App\Http\Requests\Surveys\StoreSurveyContactDetailsRequest;
 use App\Http\Requests\Surveys\StoreSurveyResponseRequest;
 use App\Mail\SurveySubmissionConfirmationMail;
@@ -69,6 +70,10 @@ class SurveyController extends Controller
         $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
         $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
 
+        if ($this->isBlockedEmail($contactEmail)) {
+            return to_route('survey.thankyou.generic');
+        }
+
         $response = DB::transaction(function () use ($validated, $survey, $contactEmail, $contactName) {
             $response = $survey->responses()->create([
                 'withdrawal_token' => Str::uuid(),
@@ -130,9 +135,27 @@ class SurveyController extends Controller
         return view('surveys.thankyou', compact('response'));
     }
 
-    public function storeContactDetails(StoreSurveyContactDetailsRequest $request, SurveyResponse $response)
+    public function genericThankYou()
+    {
+        return view('surveys.thankyou', ['response' => null]);
+    }
+
+    public function storeContactDetails(
+        StoreSurveyContactDetailsRequest $request,
+        SurveyResponse $response,
+        DeleteSurveySubmission $deleteSurveySubmission,
+    )
     {
         $validated = $request->validated();
+        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
+
+        if ($this->isBlockedEmail($contactEmail)) {
+            DB::transaction(function () use ($deleteSurveySubmission, $response): void {
+                $deleteSurveySubmission->handle($response);
+            });
+
+            return to_route('survey.thankyou.generic');
+        }
 
         $contactInformationPayload = $this->buildContactInformationPayload($validated, $response);
 
@@ -147,7 +170,6 @@ class SurveyController extends Controller
         );
 
         $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
-        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
         $this->syncParticipantForResponse($response, $contactEmail, $contactName);
 
         return to_route('survey.thankyou', $response)
@@ -225,5 +247,17 @@ class SurveyController extends Controller
         if ($response->participant_id !== $participant->id) {
             $response->update(['participant_id' => $participant->id]);
         }
+    }
+
+    private function isBlockedEmail(?string $contactEmail): bool
+    {
+        if ($contactEmail === null) {
+            return false;
+        }
+
+        return Participant::query()
+            ->where('email', $contactEmail)
+            ->whereNotNull('blocked_at')
+            ->exists();
     }
 }
