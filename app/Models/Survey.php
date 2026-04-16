@@ -18,6 +18,16 @@ class Survey extends Model
         'description',
         'is_active',
         'share_token',
+        'reward_points',
+    ];
+
+    protected $attributes = [
+        'reward_points' => 10,
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'reward_points' => 'integer',
     ];
 
     public function questions(): HasMany

@@ -10,7 +10,7 @@ class UpsertSurveyRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->canManageSurveys();
+        return (bool)$this->user()?->canManageSurveys();
     }
 
     public function rules(): array
@@ -19,6 +19,7 @@ class UpsertSurveyRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'is_active' => ['required', 'boolean'],
+            'reward_points' => ['required', 'integer', 'min:0'],
 
             'questions' => ['required', 'array', 'min:1'],
             'questions.*.id' => ['nullable', 'integer'],
@@ -44,10 +45,10 @@ class UpsertSurveyRequest extends FormRequest
                 $filledOptions = collect($rawOptions)
                     ->map(function ($option) {
                         if (is_array($option)) {
-                            return trim((string) ($option['label'] ?? ''));
+                            return trim((string)($option['label'] ?? ''));
                         }
 
-                        return trim((string) $option);
+                        return trim((string)$option);
                     })
                     ->filter()
                     ->values();

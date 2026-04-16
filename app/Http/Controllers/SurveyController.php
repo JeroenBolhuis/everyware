@@ -7,6 +7,7 @@ use App\Http\Requests\Surveys\StoreSurveyContactDetailsRequest;
 use App\Http\Requests\Surveys\StoreSurveyResponseRequest;
 use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\Participant;
+use App\Models\ParticipantPointsHistory;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
 use Illuminate\Http\Request;
@@ -104,24 +105,7 @@ class SurveyController extends Controller
             return $response;
         });
 
-        $confirmationMailStatus = 'skipped';
-
-        if ($contactEmail !== null) {
-            try {
-                Mail::to($contactEmail)->send(
-                    new SurveySubmissionConfirmationMail($response->fresh('survey'), $contactName)
-                );
-
-                $confirmationMailStatus = 'sent';
-            } catch (Throwable $exception) {
-                Log::warning('Survey confirmation email could not be sent.', [
-                    'survey_response_id' => $response->id,
-                    'message' => $exception->getMessage(),
-                ]);
-
-                $confirmationMailStatus = 'failed';
-            }
-        }
+        $confirmationMailStatus = $this->sendConfirmationMail($response, $contactEmail, $contactName);
 
         return to_route('survey.thankyou', $response)->with([
             'confirmationMailStatus' => $confirmationMailStatus,
@@ -130,7 +114,7 @@ class SurveyController extends Controller
 
     public function thankYou(SurveyResponse $response)
     {
-        $response->loadMissing('contactInformationSubmission');
+        $response->loadMissing('contactInformationSubmission', 'participant', 'participantPointsHistories');
 
         return view('surveys.thankyou', compact('response'));
     }
@@ -171,9 +155,13 @@ class SurveyController extends Controller
 
         $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
         $this->syncParticipantForResponse($response, $contactEmail, $contactName);
+        $confirmationMailStatus = $this->sendConfirmationMail($response, $contactEmail, $contactName);
 
         return to_route('survey.thankyou', $response)
-            ->with('contactDetailsSaved', true);
+            ->with([
+                'contactDetailsSaved' => true,
+                'confirmationMailStatus' => $confirmationMailStatus,
+            ]);
     }
 
     private function buildContactInformationPayload(array $validated, SurveyResponse $response): ?array
@@ -246,6 +234,61 @@ class SurveyController extends Controller
 
         if ($response->participant_id !== $participant->id) {
             $response->update(['participant_id' => $participant->id]);
+        }
+
+        $this->awardPointsForResponse($response, $participant);
+    }
+
+    private function awardPointsForResponse(SurveyResponse $response, Participant $participant): void
+    {
+        $response->loadMissing('survey', 'participantPointsHistories');
+
+        if ($response->participantPointsHistories->isNotEmpty()) {
+            return;
+        }
+
+        $points = (int) ($response->survey?->reward_points ?? 0);
+
+        if ($points <= 0) {
+            return;
+        }
+
+        ParticipantPointsHistory::create([
+            'participant_id' => $participant->id,
+            'amount' => $points,
+            'source_type' => $response::class,
+            'source_id' => $response->id,
+        ]);
+
+        $participant->increment('current_points', $points);
+        $participant->refresh();
+
+        $response->unsetRelation('participantPointsHistories');
+        $response->setRelation('participant', $participant);
+    }
+
+    private function sendConfirmationMail(SurveyResponse $response, ?string $contactEmail, ?string $contactName): string
+    {
+        if ($contactEmail === null) {
+            return 'skipped';
+        }
+
+        try {
+            Mail::to($contactEmail)->send(
+                new SurveySubmissionConfirmationMail(
+                    $response->fresh(['survey', 'participant', 'participantPointsHistories']),
+                    $contactName
+                )
+            );
+
+            return 'sent';
+        } catch (Throwable $exception) {
+            Log::warning('Survey confirmation email could not be sent.', [
+                'survey_response_id' => $response->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return 'failed';
         }
     }
 

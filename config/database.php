@@ -97,6 +97,11 @@ return [
             'prefix_indexes' => true,
             'search_path' => env('DB_SCHEMA', 'public'),
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'options' => defined('PDO::PGSQL_ATTR_DISABLE_PREPARES')
+                ? [
+                    PDO::PGSQL_ATTR_DISABLE_PREPARES => true,
+                ]
+                : [],
         ],
 
         'sqlsrv' => [

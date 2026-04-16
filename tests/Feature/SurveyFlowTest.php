@@ -1,8 +1,9 @@
 <?php
 
 use App\Mail\SurveySubmissionConfirmationMail;
-use App\Models\ContactInformationSubmission;
 use App\Models\Participant;
+use App\Models\ParticipantPointsHistory;
+use App\Models\ContactInformationSubmission;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
@@ -120,6 +121,27 @@ it('submits a survey and sends a confirmation email when an email address is pro
             && $mail->recipientName === 'Ali Test'
             && $mail->hasTo('ali@example.com');
     });
+
+    $participant = Participant::where('email', 'ali@example.com')->first();
+
+    expect($participant)->not->toBeNull()
+        ->and($participant->current_points)->toBe(10)
+        ->and($surveyResponse->fresh()->participant_id)->toBe($participant->id);
+
+    assertDatabaseHas('participant_points_history', [
+        'participant_id' => $participant->id,
+        'amount' => 10,
+        'source_type' => SurveyResponse::class,
+        'source_id' => $surveyResponse->id,
+    ]);
+
+    Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) {
+        $rendered = $mail->render();
+
+        return str_contains($rendered, '10 punten')
+            && str_contains($rendered, 'Je totaal staat nu op')
+            && str_contains($rendered, '10 punten');
+    });
 });
 
 it('submits a survey without sending a confirmation email when no email address is provided', function () {
@@ -223,6 +245,18 @@ it('saves contact details after submission', function () {
     expect($contactSubmission->email)->toBe('ali@example.com');
     expect($contactSubmission->phone)->toBe('0612345678');
     expect($contactSubmission->getRawOriginal('email'))->not->toBe('ali@example.com');
+
+    $participant = Participant::where('email', 'ali@example.com')->first();
+
+    expect($participant)->not->toBeNull()
+        ->and($participant->current_points)->toBe(10);
+
+    assertDatabaseHas('participant_points_history', [
+        'participant_id' => $participant->id,
+        'amount' => 10,
+        'source_type' => SurveyResponse::class,
+        'source_id' => $surveyResponse->id,
+    ]);
 });
 
 it('deletes an existing submission when blocked contact details are added afterwards', function () {
@@ -299,6 +333,32 @@ it('shows the mail confirmation state on the thank you page', function () {
 
     $response->assertOk();
     $response->assertSee('Er is een bevestigingsmail verstuurd.');
+});
+
+it('shows the awarded and total points on the thank you page', function () {
+    $participant = Participant::create([
+        'email' => 'ali@example.com',
+        'name' => 'Ali Test',
+    ]);
+
+    $participant->forceFill(['current_points' => 10])->save();
+
+    $surveyResponse = createSurveyResponse(null, [
+        'participant_id' => $participant->id,
+    ]);
+
+    ParticipantPointsHistory::create([
+        'participant_id' => $participant->id,
+        'amount' => 10,
+        'source_type' => SurveyResponse::class,
+        'source_id' => $surveyResponse->id,
+    ]);
+
+    $response = get(route('survey.thankyou', ['response' => $surveyResponse->id]));
+
+    $response->assertOk();
+    $response->assertSee('Je hebt 10 punten gekregen.');
+    $response->assertSee('Je totaal staat nu op 10 punten.');
 });
 
 /* Thank-you page shows form if no contact data */

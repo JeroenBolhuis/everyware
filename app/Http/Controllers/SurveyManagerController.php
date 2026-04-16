@@ -58,12 +58,13 @@ class SurveyManagerController extends Controller
             $survey = Survey::create([
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
-                'is_active' => (bool) $validated['is_active'],
+                'is_active' => (bool)$validated['is_active'],
+                'reward_points' => $validated['reward_points'],
             ]);
 
             $survey->questions()->createMany(
                 collect($questions)
-                    ->map(fn (array $question) => Arr::except($question, ['id']))
+                    ->map(fn(array $question) => Arr::except($question, ['id']))
                     ->all()
             );
         });
@@ -87,7 +88,8 @@ class SurveyManagerController extends Controller
             $survey->update([
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
-                'is_active' => (bool) $validated['is_active'],
+                'is_active' => (bool)$validated['is_active'],
+                'reward_points' => $validated['reward_points'],
             ]);
 
             $existingQuestions = $survey->questions()->get()->keyBy('id');
@@ -154,7 +156,7 @@ class SurveyManagerController extends Controller
             ->values()
             ->map(function (array $question, int $index) use ($request): array {
                 return [
-                    'id' => isset($question['id']) && $question['id'] !== '' ? (int) $question['id'] : null,
+                    'id' => isset($question['id']) && $question['id'] !== '' ? (int)$question['id'] : null,
                     'question' => trim($question['question']),
                     'type' => $question['type'],
                     'options' => $this->normalizeOptions(
@@ -163,7 +165,7 @@ class SurveyManagerController extends Controller
                         $question['type'],
                         $question['options'] ?? []
                     ),
-                    'required' => (bool) ($question['required'] ?? false),
+                    'required' => (bool)($question['required'] ?? false),
                     'sort_order' => $index + 1,
                 ];
             })
@@ -172,10 +174,11 @@ class SurveyManagerController extends Controller
 
     private function normalizeOptions(
         UpsertSurveyRequest $request,
-        int $questionIndex,
-        string $type,
-        array $options
-    ): ?array {
+        int                 $questionIndex,
+        string              $type,
+        array               $options
+    ): ?array
+    {
         if ($type === 'textarea') {
             return null;
         }
@@ -187,10 +190,10 @@ class SurveyManagerController extends Controller
                 $existingImage = null;
 
                 if (is_array($option)) {
-                    $label = trim((string) ($option['label'] ?? ''));
+                    $label = trim((string)($option['label'] ?? ''));
                     $existingImage = $option['existing_image'] ?? null;
                 } else {
-                    $label = trim((string) $option);
+                    $label = trim((string)$option);
                 }
 
                 if ($label === '') {

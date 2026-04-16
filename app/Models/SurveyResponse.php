@@ -65,4 +65,14 @@ class SurveyResponse extends Model
             $contactInformation?->phone ? 'Telefoonnummer opgeslagen' : null,
         ]));
     }
+
+    public function awardedPoints(): int
+    {
+        return (int) $this->participantPointsHistories->sum('amount');
+    }
+
+    public function totalPoints(): int
+    {
+        return (int) ($this->participant?->current_points ?? 0);
+    }
 }

@@ -1,9 +1,11 @@
 <?php
 
+use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\ContactInformationSubmission;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
+use Illuminate\Support\Facades\Mail;
 use function Pest\Laravel\from;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
@@ -111,6 +113,35 @@ it('stores encrypted contact details on the thank you page when provided', funct
         ->assertSee('E-mailadres opgeslagen')
         ->assertSee('Telefoonnummer opgeslagen')
         ->assertSee('versleuteld opgeslagen');
+});
+
+it('sends a confirmation email after contact details are saved on the thank you page', function () {
+    Mail::fake();
+
+    $survey = createSurveyWithQuestion();
+    $question = $survey->questions()->firstOrFail();
+
+    post(route('survey.store', $survey), [
+        'answers' => [
+            $question->id => 'Erg nuttig.',
+        ],
+    ])->assertRedirect();
+
+    $response = SurveyResponse::firstOrFail();
+
+    from(route('survey.thankyou', $response))
+        ->post(route('survey.contact-details.store', $response), [
+            'contact_name' => 'Jamie Jansen',
+            'contact_email' => 'jamie@example.com',
+            'contact_phone' => '+31 6 12345678',
+        ])
+        ->assertRedirect(route('survey.thankyou', $response));
+
+    Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) use ($response) {
+        return $mail->response->is($response)
+            && $mail->recipientName === 'Jamie Jansen'
+            && $mail->hasTo('jamie@example.com');
+    });
 });
 
 it('validates optional contact details when provided', function () {
