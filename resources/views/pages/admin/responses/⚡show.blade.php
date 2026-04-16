@@ -1,14 +1,18 @@
 <?php
 
-use App\Models\SurveyAnswer;
+use App\Actions\Surveys\DeleteSurveySubmission;
+use App\Models\Participant;
 use App\Models\SurveyResponse;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Enquete-inzending')] class extends Component {
     public SurveyResponse $response;
-
-    public ?string $statusMessage = null;
+    public ?string $respondentEmail = null;
+    public bool $respondentIsBlocked = false;
 
     public function mount(): void
     {
@@ -16,26 +20,73 @@ new #[Title('Enquete-inzending')] class extends Component {
         $this->refreshResponse();
     }
 
-    public function deleteAnswer(int $answerId): void
+    public function deleteSubmission(): void
     {
-        $this->authorize('deleteAnswer', $this->response);
+        $this->authorize('delete', $this->response);
 
-        $answer = SurveyAnswer::query()
-            ->whereBelongsTo($this->response, 'response')
-            ->whereKey($answerId)
-            ->firstOrFail();
+        $survey = $this->response->survey;
+        $deleteSurveySubmission = app(DeleteSurveySubmission::class);
 
-        $answer->delete();
+        DB::transaction(function () use ($deleteSurveySubmission): void {
+            $deleteSurveySubmission->handle($this->response);
+        });
 
-        $this->statusMessage = __('Het antwoord is succesvol verwijderd.');
+        Session::flash('status', __('De inzending is succesvol verwijderd.'));
 
-        $this->refreshResponse();
+        $this->redirect(route('admin.surveys.show', $survey));
+    }
+
+    public function blockRespondent(): void
+    {
+        $this->authorize('delete', $this->response);
+
+        if ($this->respondentEmail === null) {
+            return;
+        }
+
+        $survey = $this->response->survey;
+        $contactName = $this->response->contactInformationSubmission?->name;
+        $deleteSurveySubmission = app(DeleteSurveySubmission::class);
+
+        DB::transaction(function () use ($contactName, $deleteSurveySubmission): void {
+            $participant = Participant::firstOrCreate(
+                ['email' => $this->respondentEmail],
+                ['name' => $contactName],
+            );
+
+            if ($contactName !== null && blank($participant->name)) {
+                $participant->forceFill(['name' => $contactName])->save();
+            }
+
+            $participant->block();
+            $deleteSurveySubmission->handle($this->response);
+        });
+
+        Session::flash('status', __('De inzending is verwijderd en het e-mailadres is geblokkeerd.'));
+
+        $this->redirect(route('admin.surveys.show', $survey));
     }
 
     protected function refreshResponse(): void
     {
         $this->response->refresh();
         $this->response->load('survey', 'answers.question', 'contactInformationSubmission');
+
+        $this->respondentEmail = $this->normalizeEmail($this->response->contactInformationSubmission?->email);
+        $this->respondentIsBlocked = $this->respondentEmail !== null
+            && Participant::query()
+                ->where('email', $this->respondentEmail)
+                ->whereNotNull('blocked_at')
+                ->exists();
+    }
+
+    protected function normalizeEmail(?string $email): ?string
+    {
+        if (! filled($email)) {
+            return null;
+        }
+
+        return Str::lower(trim($email));
     }
 }; ?>
 
@@ -49,15 +100,111 @@ new #[Title('Enquete-inzending')] class extends Component {
         :subheading="$response->survey->title"
     >
         <div class="my-6 space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-            <div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <a href="{{ route('admin.surveys.show', $response->survey) }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquete-inzendingen') }}</a>
+
+                <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                    @if ($respondentEmail !== null && ! $respondentIsBlocked)
+                        <flux:modal.trigger name="confirm-respondent-blocking">
+                            <flux:button
+                                variant="danger"
+                                type="button"
+                                icon="no-symbol"
+                            >
+                                {{ __('E-mailadres blokkeren') }}
+                            </flux:button>
+                        </flux:modal.trigger>
+                    @endif
+
+                    <flux:modal.trigger name="confirm-submission-deletion">
+                        <flux:button
+                            variant="danger"
+                            type="button"
+                            icon="trash"
+                        >
+                            {{ __('Inzending verwijderen') }}
+                        </flux:button>
+                    </flux:modal.trigger>
+                </div>
             </div>
 
-            @if ($statusMessage)
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                    {{ $statusMessage }}
+            @if ($respondentIsBlocked)
+                <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-950 dark:border-rose-800/70 dark:bg-rose-950/30 dark:text-rose-100">
+                    {{ __('Dit e-mailadres is geblokkeerd. Nieuwe inzendingen met dit e-mailadres worden automatisch verwijderd.') }}
                 </div>
             @endif
+
+            @if ($respondentEmail !== null && ! $respondentIsBlocked)
+                <flux:modal name="confirm-respondent-blocking" class="max-w-lg">
+                    <div class="space-y-6">
+                        <div>
+                            <flux:heading size="lg">{{ __('E-mailadres blokkeren?') }}</flux:heading>
+
+                            <flux:subheading class="mt-2">
+                                {{ __('Dit blokkeert :email voor toekomstige enquête-inzendingen en verwijdert deze huidige inzending direct.', ['email' => $respondentEmail]) }}
+                            </flux:subheading>
+                        </div>
+
+                        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-100">
+                            {{ __('Gebruik dit alleen wanneer je wilt voorkomen dat deze persoon opnieuw enquêtes kan insturen met hetzelfde e-mailadres.') }}
+                        </div>
+
+                        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                            <flux:modal.close>
+                                <flux:button variant="ghost" type="button">
+                                    {{ __('Annuleren') }}
+                                </flux:button>
+                            </flux:modal.close>
+
+                            <flux:button
+                                variant="danger"
+                                type="button"
+                                icon="no-symbol"
+                                wire:click="blockRespondent"
+                                wire:loading.attr="disabled"
+                                wire:target="blockRespondent"
+                            >
+                                {{ __('Blokkeren en verwijderen') }}
+                            </flux:button>
+                        </div>
+                    </div>
+                </flux:modal>
+            @endif
+
+            <flux:modal name="confirm-submission-deletion" class="max-w-lg">
+                <div class="space-y-6">
+                    <div>
+                        <flux:heading size="lg">{{ __('Volledige inzending verwijderen?') }}</flux:heading>
+
+                        <flux:subheading class="mt-2">
+                            {{ __('Je verwijdert hiermee alle antwoorden, gedeelde contactgegevens en gekoppelde puntenhistorie van deze inzending. Deze actie kan niet ongedaan worden gemaakt.') }}
+                        </flux:subheading>
+                    </div>
+
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-100">
+                        {{ __('Controleer goed of je de volledige inzending van deze gebruiker wilt verwijderen voordat je doorgaat.') }}
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <flux:modal.close>
+                            <flux:button variant="ghost" type="button">
+                                {{ __('Annuleren') }}
+                            </flux:button>
+                        </flux:modal.close>
+
+                        <flux:button
+                            variant="danger"
+                            type="button"
+                            icon="trash"
+                            wire:click="deleteSubmission"
+                            wire:loading.attr="disabled"
+                            wire:target="deleteSubmission"
+                        >
+                            {{ __('Definitief verwijderen') }}
+                        </flux:button>
+                    </div>
+                </div>
+            </flux:modal>
 
             <div class="grid gap-4 md:grid-cols-2">
                 <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
@@ -105,26 +252,13 @@ new #[Title('Enquete-inzending')] class extends Component {
                 <div class="mt-4 space-y-4">
                     @forelse ($response->answers as $answer)
                         <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700" wire:key="answer-{{ $answer->id }}">
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                <div class="min-w-0 flex-1">
-                                    <flux:text class="font-medium text-zinc-900 dark:text-zinc-100">
-                                        {{ $answer->question?->question ?? __('Vraag verwijderd') }}
-                                    </flux:text>
-                                    <flux:text class="mt-2 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">
-                                        {{ $answer->answer }}
-                                    </flux:text>
-                                </div>
-
-                                <flux:button
-                                    size="sm"
-                                    variant="danger"
-                                    type="button"
-                                    icon="trash"
-                                    wire:click="deleteAnswer({{ $answer->id }})"
-                                    wire:confirm="{{ __('Weet je zeker dat je dit antwoord wilt verwijderen?') }}"
-                                >
-                                    {{ __('Antwoord verwijderen') }}
-                                </flux:button>
+                            <div class="min-w-0">
+                                <flux:text class="font-medium text-zinc-900 dark:text-zinc-100">
+                                    {{ $answer->question?->question ?? __('Vraag verwijderd') }}
+                                </flux:text>
+                                <flux:text class="mt-2 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">
+                                    {{ $answer->answer }}
+                                </flux:text>
                             </div>
                         </div>
                     @empty

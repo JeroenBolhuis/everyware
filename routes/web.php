@@ -11,7 +11,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('enquetes', 'enquetes')->name('enquetes');
 });
-Route::middleware(['auth', 'verified', 'role:admin|lic-medewerker'])
+Route::middleware(['auth', 'verified', 'role:admin|LICEmployee'])
     ->prefix('enquetes')
     ->name('survey-manager.')
     ->group(function () {
@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified', 'role:admin|lic-medewerker'])
     });
 
 Route::prefix('survey')->name('survey.')->group(function () {
+    Route::get('/thank-you', [SurveyController::class, 'genericThankYou'])->name('thankyou.generic');
     Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
     Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
     Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');

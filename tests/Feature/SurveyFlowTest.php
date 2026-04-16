@@ -4,6 +4,7 @@ use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
 use App\Models\ContactInformationSubmission;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
@@ -169,6 +170,32 @@ it('submits a survey without sending a confirmation email when no email address 
     Mail::assertNothingSent();
 });
 
+it('silently discards a survey submission when the email address is blocked', function () {
+    Mail::fake();
+
+    $survey = createSurvey();
+    $question1 = $survey->questions[0];
+
+    Participant::create([
+        'name' => 'Ali Test',
+        'email' => 'ali@example.com',
+        'blocked_at' => now(),
+    ]);
+
+    post(route('survey.store', $survey), [
+        'answers' => [
+            $question1->id => 'yes',
+        ],
+        'contact_name' => 'Ali Test',
+        'contact_email' => 'Ali@Example.com',
+    ])->assertRedirect(route('survey.thankyou.generic'));
+
+    expect(SurveyResponse::count())->toBe(0)
+        ->and(ContactInformationSubmission::count())->toBe(0);
+
+    Mail::assertNothingSent();
+});
+
 /* Required questions must be answered */
 it('requires answers for required questions', function () {
     $survey = createSurvey();
@@ -231,6 +258,37 @@ it('saves contact details after submission', function () {
         'source_type' => SurveyResponse::class,
         'source_id' => $surveyResponse->id,
     ]);
+});
+
+it('deletes an existing submission when blocked contact details are added afterwards', function () {
+    $survey = createSurvey();
+    $question1 = $survey->questions[0];
+
+    Participant::create([
+        'name' => 'Ali Test',
+        'email' => 'ali@example.com',
+        'blocked_at' => now(),
+    ]);
+
+    post(route('survey.store', $survey), [
+        'answers' => [
+            $question1->id => 'yes',
+        ],
+    ])->assertRedirect();
+
+    $surveyResponse = SurveyResponse::firstOrFail();
+
+    post(route('survey.contact-details.store', $surveyResponse), [
+        'contact_name' => 'Ali Test',
+        'contact_email' => 'Ali@Example.com',
+        'contact_phone' => '06 12345678',
+    ])->assertRedirect(route('survey.thankyou.generic'));
+
+    assertDatabaseMissing('survey_responses', [
+        'id' => $surveyResponse->id,
+    ]);
+
+    expect(ContactInformationSubmission::count())->toBe(0);
 });
 
 /* Empty contact form should not store data */
