@@ -12,6 +12,11 @@ use Illuminate\Validation\ValidationException;
 
 class SurveyManagerController extends Controller
 {
+    private function surveyImagesDisk(): string
+    {
+        return (string) config('filesystems.survey_images_disk', 'public');
+    }
+
     public function index(Request $request)
     {
         $query = Survey::query()
@@ -204,11 +209,11 @@ class SurveyManagerController extends Controller
 
                 if ($type === 'swipe' && $request->hasFile("questions.$questionIndex.options.$optionIndex.image")) {
                     if ($existingImage) {
-                        Storage::disk('public')->delete($existingImage);
+                        Storage::disk($this->surveyImagesDisk())->delete($existingImage);
                     }
 
                     $imagePath = $request->file("questions.$questionIndex.options.$optionIndex.image")
-                        ->store('survey-options', 'public');
+                        ->store('survey-options', $this->surveyImagesDisk());
                 }
 
                 if ($type === 'swipe') {
@@ -238,7 +243,7 @@ class SurveyManagerController extends Controller
     {
         foreach ($options as $option) {
             if (is_array($option) && !empty($option['image'])) {
-                Storage::disk('public')->delete($option['image']);
+                Storage::disk($this->surveyImagesDisk())->delete($option['image']);
             }
         }
     }

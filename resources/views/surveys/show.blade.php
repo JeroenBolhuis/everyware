@@ -5,6 +5,7 @@
         $totalQuestions = $survey->questions->count();
         $totalSteps = $totalQuestions;
         $initialStep = 0;
+        $surveyImagesDisk = config('filesystems.survey_images_disk', 'public');
 
         if ($errors->any()) {
             foreach ($survey->questions as $errorIndex => $errorQuestion) {
@@ -51,11 +52,11 @@
                             : $rightRawOption;
 
                         $leftOptionImage = is_array($leftRawOption) && !empty($leftRawOption['image'])
-                            ? asset('storage/' . $leftRawOption['image'])
+                            ? Storage::disk($surveyImagesDisk)->url($leftRawOption['image'])
                             : null;
 
                         $rightOptionImage = is_array($rightRawOption) && !empty($rightRawOption['image'])
-                            ? asset('storage/' . $rightRawOption['image'])
+                            ? Storage::disk($surveyImagesDisk)->url($rightRawOption['image'])
                             : null;
 
                         $currentQuestionNumber = $index + 1;

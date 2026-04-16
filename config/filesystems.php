@@ -15,6 +15,8 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    'survey_images_disk' => env('SURVEY_IMAGES_DISK', 'public'),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
@@ -41,7 +43,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => env('PUBLIC_DISK_URL', '/storage'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

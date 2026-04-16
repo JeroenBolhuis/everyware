@@ -149,12 +149,13 @@ class SurveyManagerTest extends TestCase
 
     public function test_existing_swipe_images_are_kept_when_question_type_does_not_change(): void
     {
-        Storage::fake('public');
+        config(['filesystems.survey_images_disk' => 'survey_images']);
+        Storage::fake('survey_images');
 
         $this->actingAsSurveyManager();
 
         $oldImage = 'survey-options/old-image.jpg';
-        Storage::disk('public')->put($oldImage, 'fake-image');
+        Storage::disk('survey_images')->put($oldImage, 'fake-image');
 
         $survey = Survey::create([
             'title' => 'Bestaande enquete',
@@ -193,7 +194,7 @@ class SurveyManagerTest extends TestCase
         ]);
 
         $response->assertRedirect(route('survey-manager.index'));
-        Storage::disk('public')->assertExists($oldImage);
+        Storage::disk('survey_images')->assertExists($oldImage);
 
         expect($question->fresh()->options)->toBe([
             ['label' => 'Links', 'image' => $oldImage],
@@ -203,12 +204,13 @@ class SurveyManagerTest extends TestCase
 
     public function test_existing_swipe_images_are_deleted_when_question_type_changes(): void
     {
-        Storage::fake('public');
+        config(['filesystems.survey_images_disk' => 'survey_images']);
+        Storage::fake('survey_images');
 
         $this->actingAsSurveyManager();
 
         $oldImage = 'survey-options/old-image.jpg';
-        Storage::disk('public')->put($oldImage, 'fake-image');
+        Storage::disk('survey_images')->put($oldImage, 'fake-image');
 
         $survey = Survey::create([
             'title' => 'Bestaande enquete',
@@ -247,7 +249,7 @@ class SurveyManagerTest extends TestCase
         ]);
 
         $response->assertRedirect(route('survey-manager.index'));
-        Storage::disk('public')->assertMissing($oldImage);
+        Storage::disk('survey_images')->assertMissing($oldImage);
 
         expect($question->fresh()->options)->toBe([
             'Links',

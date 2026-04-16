@@ -292,11 +292,11 @@
 
                                                         @if ($existingImage)
                                                             <div class="mb-2">
-                                                                <img
-                                                                    src="{{ asset('storage/' . $existingImage) }}"
-                                                                    alt="Bestaande optie afbeelding"
-                                                                    class="h-20 w-full rounded-xl object-cover border border-neutral-200 dark:border-neutral-700"
-                                                                >
+                                                                    <img
+                                                                        src="{{ Storage::disk(config('filesystems.survey_images_disk', 'public'))->url($existingImage) }}"
+                                                                        alt="Bestaande optie afbeelding"
+                                                                        class="h-20 w-full rounded-xl object-cover border border-neutral-200 dark:border-neutral-700"
+                                                                    >
                                                             </div>
                                                         @endif
 
@@ -444,4 +444,3 @@
     </template>
 
 </x-layouts::app>
-
