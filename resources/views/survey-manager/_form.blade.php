@@ -48,7 +48,8 @@
 <x-layouts::app :title="$isEdit ? __('Enquête bewerken') : __('Nieuwe enquête')">
     @vite('resources/js/surveys/manager-form.js')
     <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+        <div
+            class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 class="text-2xl font-semibold text-zinc-900 dark:text-white">
@@ -66,7 +67,8 @@
         </div>
 
         @if ($errors->any())
-            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+            <div
+                class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
                 <div class="font-medium">Controleer de invoer:</div>
                 <ul class="mt-2 list-disc pl-5">
                     @foreach ($errors->all() as $error)
@@ -87,10 +89,12 @@
                 @method('PUT')
             @endif
 
-            <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <div
+                class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <div class="grid gap-4 md:grid-cols-2">
                     <div class="md:col-span-2">
-                        <label for="title" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Titel</label>
+                        <label for="title"
+                               class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Titel</label>
                         <input
                             id="title"
                             name="title"
@@ -102,7 +106,8 @@
                     </div>
 
                     <div class="md:col-span-2">
-                        <label for="description" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Beschrijving</label>
+                        <label for="description"
+                               class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Beschrijving</label>
                         <textarea
                             id="description"
                             name="description"
@@ -111,25 +116,45 @@
                         >{{ old('description', $survey->description ?? '') }}</textarea>
                     </div>
 
-                    <div>
-                        <label for="is_active" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Status</label>
-                        <select
-                            id="is_active"
-                            name="is_active"
-                            class="w-full rounded-full border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-                        >
-                            <option value="1" @selected((string) old('is_active', isset($survey) ? (int) $survey->is_active : 1) === '1')>
-                                Actief
-                            </option>
-                            <option value="0" @selected((string) old('is_active', isset($survey) ? (int) $survey->is_active : 1) === '0')>
-                                Gesloten
-                            </option>
-                        </select>
+                    <div class="grid gap-4 md:grid-cols-2 md:col-span-2">
+                        <div>
+                            <label for="is_active"
+                                   class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Status</label>
+                            <select
+                                id="is_active"
+                                name="is_active"
+                                class="w-full rounded-full border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                            >
+                                <option
+                                    value="1" @selected((string) old('is_active', isset($survey) ? (int) $survey->is_active : 1) === '1')>
+                                    Actief
+                                </option>
+                                <option
+                                    value="0" @selected((string) old('is_active', isset($survey) ? (int) $survey->is_active : 1) === '0')>
+                                    Gesloten
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="reward_points"
+                                   class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Beloningspunten</label>
+                            <input
+                                id="reward_points"
+                                name="reward_points"
+                                type="number"
+                                min="0"
+                                step="1"
+                                value="{{ old('reward_points', $survey->reward_points ?? '') }}"
+                                class="w-full rounded-full border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                                required
+                            >
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <div
+                class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <div class="mb-4 flex items-center justify-between gap-3">
                     <div>
                         <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">Vragen</h2>
@@ -173,20 +198,27 @@
                                 </div>
 
                                 <div>
-                                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Type</label>
+                                    <label
+                                        class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Type</label>
                                     <select
                                         name="questions[{{ $index }}][type]"
                                         class="question-type w-full rounded-full border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                                         data-field="type"
                                     >
-                                        <option value="radio" @selected(($question['type'] ?? 'radio') === 'radio')>Radio</option>
-                                        <option value="swipe" @selected(($question['type'] ?? '') === 'swipe')>Swipe</option>
-                                        <option value="textarea" @selected(($question['type'] ?? '') === 'textarea')>Textarea</option>
+                                        <option value="radio" @selected(($question['type'] ?? 'radio') === 'radio')>
+                                            Radio
+                                        </option>
+                                        <option value="swipe" @selected(($question['type'] ?? '') === 'swipe')>Swipe
+                                        </option>
+                                        <option value="textarea" @selected(($question['type'] ?? '') === 'textarea')>
+                                            Textarea
+                                        </option>
                                     </select>
                                 </div>
 
                                 <div class="flex items-end">
-                                    <label class="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
+                                    <label
+                                        class="inline-flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
                                         <input
                                             type="hidden"
                                             name="questions[{{ $index }}][required]"
@@ -205,7 +237,8 @@
                                     </label>
                                 </div>
 
-                                <div class="options-field md:col-span-2 {{ ($question['type'] ?? 'radio') === 'textarea' ? 'hidden' : '' }}">
+                                <div
+                                    class="options-field md:col-span-2 {{ ($question['type'] ?? 'radio') === 'textarea' ? 'hidden' : '' }}">
                                     <div class="mb-2 flex items-center justify-between gap-3">
                                         <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                                             Antwoordopties
@@ -234,7 +267,8 @@
                                                 $isSwipe = ($question['type'] ?? 'radio') === 'swipe';
                                             @endphp
 
-                                            <div class="option-row rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
+                                            <div
+                                                class="option-row rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
                                                 <div class="grid gap-3 md:grid-cols-12">
                                                     <div class="{{ $isSwipe ? 'md:col-span-6' : 'md:col-span-11' }}">
                                                         <input
@@ -247,7 +281,8 @@
                                                         >
                                                     </div>
 
-                                                    <div class="swipe-image-field {{ $isSwipe ? 'md:col-span-4' : 'hidden' }}">
+                                                    <div
+                                                        class="swipe-image-field {{ $isSwipe ? 'md:col-span-4' : 'hidden' }}">
                                                         <input
                                                             type="hidden"
                                                             name="questions[{{ $index }}][options][{{ $optionIndex }}][existing_image]"
@@ -274,8 +309,10 @@
                                                         >
                                                     </div>
 
-                                                    <div class="{{ $isSwipe ? 'md:col-span-2' : 'md:col-span-1' }} flex items-start md:items-center">
-                                                        <button type="button" class="remove-option btn-secondary w-full">
+                                                    <div
+                                                        class="{{ $isSwipe ? 'md:col-span-2' : 'md:col-span-1' }} flex items-start md:items-center">
+                                                        <button type="button"
+                                                                class="remove-option btn-secondary w-full">
                                                             Verwijderen
                                                         </button>
                                                     </div>
@@ -408,4 +445,3 @@
 
 </x-layouts::app>
 
-    
