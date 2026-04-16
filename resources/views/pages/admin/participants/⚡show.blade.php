@@ -71,7 +71,6 @@ new #[Title('Deelnemer')] class extends Component {
 
         <div class="my-6 space-y-6">
 
-            {{-- Deelnemer info --}}
             <div class="grid gap-4 sm:grid-cols-3">
                 <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
                     <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Naam') }}</flux:text>
@@ -87,7 +86,6 @@ new #[Title('Deelnemer')] class extends Component {
                 </div>
             </div>
 
-            {{-- Correctie formulier --}}
             <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <flux:heading size="lg">{{ __('Correctie toevoegen') }}</flux:heading>
                 <flux:subheading class="mt-1">
@@ -128,7 +126,6 @@ new #[Title('Deelnemer')] class extends Component {
                 </form>
             </div>
 
-            {{-- Puntenhistorie --}}
             <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <flux:heading size="lg">{{ __('Puntenhistorie') }}</flux:heading>
 
