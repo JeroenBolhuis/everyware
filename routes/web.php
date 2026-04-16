@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified', 'role:admin|LICEmployee'])
     });
 
 Route::prefix('survey')->name('survey.')->group(function () {
+    Route::get('/thank-you', [SurveyController::class, 'genericThankYou'])->name('thankyou.generic');
     Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
     Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
     Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');
