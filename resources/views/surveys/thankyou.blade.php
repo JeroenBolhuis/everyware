@@ -24,6 +24,13 @@
                 </div>
             @endif
 
+            @if ($response->participant && $response->awardedPoints() > 0)
+                <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                    <p class="font-semibold">Je hebt {{ $response->awardedPoints() }} punten gekregen.</p>
+                    <p class="mt-1">Je totaal staat nu op {{ $response->totalPoints() }} punten.</p>
+                </div>
+            @endif
+
             <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <p class="font-semibold text-gray-900">Contactgegevens</p>
 

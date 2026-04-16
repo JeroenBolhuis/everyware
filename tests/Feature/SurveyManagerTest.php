@@ -136,6 +136,13 @@ class SurveyManagerTest extends TestCase
         ]);
     }
 
+    public function test_new_surveys_receive_ten_reward_points_by_default(): void
+    {
+        $survey = Survey::factory()->create();
+
+        expect($survey->reward_points)->toBe(10);
+    }
+
     public function test_existing_swipe_images_are_kept_when_question_type_does_not_change(): void
     {
         Storage::fake('public');
