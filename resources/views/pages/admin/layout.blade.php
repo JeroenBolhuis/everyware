@@ -16,6 +16,10 @@
                 <flux:navlist.item :href="route('admin.users.index')" :current="request()->routeIs('admin.users.*')" wire:navigate>
                     {{ __('Gebruikers') }}
                 </flux:navlist.item>
+
+                <flux:navlist.item :href="route('admin.participants.index')" :current="request()->routeIs('admin.participants.*')" wire:navigate>
+                    {{ __('Deelnemers') }}
+                </flux:navlist.item>
             @endif
         </flux:navlist>
     </div>
