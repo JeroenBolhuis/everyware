@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\ContactInformationSubmission;
+use App\Models\Participant;
 use App\Models\Survey;
-use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\User;
@@ -45,14 +45,31 @@ function createReviewableResponse(Survey $survey): SurveyResponse
 }
 
 it('forbids regular users from the admin survey review area', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->createOne();
+
+    /** @var User $user */
     actingAs($user);
 
     get(route('admin.surveys.index'))->assertForbidden();
 });
 
+it('lets lic employees manage surveys', function () {
+    $employee = User::factory()->licEmployee()->createOne();
+    $survey = createReviewableSurvey();
+
+    actingAs($employee);
+
+    get(route('survey-manager.index'))
+        ->assertOk()
+        ->assertSee($survey->title);
+
+    get(route('survey-manager.create'))
+        ->assertOk()
+        ->assertSee('Nieuwe enquête aanmaken');
+});
+
 it('lets lic employees open the survey response overview', function () {
-    $employee = User::factory()->licEmployee()->create();
+    $employee = User::factory()->licEmployee()->createOne();
     $survey = createReviewableSurvey();
 
     actingAs($employee);
@@ -63,7 +80,7 @@ it('lets lic employees open the survey response overview', function () {
 });
 
 it('shows decrypted contact details to admins and lic employees', function () {
-    $employee = User::factory()->licEmployee()->create();
+    $employee = User::factory()->licEmployee()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
@@ -86,7 +103,7 @@ it('shows decrypted contact details to admins and lic employees', function () {
 });
 
 it('shows when no contact information was provided', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->admin()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
@@ -97,33 +114,70 @@ it('shows when no contact information was provided', function () {
         ->assertSee('Er zijn geen contactgegevens gedeeld voor deze inzending.');
 });
 
-it('lets lic employees delete answers and shows a success message', function () {
-    $employee = User::factory()->licEmployee()->create();
+it('lets lic employees delete a full submission and shows a success message', function () {
+    $employee = User::factory()->licEmployee()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
-    $answerToKeep = $response->answers()->create([
-        'survey_question_id' => $survey->questions()->firstOrFail()->id,
-        'answer' => 'Dit antwoord blijft staan.',
+    $participant = Participant::create([
+        'name' => 'Jamie Jansen',
+        'email' => 'jamie@example.com',
     ]);
 
-    $answerToDelete = SurveyAnswer::query()
-        ->where('survey_response_id', $response->id)
-        ->where('answer', 'Very helpful and practical.')
-        ->firstOrFail();
+    $response->update([
+        'participant_id' => $participant->id,
+    ]);
+
+    $secondAnswer = $response->answers()->create([
+        'survey_question_id' => $survey->questions()->firstOrFail()->id,
+        'answer' => 'Dit antwoord hoort ook verwijderd te worden.',
+    ]);
+
+    $contactSubmission = ContactInformationSubmission::create([
+        'survey_id' => $survey->id,
+        'survey_response_id' => $response->id,
+        'name' => 'Jamie Jansen',
+        'email' => 'jamie@example.com',
+        'phone' => '+31612345678',
+    ]);
+
+    $pointsHistory = $response->participantPointsHistories()->create([
+        'participant_id' => $participant->id,
+        'amount' => 10,
+    ]);
 
     actingAs($employee);
 
-    Livewire::test('pages::admin.responses.show', ['response' => $response])
-        ->call('deleteAnswer', $answerToDelete->id)
-        ->assertSet('statusMessage', 'Het antwoord is succesvol verwijderd.')
-        ->assertDontSee('Very helpful and practical.')
-        ->assertSee('Dit antwoord blijft staan.')
-        ->assertSee('Het antwoord is succesvol verwijderd.');
+    get(route('admin.responses.show', $response))
+        ->assertOk()
+        ->assertSee('Inzending verwijderen')
+        ->assertSee('Volledige inzending verwijderen?')
+        ->assertSee('Definitief verwijderen')
+        ->assertDontSee('Antwoord verwijderen');
 
-    assertDatabaseMissing('survey_answers', [
-        'id' => $answerToDelete->id,
+    Livewire::test('pages::admin.responses.show', ['response' => $response])
+        ->call('deleteSubmission')
+        ->assertRedirect(route('admin.surveys.show', $survey));
+
+    expect(session('status'))->toBe('De inzending is succesvol verwijderd.');
+
+    assertDatabaseMissing('survey_responses', [
+        'id' => $response->id,
     ]);
 
-    expect($answerToKeep->fresh())->not->toBeNull();
+    assertDatabaseMissing('survey_answers', [
+        'id' => $secondAnswer->id,
+    ]);
+
+    assertDatabaseMissing('contact_information_submissions', [
+        'id' => $contactSubmission->id,
+    ]);
+
+    assertDatabaseMissing('participant_points_history', [
+        'id' => $pointsHistory->id,
+    ]);
+
+    get(route('admin.surveys.show', $survey))
+        ->assertOk()
+        ->assertSee('De inzending is succesvol verwijderd.');
 });

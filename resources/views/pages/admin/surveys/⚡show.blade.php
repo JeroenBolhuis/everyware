@@ -38,6 +38,12 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                 <a href="{{ route('admin.surveys.index') }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquetes') }}</a>
             </div>
 
+            @if (session('status'))
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
                 <flux:text>{{ $survey->description }}</flux:text>
             </div>

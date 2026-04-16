@@ -11,7 +11,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
     Route::view('enquetes', 'enquetes')->name('enquetes');
 });
-Route::middleware(['auth', 'verified', 'role:admin|lic-medewerker'])
+Route::middleware(['auth', 'verified', 'role:admin|LICEmployee'])
     ->prefix('enquetes')
     ->name('survey-manager.')
     ->group(function () {

@@ -12,7 +12,7 @@ class SurveyResponsePolicy
         return $user->canReviewSurveyResponses();
     }
 
-    public function deleteAnswer(User $user, SurveyResponse $surveyResponse): bool
+    public function delete(User $user, SurveyResponse $surveyResponse): bool
     {
         return $this->view($user, $surveyResponse);
     }
