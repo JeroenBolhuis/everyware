@@ -7,10 +7,12 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
     plugins: [
         laravel({
-            input: [                'resources/css/app.css',
+            input: [
+                'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/css/surveys/show.css',
                 'resources/js/surveys/show.js',
+                'resources/js/surveys/manager-form.js',
             ],
             refresh: true,
         }),

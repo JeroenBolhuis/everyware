@@ -107,6 +107,10 @@ class SurveyManagerController extends Controller
                         ]);
                     }
 
+                    if ($existingQuestion->type !== $attributes['type']) {
+                        $this->deleteOptionImages($existingQuestion->options ?? []);
+                    }
+
                     $existingQuestion->update($attributes);
                     $keepIds[] = $existingQuestion->id;
 
@@ -127,11 +131,7 @@ class SurveyManagerController extends Controller
                 }
 
                 foreach ($survey->questions()->whereIn('id', $questionIdsToDelete)->get() as $questionToDelete) {
-                    foreach ($questionToDelete->options ?? [] as $option) {
-                        if (is_array($option) && !empty($option['image'])) {
-                            Storage::disk('public')->delete($option['image']);
-                        }
-                    }
+                    $this->deleteOptionImages($questionToDelete->options ?? []);
                 }
 
                 $survey->questions()->whereIn('id', $questionIdsToDelete)->delete();
@@ -200,13 +200,12 @@ class SurveyManagerController extends Controller
                 $imagePath = $existingImage;
 
                 if ($type === 'swipe' && $request->hasFile("questions.$questionIndex.options.$optionIndex.image")) {
-                    $uploadedImage = $request->file("questions.$questionIndex.options.$optionIndex.image");
-
                     if ($existingImage) {
                         Storage::disk('public')->delete($existingImage);
                     }
 
-                    $imagePath = $uploadedImage->store('survey-options', 'public');
+                    $imagePath = $request->file("questions.$questionIndex.options.$optionIndex.image")
+                        ->store('survey-options', 'public');
                 }
 
                 if ($type === 'swipe') {
@@ -230,5 +229,14 @@ class SurveyManagerController extends Controller
         }
 
         return $normalized;
+    }
+
+    private function deleteOptionImages(array $options): void
+    {
+        foreach ($options as $option) {
+            if (is_array($option) && !empty($option['image'])) {
+                Storage::disk('public')->delete($option['image']);
+            }
+        }
     }
 }

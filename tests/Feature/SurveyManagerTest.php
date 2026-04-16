@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\Role as RoleEnum;
+use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -131,6 +133,112 @@ class SurveyManagerTest extends TestCase
         $this->assertDatabaseHas('survey_questions', [
             'question' => 'Vertel je mening',
             'type' => 'textarea',
+        ]);
+    }
+
+    public function test_existing_swipe_images_are_kept_when_question_type_does_not_change(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAsSurveyManager();
+
+        $oldImage = 'survey-options/old-image.jpg';
+        Storage::disk('public')->put($oldImage, 'fake-image');
+
+        $survey = Survey::create([
+            'title' => 'Bestaande enquete',
+            'description' => 'Beschrijving',
+            'is_active' => true,
+        ]);
+
+        $question = $survey->questions()->create([
+            'question' => 'Kies een optie',
+            'type' => 'swipe',
+            'required' => true,
+            'sort_order' => 1,
+            'options' => [
+                ['label' => 'Links', 'image' => $oldImage],
+                ['label' => 'Rechts', 'image' => null],
+            ],
+        ]);
+
+        $response = $this->put(route('survey-manager.update', $survey), [
+            'title' => 'Bestaande enquete',
+            'description' => 'Aangepast',
+            'is_active' => '1',
+            'questions' => [
+                [
+                    'id' => $question->id,
+                    'question' => 'Kies een optie',
+                    'type' => 'swipe',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Links', 'existing_image' => $oldImage],
+                        ['label' => 'Rechts'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+        Storage::disk('public')->assertExists($oldImage);
+
+        expect($question->fresh()->options)->toBe([
+            ['label' => 'Links', 'image' => $oldImage],
+            ['label' => 'Rechts', 'image' => null],
+        ]);
+    }
+
+    public function test_existing_swipe_images_are_deleted_when_question_type_changes(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAsSurveyManager();
+
+        $oldImage = 'survey-options/old-image.jpg';
+        Storage::disk('public')->put($oldImage, 'fake-image');
+
+        $survey = Survey::create([
+            'title' => 'Bestaande enquete',
+            'description' => 'Beschrijving',
+            'is_active' => true,
+        ]);
+
+        $question = $survey->questions()->create([
+            'question' => 'Kies een optie',
+            'type' => 'swipe',
+            'required' => true,
+            'sort_order' => 1,
+            'options' => [
+                ['label' => 'Links', 'image' => $oldImage],
+                ['label' => 'Rechts', 'image' => null],
+            ],
+        ]);
+
+        $response = $this->put(route('survey-manager.update', $survey), [
+            'title' => 'Bestaande enquete',
+            'description' => 'Aangepast',
+            'is_active' => '1',
+            'questions' => [
+                [
+                    'id' => $question->id,
+                    'question' => 'Kies een optie',
+                    'type' => 'radio',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Links', 'existing_image' => $oldImage],
+                        ['label' => 'Rechts'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+        Storage::disk('public')->assertMissing($oldImage);
+
+        expect($question->fresh()->options)->toBe([
+            'Links',
+            'Rechts',
         ]);
     }
 }
