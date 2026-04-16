@@ -15,6 +15,7 @@ class ParticipantPointsHistory extends Model
         'amount',
         'source_type',
         'source_id',
+        'reason',
     ];
 
     protected $casts = [

@@ -27,6 +27,8 @@ return new class extends Migration
 
         $this->migrateLegacyStudentFieldsToParticipants();
 
+        $this->dropLegacyStudentEmailUniqueIndex();
+
         Schema::table('survey_responses', function (Blueprint $table) {
             $table->dropColumn(['student_name', 'student_email']);
         });
@@ -76,6 +78,26 @@ return new class extends Migration
                     ]);
                 }
             });
+    }
+
+    private function dropLegacyStudentEmailUniqueIndex(): void
+    {
+        $indexes = collect(Schema::getIndexes('survey_responses'))
+            ->pluck('name');
+
+        if (! $indexes->contains('survey_responses_survey_id_index')) {
+            Schema::table('survey_responses', function (Blueprint $table) {
+                $table->index('survey_id');
+            });
+        }
+
+        if (! $indexes->contains('survey_responses_survey_id_student_email_unique')) {
+            return;
+        }
+
+        Schema::table('survey_responses', function (Blueprint $table) {
+            $table->dropUnique('survey_responses_survey_id_student_email_unique');
+        });
     }
 
     private function normalizeEmail(?string $value): ?string

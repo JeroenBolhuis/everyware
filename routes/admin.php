@@ -13,8 +13,11 @@ Route::middleware(['auth', 'verified'])
         });
 
         Route::middleware('role:admin')->group(function () {
-        Route::livewire('users', 'pages::admin.users.index')->name('users.index');
-        Route::livewire('users/create', 'pages::admin.users.create')->name('users.create');
-        Route::livewire('users/{user}/edit', 'pages::admin.users.edit')->name('users.edit');
+            Route::livewire('users', 'pages::admin.users.index')->name('users.index');
+            Route::livewire('users/create', 'pages::admin.users.create')->name('users.create');
+            Route::livewire('users/{user}/edit', 'pages::admin.users.edit')->name('users.edit');
+
+            Route::livewire('participants', 'pages::admin.participants.index')->name('participants.index');
+            Route::livewire('participants/{participant}', 'pages::admin.participants.show')->name('participants.show');
         });
     });
