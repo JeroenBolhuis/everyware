@@ -13,22 +13,34 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('participants', function (Blueprint $table) {
-            $table->id();
-            $table->string('email')->unique();
-            $table->string('name')->nullable();
-            $table->unsignedInteger('current_points')->default(0);
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('participants')) {
+            Schema::create('participants', function (Blueprint $table) {
+                $table->id();
+                $table->string('email')->unique();
+                $table->string('name')->nullable();
+                $table->unsignedInteger('current_points')->default(0);
+                $table->timestamps();
+            });
+        }
 
-        Schema::table('survey_responses', function (Blueprint $table) {
-            $table->foreignId('participant_id')->nullable()->constrained()->nullOnDelete();
-        });
+        if (! Schema::hasColumn('survey_responses', 'participant_id')) {
+            Schema::table('survey_responses', function (Blueprint $table) {
+                $table->foreignId('participant_id')->nullable()->constrained()->nullOnDelete();
+            });
+        }
 
         $this->migrateLegacyStudentFieldsToParticipants();
 
+        $this->dropLegacyStudentEmailUniqueIndex();
+
         Schema::table('survey_responses', function (Blueprint $table) {
-            $table->dropColumn(['student_name', 'student_email']);
+            if (Schema::hasColumn('survey_responses', 'student_name')) {
+                $table->dropColumn('student_name');
+            }
+
+            if (Schema::hasColumn('survey_responses', 'student_email')) {
+                $table->dropColumn('student_email');
+            }
         });
     }
 
@@ -37,6 +49,10 @@ return new class extends Migration
      */
     private function migrateLegacyStudentFieldsToParticipants(): void
     {
+        if (! Schema::hasColumn('survey_responses', 'student_email')) {
+            return;
+        }
+
         $now = now();
 
         DB::table('survey_responses')
@@ -76,6 +92,31 @@ return new class extends Migration
                     ]);
                 }
             });
+    }
+
+    private function dropLegacyStudentEmailUniqueIndex(): void
+    {
+        $indexes = collect(DB::select('SHOW INDEX FROM survey_responses'));
+
+        $surveyIdIndexExists = $indexes
+            ->contains(fn (object $index): bool => $index->Key_name === 'survey_responses_survey_id_index');
+
+        if (! $surveyIdIndexExists) {
+            Schema::table('survey_responses', function (Blueprint $table) {
+                $table->index('survey_id');
+            });
+        }
+
+        $indexExists = $indexes
+            ->contains(fn (object $index): bool => $index->Key_name === 'survey_responses_survey_id_student_email_unique');
+
+        if (! $indexExists) {
+            return;
+        }
+
+        Schema::table('survey_responses', function (Blueprint $table) {
+            $table->dropUnique('survey_responses_survey_id_student_email_unique');
+        });
     }
 
     private function normalizeEmail(?string $value): ?string
