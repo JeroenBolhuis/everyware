@@ -96,21 +96,16 @@ return new class extends Migration
 
     private function dropLegacyStudentEmailUniqueIndex(): void
     {
-        $indexes = collect(DB::select('SHOW INDEX FROM survey_responses'));
+        $indexes = collect(Schema::getIndexes('survey_responses'))
+            ->pluck('name');
 
-        $surveyIdIndexExists = $indexes
-            ->contains(fn (object $index): bool => $index->Key_name === 'survey_responses_survey_id_index');
-
-        if (! $surveyIdIndexExists) {
+        if (! $indexes->contains('survey_responses_survey_id_index')) {
             Schema::table('survey_responses', function (Blueprint $table) {
                 $table->index('survey_id');
             });
         }
 
-        $indexExists = $indexes
-            ->contains(fn (object $index): bool => $index->Key_name === 'survey_responses_survey_id_student_email_unique');
-
-        if (! $indexExists) {
+        if (! $indexes->contains('survey_responses_survey_id_student_email_unique')) {
             return;
         }
 
