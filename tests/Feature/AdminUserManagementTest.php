@@ -7,21 +7,23 @@ use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
 it('forbids non-admins from the admin users area', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->createOne();
+
+    /** @var User $user */
     actingAs($user);
 
     get(route('admin.users.index'))->assertForbidden();
 });
 
 it('lets admins list users', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->admin()->createOne();
     actingAs($admin);
 
     get(route('admin.users.index'))->assertOk();
 });
 
 it('lets admins create users with roles', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->admin()->createOne();
     actingAs($admin);
 
     Livewire::test('pages::admin.users.create')
@@ -41,7 +43,9 @@ it('lets admins create users with roles', function () {
 });
 
 it('forbids non-admins from creating users via livewire', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->createOne();
+
+    /** @var User $user */
     actingAs($user);
 
     Livewire::test('pages::admin.users.create')
@@ -49,8 +53,8 @@ it('forbids non-admins from creating users via livewire', function () {
 });
 
 it('lets admins update users', function () {
-    $admin = User::factory()->admin()->create();
-    $subject = User::factory()->create();
+    $admin = User::factory()->admin()->createOne();
+    $subject = User::factory()->createOne();
     actingAs($admin);
 
     Livewire::test('pages::admin.users.edit', ['user' => $subject])
@@ -62,7 +66,7 @@ it('lets admins update users', function () {
 });
 
 it('prevents demoting the last administrator', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->admin()->createOne();
     actingAs($admin);
 
     Livewire::test('pages::admin.users.edit', ['user' => $admin])
