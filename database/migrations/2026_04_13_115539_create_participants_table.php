@@ -13,34 +13,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (! Schema::hasTable('participants')) {
-            Schema::create('participants', function (Blueprint $table) {
-                $table->id();
-                $table->string('email')->unique();
-                $table->string('name')->nullable();
-                $table->unsignedInteger('current_points')->default(0);
-                $table->timestamps();
-            });
-        }
+        Schema::create('participants', function (Blueprint $table) {
+            $table->id();
+            $table->string('email')->unique();
+            $table->string('name')->nullable();
+            $table->unsignedInteger('current_points')->default(0);
+            $table->timestamps();
+        });
 
-        if (! Schema::hasColumn('survey_responses', 'participant_id')) {
-            Schema::table('survey_responses', function (Blueprint $table) {
-                $table->foreignId('participant_id')->nullable()->constrained()->nullOnDelete();
-            });
-        }
+        Schema::table('survey_responses', function (Blueprint $table) {
+            $table->foreignId('participant_id')->nullable()->constrained()->nullOnDelete();
+        });
 
         $this->migrateLegacyStudentFieldsToParticipants();
 
         $this->dropLegacyStudentEmailUniqueIndex();
 
         Schema::table('survey_responses', function (Blueprint $table) {
-            if (Schema::hasColumn('survey_responses', 'student_name')) {
-                $table->dropColumn('student_name');
-            }
-
-            if (Schema::hasColumn('survey_responses', 'student_email')) {
-                $table->dropColumn('student_email');
-            }
+            $table->dropColumn(['student_name', 'student_email']);
         });
     }
 
@@ -49,10 +39,6 @@ return new class extends Migration
      */
     private function migrateLegacyStudentFieldsToParticipants(): void
     {
-        if (! Schema::hasColumn('survey_responses', 'student_email')) {
-            return;
-        }
-
         $now = now();
 
         DB::table('survey_responses')
