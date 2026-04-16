@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const questionTemplate = document.getElementById('question-template');
     const optionTemplate = document.getElementById('option-template');
     const surveyForm = document.querySelector('form[enctype="multipart/form-data"]');
+    const blobUploadUrl = surveyForm?.dataset.blobUploadUrl ?? '';
+    const pendingUploads = new Set();
 
     if (!wrapper || !questionTemplate || !optionTemplate || !surveyForm) {
         return;
@@ -71,12 +73,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
             input.dataset.validationBound = 'true';
 
-            input.addEventListener('change', () => {
+            input.addEventListener('change', async () => {
                 if (!validateImageInput(input)) {
                     return;
                 }
 
-                validateTotalImageSize(input);
+                if (!validateTotalImageSize(input)) {
+                    return;
+                }
+
+                if (!blobUploadUrl) {
+                    return;
+                }
+
+                const file = input.files?.[0];
+                if (!file) {
+                    return;
+                }
+
+                const row = input.closest('.option-row');
+                const existingImageInput = row?.querySelector('[data-option-existing-image]');
+                const previewWrapper = row?.querySelector('[data-image-preview-wrapper]');
+                const previewImage = row?.querySelector('[data-image-preview]');
+                const submitButton = surveyForm.querySelector('button[type="submit"]');
+
+                const uploadPromise = (async () => {
+                    input.disabled = true;
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                    }
+
+                    try {
+                        const response = await fetch(blobUploadUrl, {
+                            method: 'PUT',
+                            headers: {
+                                'x-file-name': file.name,
+                                'x-content-type': file.type || 'application/octet-stream',
+                            },
+                            body: file,
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Upload failed');
+                        }
+
+                        const payload = await response.json();
+
+                        if (!payload?.url || !existingImageInput) {
+                            throw new Error('Upload response missing url');
+                        }
+
+                        existingImageInput.value = payload.url;
+
+                        if (previewWrapper && previewImage) {
+                            previewImage.src = payload.url;
+                            previewWrapper.classList.remove('hidden');
+                        }
+
+                        input.value = '';
+                    } catch (error) {
+                        console.error(error);
+                        alert('De afbeelding kon niet naar Vercel Blob worden geüpload. Probeer het opnieuw.');
+                    } finally {
+                        input.disabled = false;
+                        if (submitButton && pendingUploads.size <= 1) {
+                            submitButton.disabled = false;
+                        }
+                    }
+                })();
+
+                pendingUploads.add(uploadPromise);
+                uploadPromise.finally(() => pendingUploads.delete(uploadPromise));
+                await uploadPromise;
             });
         });
     }
@@ -328,6 +396,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     surveyForm.addEventListener('submit', (event) => {
+        if (pendingUploads.size > 0) {
+            event.preventDefault();
+            alert('Wacht tot de afbeelding is geüpload voordat je de enquête opslaat.');
+            return;
+        }
+
         const imageInputs = document.querySelectorAll('[data-option-image]');
         let hasTooLargeSingleFile = false;
 

@@ -83,6 +83,7 @@
             action="{{ $isEdit ? route('survey-manager.update', $survey) : route('survey-manager.store') }}"
             class="space-y-4"
             enctype="multipart/form-data"
+            data-blob-upload-url="{{ env('VERCEL') && filled(env('BLOB_READ_WRITE_TOKEN')) ? '/api/blob-upload' : '' }}"
         >
             @csrf
             @if ($isEdit)
@@ -265,6 +266,11 @@
                                                 $label = is_array($option) ? ($option['label'] ?? '') : $option;
                                                 $existingImage = is_array($option) ? ($option['existing_image'] ?? null) : null;
                                                 $isSwipe = ($question['type'] ?? 'radio') === 'swipe';
+                                                $existingImageUrl = $existingImage
+                                                    ? (filter_var($existingImage, FILTER_VALIDATE_URL)
+                                                        ? $existingImage
+                                                        : Storage::disk(config('filesystems.survey_images_disk', 'public'))->url($existingImage))
+                                                    : null;
                                             @endphp
 
                                             <div
@@ -290,15 +296,17 @@
                                                             data-option-existing-image
                                                         >
 
-                                                        @if ($existingImage)
-                                                            <div class="mb-2">
-                                                                    <img
-                                                                        src="{{ Storage::disk(config('filesystems.survey_images_disk', 'public'))->url($existingImage) }}"
-                                                                        alt="Bestaande optie afbeelding"
-                                                                        class="h-20 w-full rounded-xl object-cover border border-neutral-200 dark:border-neutral-700"
-                                                                    >
-                                                            </div>
-                                                        @endif
+                                                        <div
+                                                            class="mb-2 {{ $existingImageUrl ? '' : 'hidden' }}"
+                                                            data-image-preview-wrapper
+                                                        >
+                                                            <img
+                                                                src="{{ $existingImageUrl ?? '' }}"
+                                                                alt="Bestaande optie afbeelding"
+                                                                class="h-20 w-full rounded-xl object-cover border border-neutral-200 dark:border-neutral-700"
+                                                                data-image-preview
+                                                            >
+                                                        </div>
 
                                                         <input
                                                             type="file"
@@ -426,6 +434,14 @@
 
                 <div class="swipe-image-field hidden md:col-span-4">
                     <input type="hidden" data-option-existing-image value="">
+                    <div class="mb-2 hidden" data-image-preview-wrapper>
+                        <img
+                            src=""
+                            alt="Bestaande optie afbeelding"
+                            class="h-20 w-full rounded-xl object-cover border border-neutral-200 dark:border-neutral-700"
+                            data-image-preview
+                        >
+                    </div>
                     <input
                         type="file"
                         data-option-image

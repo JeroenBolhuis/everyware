@@ -10,6 +10,7 @@
         "dev": "vite"
     },
     "dependencies": {
+        "@vercel/blob": "^1.1.1",
         "@tailwindcss/vite": "^4.1.11",
         "autoprefixer": "^10.4.20",
         "axios": "^1.7.4",

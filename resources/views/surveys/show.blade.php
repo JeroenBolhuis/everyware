@@ -52,11 +52,15 @@
                             : $rightRawOption;
 
                         $leftOptionImage = is_array($leftRawOption) && !empty($leftRawOption['image'])
-                            ? Storage::disk($surveyImagesDisk)->url($leftRawOption['image'])
+                            ? (filter_var($leftRawOption['image'], FILTER_VALIDATE_URL)
+                                ? $leftRawOption['image']
+                                : Storage::disk($surveyImagesDisk)->url($leftRawOption['image']))
                             : null;
 
                         $rightOptionImage = is_array($rightRawOption) && !empty($rightRawOption['image'])
-                            ? Storage::disk($surveyImagesDisk)->url($rightRawOption['image'])
+                            ? (filter_var($rightRawOption['image'], FILTER_VALIDATE_URL)
+                                ? $rightRawOption['image']
+                                : Storage::disk($surveyImagesDisk)->url($rightRawOption['image']))
                             : null;
 
                         $currentQuestionNumber = $index + 1;

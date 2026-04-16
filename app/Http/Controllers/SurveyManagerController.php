@@ -17,6 +17,22 @@ class SurveyManagerController extends Controller
         return (string) config('filesystems.survey_images_disk', 'public');
     }
 
+    private function normalizeExistingImage(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function isAbsoluteUrl(string $value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_URL) !== false;
+    }
+
     public function index(Request $request)
     {
         $query = Survey::query()
@@ -196,7 +212,7 @@ class SurveyManagerController extends Controller
 
                 if (is_array($option)) {
                     $label = trim((string)($option['label'] ?? ''));
-                    $existingImage = $option['existing_image'] ?? null;
+                    $existingImage = $this->normalizeExistingImage($option['existing_image'] ?? null);
                 } else {
                     $label = trim((string)$option);
                 }
@@ -214,6 +230,12 @@ class SurveyManagerController extends Controller
 
                     $imagePath = $request->file("questions.$questionIndex.options.$optionIndex.image")
                         ->store('survey-options', $this->surveyImagesDisk());
+
+                    if (! is_string($imagePath) || $imagePath === '') {
+                        throw ValidationException::withMessages([
+                            'questions' => 'De afbeelding kon niet worden opgeslagen. Probeer het opnieuw.',
+                        ]);
+                    }
                 }
 
                 if ($type === 'swipe') {
@@ -242,7 +264,7 @@ class SurveyManagerController extends Controller
     private function deleteOptionImages(array $options): void
     {
         foreach ($options as $option) {
-            if (is_array($option) && !empty($option['image'])) {
+            if (is_array($option) && ! empty($option['image']) && ! $this->isAbsoluteUrl((string) $option['image'])) {
                 Storage::disk($this->surveyImagesDisk())->delete($option['image']);
             }
         }
