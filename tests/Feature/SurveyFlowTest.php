@@ -4,7 +4,6 @@ use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
 use App\Models\ContactInformationSubmission;
-use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;

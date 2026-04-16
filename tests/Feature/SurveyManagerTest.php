@@ -34,6 +34,7 @@ class SurveyManagerTest extends TestCase
             'title' => 'Test enquête',
             'description' => 'Beschrijving',
             'is_active' => '1',
+            'reward_points' => 10,
             'questions' => [
                 [
                     'question' => 'Wat vind je ervan?',
@@ -68,6 +69,7 @@ class SurveyManagerTest extends TestCase
             'title' => 'Swipe test',
             'description' => 'Beschrijving',
             'is_active' => '1',
+            'reward_points' => 10,
             'questions' => [
                 [
                     'question' => 'Kies door te swipen',
@@ -94,6 +96,7 @@ class SurveyManagerTest extends TestCase
             'title' => 'Swipe test',
             'description' => 'Beschrijving',
             'is_active' => '1',
+            'reward_points' => 10,
             'questions' => [
                 [
                     'question' => 'Kies door te swipen',
@@ -118,6 +121,7 @@ class SurveyManagerTest extends TestCase
             'title' => 'Open vraag enquête',
             'description' => 'Beschrijving',
             'is_active' => '1',
+            'reward_points' => 10,
             'questions' => [
                 [
                     'question' => 'Vertel je mening',
@@ -173,6 +177,7 @@ class SurveyManagerTest extends TestCase
             'title' => 'Bestaande enquete',
             'description' => 'Aangepast',
             'is_active' => '1',
+            'reward_points' => 10,
             'questions' => [
                 [
                     'id' => $question->id,
@@ -226,6 +231,7 @@ class SurveyManagerTest extends TestCase
             'title' => 'Bestaande enquete',
             'description' => 'Aangepast',
             'is_active' => '1',
+            'reward_points' => 10,
             'questions' => [
                 [
                     'id' => $question->id,

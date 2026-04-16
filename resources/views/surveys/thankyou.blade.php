@@ -70,7 +70,6 @@
                         {{ route('survey.withdraw.show', $response->withdrawal_token) }}
                     </a>
                 </div>
-            @endif
         </div>
     </div>
 </x-layout>
