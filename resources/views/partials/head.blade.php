@@ -13,4 +13,5 @@
 <link href="https://fonts.bunny.net/css?family=fraunces:400,500,600,700|source-sans-3:400,500,600,700" rel="stylesheet" />
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])
+@include('partials.vercel-analytics')
 @fluxAppearance

@@ -1,7 +1,9 @@
 <?php
 
-test('returns a successful response', function () {
-    $response = $this->get(route('home'));
+use function Pest\Laravel\get;
+
+it('returns a successful response', function () {
+    $response = get(route('home'));
 
     $response->assertOk();
 });

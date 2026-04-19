@@ -13,8 +13,8 @@
                 <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:navbar.item>
-                <flux:navbar.item icon="clipboard-document-list" :href="route('enquetes')" :current="request()->routeIs('enquetes')" wire:navigate>
-                    {{ __('Enquetes') }}
+<flux:navbar.item icon="clipboard-document-list" :href="route('survey-manager.index')" :current="request()->routeIs('survey-manager.*')" wire:navigate>
+                    {{ __('Enquêtes') }}
                 </flux:navbar.item>
             </flux:navbar>
 
@@ -41,8 +41,8 @@
                     <flux:sidebar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="clipboard-document-list" :href="route('enquetes')" :current="request()->routeIs('enquetes')" wire:navigate>
-                        {{ __('Enquetes') }}
+                    <flux:sidebar.item icon="clipboard-document-list" :href="route('survey-manager.index')" :current="request()->routeIs('survey-manager.index')" wire:navigate>
+                        {{ __('Enquêtes') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>

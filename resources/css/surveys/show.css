@@ -1,0 +1,93 @@
+html,
+body {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.survey-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.survey-main {
+    flex: 1;
+    overflow: visible;
+}
+
+.question-step {
+    height: auto;
+}
+
+.question-step > div {
+    max-height: none;
+    overflow: visible;
+}
+
+.avans-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.avans-title {
+    color: #d71920;
+    font-weight: 700;
+}
+
+.avans-logo {
+    color: #d71920;
+    font-weight: 800;
+}
+
+.avans-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.avans-progress {
+    background-color: #f8d7da;
+}
+
+.avans-progress-bar {
+    background-color: #d71920;
+}
+
+.avans-option {
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.avans-option:hover {
+    border-color: #d71920;
+    background-color: #fff5f5;
+}
+
+.avans-button-primary {
+    background-color: #d71920;
+    color: #ffffff;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.avans-button-primary:hover {
+    background-color: #b91c1c;
+}
+
+.avans-button-secondary {
+    background-color: #ffffff;
+    color: #d71920;
+    border: 1px solid #d71920;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.avans-button-secondary:hover {
+    background-color: #fff5f5;
+}

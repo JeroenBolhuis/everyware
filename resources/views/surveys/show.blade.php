@@ -1,0 +1,106 @@
+<x-layout>
+    @vite(['resources/css/surveys/show.css', 'resources/js/surveys/show.js'])
+
+    @php
+        $totalQuestions = $survey->questions->count();
+        $totalSteps = $totalQuestions;
+        $initialStep = 0;
+        $surveyImagesDisk = config('filesystems.survey_images_disk', 'public');
+
+        if ($errors->any()) {
+            foreach ($survey->questions as $errorIndex => $errorQuestion) {
+                if ($errors->has("answers.{$errorQuestion->id}")) {
+                    $initialStep = $errorIndex;
+                    break;
+                }
+            }
+        }
+    @endphp
+
+    <div class="survey-page">
+        <div class="avans-header">
+            <x-surveys.page-header/>
+        </div>
+
+        <main class="survey-main max-w-3xl mx-auto w-full px-4 pb-10 pt-0">
+            <x-surveys.validation-notices/>
+
+            <form
+                method="POST"
+                action="{{ route('survey.store', $survey) }}"
+                id="surveyForm"
+                data-initial-step="{{ $initialStep }}"
+                novalidate
+            >
+                @csrf
+
+                @foreach ($survey->questions as $index => $question)
+                    @php
+                        $isFirst = $index === 0;
+                        $isLast = false;
+                        $oldAnswer = old("answers.$question->id");
+
+                        $leftRawOption = $question->options[0] ?? ['label' => 'Nee', 'image' => null];
+                        $rightRawOption = $question->options[1] ?? ['label' => 'Ja', 'image' => null];
+
+                        $leftOptionLabel = is_array($leftRawOption)
+                            ? ($leftRawOption['label'] ?? 'Nee')
+                            : $leftRawOption;
+
+                        $rightOptionLabel = is_array($rightRawOption)
+                            ? ($rightRawOption['label'] ?? 'Ja')
+                            : $rightRawOption;
+
+                        $leftOptionImage = is_array($leftRawOption) && !empty($leftRawOption['image'])
+                            ? (filter_var($leftRawOption['image'], FILTER_VALIDATE_URL)
+                                ? $leftRawOption['image']
+                                : Storage::disk($surveyImagesDisk)->url($leftRawOption['image']))
+                            : null;
+
+                        $rightOptionImage = is_array($rightRawOption) && !empty($rightRawOption['image'])
+                            ? (filter_var($rightRawOption['image'], FILTER_VALIDATE_URL)
+                                ? $rightRawOption['image']
+                                : Storage::disk($surveyImagesDisk)->url($rightRawOption['image']))
+                            : null;
+
+                        $currentQuestionNumber = $index + 1;
+                        $progressPercentage = (int) round(($currentQuestionNumber / $totalSteps) * 100);
+                    @endphp
+
+                    <x-surveys.question-step
+                        :step="$index"
+                        :question-id="$question->id"
+                        :type="$question->type"
+                        :required="$question->required"
+                        :is-first="$isFirst"
+                        :is-last="$isLast"
+                        :question="$question->question"
+                        :current-question-number="$currentQuestionNumber"
+                        :total-questions="$totalSteps"
+                        :progress-percentage="$progressPercentage"
+                    >
+                        @if ($question->type === 'radio')
+                            <x-surveys.radio-answer :question="$question" :old-answer="$oldAnswer"/>
+                        @endif
+
+                        @if ($question->type === 'swipe')
+                            <x-surveys.swipe-answer
+                                :question="$question"
+                                :old-answer="$oldAnswer"
+                                :left-option="$leftOptionLabel"
+                                :right-option="$rightOptionLabel"
+                                :left-image="$leftOptionImage"
+                                :right-image="$rightOptionImage"
+                                :index="$index"
+                            />
+                        @endif
+
+                        @if ($question->type === 'textarea')
+                            <x-surveys.textarea-answer :question="$question" :old-answer="$oldAnswer"/>
+                        @endif
+                    </x-surveys.question-step>
+                @endforeach
+            </form>
+        </main>
+    </div>
+</x-layout>
