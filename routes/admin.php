@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\SurveyFeedbackExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])
@@ -8,6 +9,7 @@ Route::middleware(['auth', 'verified'])
     ->group(function () {
         Route::middleware('role:admin|LICEmployee')->group(function () {
             Route::livewire('surveys', 'pages::admin.surveys.index')->name('surveys.index');
+            Route::get('surveys/{survey}/export', SurveyFeedbackExportController::class)->name('surveys.export');
             Route::livewire('surveys/{survey}', 'pages::admin.surveys.show')->name('surveys.show');
             Route::livewire('responses/{response}', 'pages::admin.responses.show')->name('responses.show');
         });
