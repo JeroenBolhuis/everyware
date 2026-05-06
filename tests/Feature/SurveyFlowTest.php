@@ -72,6 +72,40 @@ it('opens the survey page', function () {
     $response->assertSee('Volgende');
 });
 
+it('renders stored alt text for swipe images', function () {
+    $survey = Survey::factory()->create([
+        'title' => 'Swipe Survey',
+        'description' => 'Beschrijving',
+        'is_active' => true,
+    ]);
+
+    SurveyQuestion::factory()->create([
+        'survey_id' => $survey->id,
+        'question' => 'Welke afbeelding past beter?',
+        'type' => 'swipe',
+        'required' => true,
+        'options' => [
+            [
+                'label' => 'Links',
+                'image' => 'https://example.com/left.jpg',
+                'image_alt' => 'Student geeft presentatie voor de klas',
+            ],
+            [
+                'label' => 'Rechts',
+                'image' => 'https://example.com/right.jpg',
+                'image_alt' => 'Student werkt samen aan een tafel',
+            ],
+        ],
+        'sort_order' => 1,
+    ]);
+
+    $response = get('/survey/' . $survey->id);
+
+    $response->assertOk();
+    $response->assertSee('alt="Student geeft presentatie voor de klas"', false);
+    $response->assertSee('alt="Student werkt samen aan een tafel"', false);
+});
+
 /* Inactive survey returns 404 */
 it('returns 404 for inactive survey', function () {
     $survey = createSurvey(['is_active' => false]);

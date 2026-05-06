@@ -6,6 +6,7 @@ use App\Enums\Role as RoleEnum;
 use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -13,6 +14,16 @@ use Tests\TestCase;
 class SurveyManagerTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function fakePngUpload(string $name = 'test.png'): UploadedFile
+    {
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a2uoAAAAASUVORK5CYII=',
+            true
+        );
+
+        return UploadedFile::fake()->createWithContent($name, $png ?: '');
+    }
 
     private function actingAsSurveyManager(): self
     {
@@ -140,6 +151,120 @@ class SurveyManagerTest extends TestCase
         ]);
     }
 
+    public function test_swipe_question_with_image_can_be_created_without_alt_text(): void
+    {
+        config(['filesystems.survey_images_disk' => 'survey_images']);
+        Storage::fake('survey_images');
+
+        $this->actingAsSurveyManager();
+
+        $response = $this->post(route('survey-manager.store'), [
+            'title' => 'Swipe met afbeelding',
+            'description' => 'Beschrijving',
+            'is_active' => '1',
+            'reward_points' => 10,
+            'questions' => [
+                [
+                    'question' => 'Kies een afbeelding',
+                    'type' => 'swipe',
+                    'required' => '1',
+                    'options' => [
+                        [
+                            'label' => 'Links',
+                            'image' => $this->fakePngUpload('links.png'),
+                            'image_alt' => '',
+                        ],
+                        [
+                            'label' => 'Rechts',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+
+        $question = Survey::where('title', 'Swipe met afbeelding')
+            ->firstOrFail()
+            ->questions()
+            ->firstOrFail();
+
+        expect($question->options[0]['image'])->not->toBeNull()
+            ->and($question->options[0]['image_alt'])->toBeNull();
+    }
+
+    public function test_swipe_question_stores_image_alt_text(): void
+    {
+        config(['filesystems.survey_images_disk' => 'survey_images']);
+        Storage::fake('survey_images');
+
+        $this->actingAsSurveyManager();
+
+        $response = $this->post(route('survey-manager.store'), [
+            'title' => 'Swipe met alt tekst',
+            'description' => 'Beschrijving',
+            'is_active' => '1',
+            'reward_points' => 10,
+            'questions' => [
+                [
+                    'question' => 'Kies een afbeelding',
+                    'type' => 'swipe',
+                    'required' => '1',
+                    'options' => [
+                        [
+                            'label' => 'Links',
+                            'image' => $this->fakePngUpload('links.png'),
+                            'image_alt' => 'Student kijkt glimlachend naar links',
+                        ],
+                        [
+                            'label' => 'Rechts',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+
+        $question = Survey::where('title', 'Swipe met alt tekst')
+            ->firstOrFail()
+            ->questions()
+            ->firstOrFail();
+
+        expect($question->options[0]['image_alt'])->toBe('Student kijkt glimlachend naar links')
+            ->and($question->options[0]['image'])->not->toBeNull();
+    }
+
+    public function test_survey_creation_uses_ten_reward_points_when_field_is_left_empty(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $response = $this->post(route('survey-manager.store'), [
+            'title' => 'Standaard punten enquête',
+            'description' => 'Beschrijving',
+            'is_active' => '1',
+            'reward_points' => '',
+            'questions' => [
+                [
+                    'question' => 'Wat vind je ervan?',
+                    'type' => 'radio',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Ja'],
+                        ['label' => 'Nee'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+
+        $this->assertDatabaseHas('surveys', [
+            'title' => 'Standaard punten enquête',
+            'reward_points' => 10,
+        ]);
+    }
+
     public function test_new_surveys_receive_ten_reward_points_by_default(): void
     {
         $survey = Survey::factory()->create();
@@ -189,7 +314,7 @@ class SurveyManagerTest extends TestCase
             'required' => true,
             'sort_order' => 1,
             'options' => [
-                ['label' => 'Links', 'image' => $oldImage],
+                ['label' => 'Links', 'image' => $oldImage, 'image_alt' => 'Bestaande linker afbeelding'],
                 ['label' => 'Rechts', 'image' => null],
             ],
         ]);
@@ -206,7 +331,7 @@ class SurveyManagerTest extends TestCase
                     'type' => 'swipe',
                     'required' => '1',
                     'options' => [
-                        ['label' => 'Links', 'existing_image' => $oldImage],
+                        ['label' => 'Links', 'existing_image' => $oldImage, 'image_alt' => 'Bestaande linker afbeelding'],
                         ['label' => 'Rechts'],
                     ],
                 ],
@@ -217,8 +342,8 @@ class SurveyManagerTest extends TestCase
         Storage::disk('survey_images')->assertExists($oldImage);
 
         expect($question->fresh()->options)->toBe([
-            ['label' => 'Links', 'image' => $oldImage],
-            ['label' => 'Rechts', 'image' => null],
+            ['label' => 'Links', 'image' => $oldImage, 'image_alt' => 'Bestaande linker afbeelding'],
+            ['label' => 'Rechts', 'image' => null, 'image_alt' => null],
         ]);
     }
 
@@ -244,7 +369,7 @@ class SurveyManagerTest extends TestCase
             'required' => true,
             'sort_order' => 1,
             'options' => [
-                ['label' => 'Links', 'image' => $oldImage],
+                ['label' => 'Links', 'image' => $oldImage, 'image_alt' => 'Bestaande linker afbeelding'],
                 ['label' => 'Rechts', 'image' => null],
             ],
         ]);
@@ -261,7 +386,7 @@ class SurveyManagerTest extends TestCase
                     'type' => 'radio',
                     'required' => '1',
                     'options' => [
-                        ['label' => 'Links', 'existing_image' => $oldImage],
+                        ['label' => 'Links', 'existing_image' => $oldImage, 'image_alt' => 'Bestaande linker afbeelding'],
                         ['label' => 'Rechts'],
                     ],
                 ],

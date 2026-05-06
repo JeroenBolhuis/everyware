@@ -1,10 +1,12 @@
-﻿@props([
+@props([
     'question',
     'oldAnswer' => null,
     'leftOption' => 'nee',
     'rightOption' => 'ja',
     'leftImage' => null,
+    'leftImageAlt' => null,
     'rightImage' => null,
+    'rightImageAlt' => null,
     'index' => 0,
 ])
 
@@ -42,36 +44,40 @@
 
         @if ($leftImage || $rightImage)
             <div class="mb-6 grid gap-4 md:grid-cols-2">
-                <div class="space-y-2">
+                <div class="flex h-full flex-col">
                     @if ($leftImage)
-                        <img
-                            src="{{ $leftImage }}"
-                            alt="{{ $leftOption }}"
-                            class="h-48 w-full rounded-xl object-cover border border-gray-200"
-                        >
+                        <div class="swipe-option-media">
+                            <img
+                                src="{{ $leftImage }}"
+                                alt="{{ $leftImageAlt ?: $leftOption }}"
+                                class="swipe-option-image"
+                            >
+                        </div>
                     @else
-                        <div class="flex h-48 w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white text-sm text-gray-400">
-                            Geen afbeelding
+                        <div class="swipe-option-media swipe-option-media-empty border-dashed border-gray-300">
+                            <span class="swipe-option-empty-text">Geen afbeelding</span>
                         </div>
                     @endif
 
-                    <p class="text-sm font-semibold text-gray-700">{{ ucfirst($leftOption) }}</p>
+                    <p class="mt-auto pt-2 text-sm font-semibold text-gray-700">{{ ucfirst($leftOption) }}</p>
                 </div>
 
-                <div class="space-y-2">
+                <div class="flex h-full flex-col">
                     @if ($rightImage)
-                        <img
-                            src="{{ $rightImage }}"
-                            alt="{{ $rightOption }}"
-                            class="h-48 w-full rounded-xl object-cover border border-gray-200"
-                        >
+                        <div class="swipe-option-media">
+                            <img
+                                src="{{ $rightImage }}"
+                                alt="{{ $rightImageAlt ?: $rightOption }}"
+                                class="swipe-option-image"
+                            >
+                        </div>
                     @else
-                        <div class="flex h-48 w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white text-sm text-gray-400">
-                            Geen afbeelding
+                        <div class="swipe-option-media swipe-option-media-empty border-dashed border-gray-300">
+                            <span class="swipe-option-empty-text">Geen afbeelding</span>
                         </div>
                     @endif
 
-                    <p class="text-sm font-semibold text-gray-700">{{ ucfirst($rightOption) }}</p>
+                    <p class="mt-auto pt-2 text-sm font-semibold text-gray-700">{{ ucfirst($rightOption) }}</p>
                 </div>
             </div>
         @else
