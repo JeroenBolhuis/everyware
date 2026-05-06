@@ -89,6 +89,15 @@ new #[Title('Gebruiker aanmaken')] class extends Component {
                                 <input type="checkbox" wire:model="roles" value="{{ $roleOption->value }}"
                                        class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"/>
                                 <span>{{ $roleOption->label() }}</span>
+                                <details class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                    <summary class="cursor-pointer select-none">
+                                        {{ __('Wat kan deze rol?') }}
+                                    </summary>
+
+                                    <p class="mt-2">
+                                        {{ $roleOption->description() }}
+                                    </p>
+                                </details>
                             </label>
                         @endforeach
                     </div>
