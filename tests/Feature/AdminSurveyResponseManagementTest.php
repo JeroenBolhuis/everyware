@@ -80,8 +80,8 @@ it('lets lic employees open the survey response overview', function () {
         ->assertSee($survey->title);
 });
 
-it('shows decrypted contact details to admins and lic employees', function () {
-    $employee = User::factory()->licEmployee()->createOne();
+it('shows decrypted contact details to admins', function () {
+    $admin = User::factory()->admin()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
@@ -93,7 +93,7 @@ it('shows decrypted contact details to admins and lic employees', function () {
         'phone' => '+31612345678',
     ]);
 
-    actingAs($employee);
+    actingAs($admin);
 
     get(route('admin.responses.show', $response))
         ->assertOk()
@@ -114,7 +114,29 @@ it('shows when no contact information was provided', function () {
         ->assertOk()
         ->assertSee('Er zijn geen contactgegevens gedeeld voor deze inzending.');
 });
+it('hides contact details from lic employees', function () {
+    $employee = User::factory()->licEmployee()->createOne();
+    $survey = createReviewableSurvey();
+    $response = createReviewableResponse($survey);
 
+    ContactInformationSubmission::create([
+        'survey_id' => $survey->id,
+        'survey_response_id' => $response->id,
+        'name' => 'Jamie Jansen',
+        'email' => 'jamie@example.com',
+        'phone' => '+31612345678',
+    ]);
+
+    actingAs($employee);
+
+    get(route('admin.responses.show', $response))
+        ->assertOk()
+        ->assertDontSee('Jamie Jansen')
+        ->assertDontSee('jamie@example.com')
+        ->assertDontSee('+31612345678')
+        ->assertSee('Je hebt geen rechten om deze persoonsgegevens te bekijken.')
+        ->assertSee('Very helpful and practical.');
+});
 it('lets lic employees delete a full submission and shows a success message', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $survey = createReviewableSurvey();
@@ -183,8 +205,8 @@ it('lets lic employees delete a full submission and shows a success message', fu
         ->assertSee('De inzending is succesvol verwijderd.');
 });
 
-it('lets lic employees block an email address and delete the current submission', function () {
-    $employee = User::factory()->licEmployee()->createOne();
+it('lets admins block an email address and delete the current submission', function () {
+    $admin = User::factory()->admin()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
@@ -196,7 +218,7 @@ it('lets lic employees block an email address and delete the current submission'
         'phone' => '+31612345678',
     ]);
 
-    actingAs($employee);
+    actingAs($admin);
 
     get(route('admin.responses.show', $response))
         ->assertOk()
@@ -218,4 +240,24 @@ it('lets lic employees block an email address and delete the current submission'
     ]);
 
     expect(Participant::where('email', 'jamie@example.com')->firstOrFail()->blocked_at)->not->toBeNull();
+});
+it('does not show the email block action to lic employees', function () {
+    $employee = User::factory()->licEmployee()->createOne();
+    $survey = createReviewableSurvey();
+    $response = createReviewableResponse($survey);
+
+    ContactInformationSubmission::create([
+        'survey_id' => $survey->id,
+        'survey_response_id' => $response->id,
+        'name' => 'Jamie Jansen',
+        'email' => 'jamie@example.com',
+        'phone' => '+31612345678',
+    ]);
+
+    actingAs($employee);
+
+    get(route('admin.responses.show', $response))
+        ->assertOk()
+        ->assertDontSee('E-mailadres blokkeren')
+        ->assertDontSee('Blokkeren en verwijderen');
 });
