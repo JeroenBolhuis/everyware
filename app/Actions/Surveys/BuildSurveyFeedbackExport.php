@@ -5,6 +5,7 @@ namespace App\Actions\Surveys;
 use App\Models\Survey;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class BuildSurveyFeedbackExport
 {
@@ -57,6 +58,7 @@ class BuildSurveyFeedbackExport
 
     private function data(Survey $survey): array
     {
+        // Laad alles vooraf zodat de export per survey een vaste kolomvolgorde en complete response-data heeft.
         $survey->loadMissing([
             'questions',
             'responses.answers',

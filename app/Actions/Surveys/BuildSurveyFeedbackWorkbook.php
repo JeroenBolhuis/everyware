@@ -8,6 +8,34 @@ use RuntimeException;
 
 class BuildSurveyFeedbackWorkbook
 {
+    private const CONTENT_TYPES_NAMESPACE = 'http://schemas.openxmlformats.org/package/2006/content-types';
+
+    private const PACKAGE_RELATIONSHIPS_NAMESPACE = 'http://schemas.openxmlformats.org/package/2006/relationships';
+
+    private const OFFICE_DOCUMENT_RELATIONSHIPS_NAMESPACE = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+
+    private const WORKSHEET_NAMESPACE = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+
+    private const CONTENT_TYPE_DEFAULTS = [
+        ['rels', 'application/vnd.openxmlformats-package.relationships+xml'],
+        ['xml', 'application/xml'],
+    ];
+
+    private const CONTENT_TYPE_OVERRIDES = [
+        ['/xl/styles.xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml'],
+        ['/xl/workbook.xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml'],
+        ['/xl/worksheets/sheet1.xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml'],
+    ];
+
+    private const ROOT_RELATIONSHIPS = [
+        ['rId1', 'officeDocument', 'xl/workbook.xml'],
+    ];
+
+    private const WORKBOOK_RELATIONSHIPS = [
+        ['rId1', 'worksheet', 'worksheets/sheet1.xml'],
+        ['rId2', 'styles', 'styles.xml'],
+    ];
+
     public function build(array $data): string
     {
         return $this->zip($this->files($data));
@@ -22,7 +50,7 @@ class BuildSurveyFeedbackWorkbook
 
     private function files(array $data): array
     {
-        $lastCell = $this->columnName(count($data['headers'])).(count($data['rows']) + 1);
+        $lastCell = $this->cellReference(count($data['headers']), count($data['rows']) + 1);
 
         return [
             '[Content_Types].xml' => $this->contentTypesXml(),
@@ -36,37 +64,25 @@ class BuildSurveyFeedbackWorkbook
 
     private function contentTypesXml(): string
     {
-        return <<<'XML'
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
- <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
- <Default Extension="xml" ContentType="application/xml"/>
- <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
- <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
- <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-</Types>
-XML;
+        // XLSX verwacht hier een register van alle onderdelen in het zip-bestand zodat workbook, sheet en styles goed gekoppeld worden.
+        return $this->xmlDocument(
+            '<Types xmlns="'.self::CONTENT_TYPES_NAMESPACE.'">',
+            [
+                ...array_map(fn (array $entry) => $this->contentTypeDefault($entry[0], $entry[1]), self::CONTENT_TYPE_DEFAULTS),
+                ...array_map(fn (array $entry) => $this->contentTypeOverride($entry[0], $entry[1]), self::CONTENT_TYPE_OVERRIDES),
+            ],
+            '</Types>',
+        );
     }
 
     private function rootRelationshipsXml(): string
     {
-        return <<<'XML'
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
- <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
-</Relationships>
-XML;
+        return $this->relationshipsXml(self::ROOT_RELATIONSHIPS);
     }
 
     private function workbookRelationshipsXml(): string
     {
-        return <<<'XML'
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
- <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
- <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-</Relationships>
-XML;
+        return $this->relationshipsXml(self::WORKBOOK_RELATIONSHIPS);
     }
 
     private function stylesXml(): string
@@ -111,18 +127,14 @@ XML;
 
     private function worksheetXml(array $data, string $lastCell): string
     {
-        $columns = collect($data['widths'])
-            ->values()
-            ->map(fn (int|float $width, int $index) => '  <col min="'.($index + 1).'" max="'.($index + 1).'" width="'.$this->columnWidth($width).'" customWidth="1"/>')
-            ->implode("\n");
-
-        $rows = collect([$this->row($data['headers'], 1, 1)])
-            ->concat(collect($data['rows'])->values()->map(fn (array $row, int $index) => $this->row($row, $index + 2)))
-            ->implode("\n");
+        // Zet de exportstructuur om naar worksheet-XML met vaste kolommen, filter en een bevroren kopregel.
+        $worksheetNamespace = self::WORKSHEET_NAMESPACE;
+        $columns = $this->columnsXml($data['widths']);
+        $rows = $this->rowsXml($data['headers'], $data['rows']);
 
         return <<<XML
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<worksheet xmlns="{$worksheetNamespace}">
  <dimension ref="A1:{$lastCell}"/>
  <sheetViews>
   <sheetView workbookViewId="0">
@@ -142,12 +154,27 @@ XML;
 XML;
     }
 
+    private function columnsXml(array $widths): string
+    {
+        return collect($widths)
+            ->values()
+            ->map(fn (int|float $width, int $index) => '  <col min="'.($index + 1).'" max="'.($index + 1).'" width="'.$this->columnWidth($width).'" customWidth="1"/>')
+            ->implode("\n");
+    }
+
+    private function rowsXml(array $headers, array $rows): string
+    {
+        return collect([$this->row($headers, 1, 1)])
+            ->concat(collect($rows)->values()->map(fn (array $row, int $index) => $this->row($row, $index + 2)))
+            ->implode("\n");
+    }
+
     private function row(array $values, int $rowNumber, int $style = 0): string
     {
         $cells = Collection::make($values)
             ->values()
             ->map(function (string $value, int $index) use ($rowNumber, $style) {
-                $cell = $this->columnName($index + 1).$rowNumber;
+                $cell = $this->cellReference($index + 1, $rowNumber);
 
                 return '  <c r="'.$cell.'" s="'.$style.'" t="inlineStr"><is><t xml:space="preserve">'.$this->escape($value).'</t></is></c>';
             })
@@ -167,6 +194,7 @@ XML;
             throw new RuntimeException('Kon het XLSX-bestand niet opbouwen.');
         }
 
+        // Bouw handmatig een minimale ZIP-container op zodat XLSX-export werkt zonder ZipArchive-extensie.
         [$time, $date] = $this->dosDateTime();
         $body = '';
         $directory = '';
@@ -174,60 +202,98 @@ XML;
         $count = 0;
 
         foreach ($entries as $name => $contents) {
-            $name = str_replace('\\', '/', $name);
-            $nameLength = strlen($name);
-            $size = strlen($contents);
-            $crc = hexdec(hash('crc32b', $contents));
+            $entry = $this->zipEntry((string) $name, (string) $contents, $time, $date, $offset);
 
-            $body .= pack(
-                'VvvvvvVVVvv',
-                0x04034b50,
-                20,
-                0x0800,
-                0,
-                $time,
-                $date,
-                $crc,
-                $size,
-                $size,
-                $nameLength,
-                0
-            ).$name.$contents;
-
-            $directory .= pack(
-                'VvvvvvvVVVvvvvvVV',
-                0x02014b50,
-                20,
-                20,
-                0x0800,
-                0,
-                $time,
-                $date,
-                $crc,
-                $size,
-                $size,
-                $nameLength,
-                0,
-                0,
-                0,
-                0,
-                0,
-                $offset
-            ).$name;
-
-            $offset += 30 + $nameLength + $size;
+            $body .= $entry['body'];
+            $directory .= $entry['directory'];
+            $offset += $entry['size'];
             $count++;
         }
 
-        return $body.$directory.pack(
+        return $body.$directory.$this->endOfCentralDirectoryRecord($count, strlen($directory), strlen($body));
+    }
+
+    private function zipEntry(string $name, string $contents, int $time, int $date, int $offset): array
+    {
+        $name = str_replace('\\', '/', $name);
+        $nameLength = strlen($name);
+        $size = strlen($contents);
+        $crc = hexdec(hash('crc32b', $contents));
+
+        return [
+            'body' => $this->localFileHeader($name, $nameLength, $contents, $size, $crc, $time, $date),
+            'directory' => $this->centralDirectoryRecord($name, $nameLength, $size, $crc, $time, $date, $offset),
+            'size' => 30 + $nameLength + $size,
+        ];
+    }
+
+    private function localFileHeader(
+        string $name,
+        int $nameLength,
+        string $contents,
+        int $size,
+        int $crc,
+        int $time,
+        int $date,
+    ): string {
+        return pack(
+            'VvvvvvVVVvv',
+            0x04034b50,
+            20,
+            0x0800,
+            0,
+            $time,
+            $date,
+            $crc,
+            $size,
+            $size,
+            $nameLength,
+            0
+        ).$name.$contents;
+    }
+
+    private function centralDirectoryRecord(
+        string $name,
+        int $nameLength,
+        int $size,
+        int $crc,
+        int $time,
+        int $date,
+        int $offset,
+    ): string {
+        return pack(
+            'VvvvvvvVVVvvvvvVV',
+            0x02014b50,
+            20,
+            20,
+            0x0800,
+            0,
+            $time,
+            $date,
+            $crc,
+            $size,
+            $size,
+            $nameLength,
+            0,
+            0,
+            0,
+            0,
+            0,
+            $offset
+        ).$name;
+    }
+
+    private function endOfCentralDirectoryRecord(int $count, int $directorySize, int $bodySize): string
+    {
+        return pack(
             'VvvvvVVv',
             0x06054b50,
             0,
             0,
             $count,
             $count,
-            strlen($directory),
-            strlen($body),
+            $directorySize,
+            $bodySize,
             0
         );
     }
@@ -245,6 +311,11 @@ XML;
         return $name;
     }
 
+    private function cellReference(int $columnIndex, int $rowNumber): string
+    {
+        return $this->columnName($columnIndex).$rowNumber;
+    }
+
     private function escape(string $value): string
     {
         $value = preg_replace(
@@ -254,6 +325,40 @@ XML;
         ) ?? '';
 
         return htmlspecialchars($value, ENT_QUOTES | ENT_XML1 | ENT_SUBSTITUTE, 'UTF-8');
+    }
+
+    private function contentTypeDefault(string $extension, string $contentType): string
+    {
+        return ' <Default Extension="'.$extension.'" ContentType="'.$contentType.'"/>';
+    }
+
+    private function contentTypeOverride(string $partName, string $contentType): string
+    {
+        return ' <Override PartName="'.$partName.'" ContentType="'.$contentType.'"/>';
+    }
+
+    private function relationshipsXml(array $relationships): string
+    {
+        return $this->xmlDocument(
+            '<Relationships xmlns="'.self::PACKAGE_RELATIONSHIPS_NAMESPACE.'">',
+            array_map(fn (array $relationship) => $this->relationship(...$relationship), $relationships),
+            '</Relationships>',
+        );
+    }
+
+    private function relationship(string $id, string $type, string $target): string
+    {
+        return ' <Relationship Id="'.$id.'" Type="'.self::OFFICE_DOCUMENT_RELATIONSHIPS_NAMESPACE.'/'.$type.'" Target="'.$target.'"/>';
+    }
+
+    private function xmlDocument(string $rootOpenTag, array $bodyLines, string $rootCloseTag): string
+    {
+        return implode("\n", [
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+            $rootOpenTag,
+            ...$bodyLines,
+            $rootCloseTag,
+        ]);
     }
 
     private function dosDateTime(): array
