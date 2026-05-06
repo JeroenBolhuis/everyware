@@ -119,9 +119,25 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap gap-2">
+                        <div class="flex flex-col gap-2 lg:items-end">
+                            <div class="flex flex-wrap gap-2 lg:justify-end">
+                                <flux:dropdown position="bottom" align="end">
+                                    <flux:button variant="ghost" size="sm" icon-trailing="chevron-down">
+                                        Exporteer
+                                    </flux:button>
+
+                                    <flux:menu>
+                                        @foreach (['xlsx' => 'Excel (.xlsx)', 'csv' => 'CSV (.csv)'] as $format => $label)
+                                            <flux:menu.item href="{{ route('admin.surveys.export', ['survey' => $survey, 'format' => $format]) }}">
+                                                {{ $label }}
+                                            </flux:menu.item>
+                                        @endforeach
+                                    </flux:menu>
+                                </flux:dropdown>
+                            </div>
+
                             @if ($survey->is_active)
-                                <div class="flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-neutral-700 dark:bg-zinc-800">
+                                <div class="flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-neutral-700 dark:bg-zinc-800 lg:max-w-xl">
                                     <input
                                         type="text"
                                         readonly
@@ -137,30 +153,32 @@
                                 </div>
                             @endif
 
-                            <a
-                                href="{{ route('survey-manager.edit', $survey) }}"
-                                class="btn-secondary"
-                            >
-                                Bewerken
-                            </a>
-
-                            @if ($survey->is_active)
-                                <a href="{{ route('survey.share.show', $survey->share_token) }}" target="_blank" class="btn-secondary">
-                                    Open enquête
+                            <div class="flex flex-wrap gap-2 lg:justify-end">
+                                <a
+                                    href="{{ route('survey-manager.edit', $survey) }}"
+                                    class="btn-secondary"
+                                >
+                                    Bewerken
                                 </a>
 
-                               <form method="POST" action="{{ route('survey-manager.close', $survey) }}"  onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn-primary">
-                                        Sluiten
-                                    </button>
-                                </form>
-                            @else
-                                <span class="btn-disabled">
-                                    Niet meer invulbaar
-                                </span>
-                            @endif
+                                @if ($survey->is_active)
+                                    <a href="{{ route('survey.share.show', $survey->share_token) }}" target="_blank" class="btn-secondary">
+                                        Open enquête
+                                    </a>
+
+                                    <form method="POST" action="{{ route('survey-manager.close', $survey) }}" onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="btn-primary">
+                                            Sluiten
+                                        </button>
+                                    </form>
+                                @else
+                                    <span class="btn-disabled">
+                                        Niet meer invulbaar
+                                    </span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @empty
@@ -178,7 +196,3 @@
         </div>
     </div>
 </x-layouts::app>
-
-
-
-

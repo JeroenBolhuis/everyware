@@ -147,6 +147,26 @@ class SurveyManagerTest extends TestCase
         expect($survey->reward_points)->toBe(10);
     }
 
+    public function test_survey_overview_shows_export_link_per_survey(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $survey = Survey::factory()->create([
+            'title' => 'Exporteerbare enquete',
+            'is_active' => true,
+        ]);
+
+        $response = $this->get(route('survey-manager.index'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Exporteer')
+            ->assertSee('Excel (.xlsx)')
+            ->assertSee('CSV (.csv)')
+            ->assertSee(route('admin.surveys.export', ['survey' => $survey, 'format' => 'xlsx']), false)
+            ->assertSee(route('admin.surveys.export', ['survey' => $survey, 'format' => 'csv']), false);
+    }
+
     public function test_existing_swipe_images_are_kept_when_question_type_does_not_change(): void
     {
         config(['filesystems.survey_images_disk' => 'survey_images']);
