@@ -3,8 +3,8 @@
     'subheading' => '',
 ])
 
-<div class="flex items-start max-md:flex-col">
-    <div class="me-10 w-full pb-4 md:w-[220px]">
+<div class="flex flex-col gap-6 md:flex-row md:items-start md:gap-10">
+    <div class="w-full md:w-[220px] md:flex-shrink-0">
         <flux:navlist aria-label="{{ __('Beheer') }}">
             @if (auth()->user()->canReviewSurveyResponses())
                 <flux:navlist.item :href="route('admin.surveys.index')" :current="request()->routeIs('admin.surveys.*') || request()->routeIs('admin.responses.*')" wire:navigate>
@@ -24,9 +24,7 @@
         </flux:navlist>
     </div>
 
-    <flux:separator class="md:hidden" />
-
-    <div class="flex-1 self-stretch max-md:pt-6">
+    <div class="flex-1 w-full">
         <flux:heading>{{ $heading }}</flux:heading>
         <flux:subheading>{{ $subheading }}</flux:subheading>
 

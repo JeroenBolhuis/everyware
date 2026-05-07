@@ -32,33 +32,35 @@ new #[Title('Enquete-inzendingen')] class extends Component {
         :subheading="__('Bekijk enquetes en open individuele inzendingen, inclusief gedeelde contactgegevens.')"
     >
         <div
-            class="my-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-            <flux:table :paginate="$this->surveys">
-                <flux:table.columns>
-                    <flux:table.column>{{ __('Enquete') }}</flux:table.column>
-                    <flux:table.column>{{ __('Status') }}</flux:table.column>
-                    <flux:table.column>{{ __('Inzendingen') }}</flux:table.column>
-                    <flux:table.column align="end">{{ __('Acties') }}</flux:table.column>
-                </flux:table.columns>
+            class="my-6 rounded-lg sm:rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            <div class="overflow-x-auto">
+                <flux:table :paginate="$this->surveys">
+                    <flux:table.columns>
+                        <flux:table.column class="text-xs sm:text-sm">{{ __('Enquete') }}</flux:table.column>
+                        <flux:table.column class="text-xs sm:text-sm">{{ __('Status') }}</flux:table.column>
+                        <flux:table.column class="text-xs sm:text-sm">{{ __('Inzendingen') }}</flux:table.column>
+                        <flux:table.column align="end" class="text-xs sm:text-sm">{{ __('Acties') }}</flux:table.column>
+                    </flux:table.columns>
 
-                <flux:table.rows>
-                    @foreach ($this->surveys as $survey)
-                        <flux:table.row :key="$survey->id">
-                            <flux:table.cell variant="strong">{{ $survey->title }}</flux:table.cell>
-                            <flux:table.cell>
-                                <flux:badge :color="$survey->is_active ? 'emerald' : 'zinc'" size="sm">
-                                    {{ $survey->is_active ? __('Actief') : __('Inactief') }}
-                                </flux:badge>
-                            </flux:table.cell>
-                            <flux:table.cell>{{ $survey->responses_count }}</flux:table.cell>
-                            <flux:table.cell align="end">
-                                <a href="{{ route('admin.surveys.show', $survey) }}" class="btn-secondary"
-                                   wire:navigate>{{ __('Bekijk inzendingen') }}</a>
-                            </flux:table.cell>
-                        </flux:table.row>
-                    @endforeach
-                </flux:table.rows>
-            </flux:table>
+                    <flux:table.rows>
+                        @foreach ($this->surveys as $survey)
+                            <flux:table.row :key="$survey->id">
+                                <flux:table.cell variant="strong" class="text-xs sm:text-sm">{{ $survey->title }}</flux:table.cell>
+                                <flux:table.cell class="text-xs sm:text-sm">
+                                    <flux:badge :color="$survey->is_active ? 'emerald' : 'zinc'" size="sm">
+                                        {{ $survey->is_active ? __('Actief') : __('Inactief') }}
+                                    </flux:badge>
+                                </flux:table.cell>
+                                <flux:table.cell class="text-xs sm:text-sm">{{ $survey->responses_count }}</flux:table.cell>
+                                <flux:table.cell align="end">
+                                    <a href="{{ route('admin.surveys.show', $survey) }}" class="btn-secondary text-xs sm:text-sm whitespace-nowrap"
+                                       wire:navigate>{{ __('Bekijk inzendingen') }}</a>
+                                </flux:table.cell>
+                            </flux:table.row>
+                        @endforeach
+                    </flux:table.rows>
+                </flux:table>
+            </div>
         </div>
     </x-pages::admin.layout>
 </section>
