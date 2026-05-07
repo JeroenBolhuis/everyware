@@ -10,22 +10,13 @@
             class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900"
         >
             <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                <x-app-logo :sidebar="true" href="{{ route(auth()->user()->homeRouteName()) }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item
-                        icon="home"
-                        :href="route('dashboard')"
-                        :current="request()->routeIs('dashboard')"
-                        wire:navigate
-                    >
-                        Dashboard
-                    </flux:sidebar.item>
-
-                    @if (auth()->user()->canManageSurveys())
+                @if (auth()->user()->canManageSurveys())
+                    <flux:sidebar.group :heading="__('Platform')" class="grid">
                         <flux:sidebar.item
                             icon="clipboard-document-list"
                             :href="route('survey-manager.index')"
@@ -34,8 +25,8 @@
                         >
                             Enquêtes
                         </flux:sidebar.item>
-                    @endif
-                </flux:sidebar.group>
+                    </flux:sidebar.group>
+                @endif
 
                 @if (auth()->user()->canAccessAdminArea())
                     <flux:sidebar.group :heading="__('Beheer')" class="grid">

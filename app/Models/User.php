@@ -85,4 +85,11 @@ class User extends Authenticatable
     {
         return $this->canManageUsers() || $this->canReviewSurveyResponses();
     }
+
+    public function homeRouteName(): string
+    {
+        return $this->canManageSurveys()
+            ? 'survey-manager.index'
+            : 'surveys.index';
+    }
 }

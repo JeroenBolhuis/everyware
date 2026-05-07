@@ -9,11 +9,11 @@
                 <nav class="flex items-center justify-end gap-4">
                     @auth
                         <a
-                            href="{{ route('dashboard') }}"
+                            href="{{ route(auth()->user()->homeRouteName()) }}"
                             class="inline-block rounded-sm border border-zinc-200 px-5 py-1.5 leading-normal hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-200 dark:hover:border-zinc-600"
                             wire:navigate
                         >
-                            {{ __('Dashboard') }}
+                            {{ __('Enquêtes') }}
                         </a>
                     @else
                         <a
