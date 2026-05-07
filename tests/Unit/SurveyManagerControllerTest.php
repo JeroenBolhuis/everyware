@@ -182,6 +182,7 @@ it('normalizes swipe options, replaces existing images and stores the new upload
     expect($normalized[1])->toBe([
         'label' => 'Rechts',
         'image' => null,
+        'image_alt' => null,
     ]);
 
     Storage::disk('survey_images')->assertMissing($oldImage);
@@ -205,8 +206,8 @@ it('returns default swipe options when fewer than two usable options remain', fu
     ]);
 
     expect($normalized)->toBe([
-        ['label' => 'Nee', 'image' => null],
-        ['label' => 'Ja', 'image' => null],
+        ['label' => 'Nee', 'image' => null, 'image_alt' => null],
+        ['label' => 'Ja', 'image' => null, 'image_alt' => null],
     ]);
 });
 

@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'step',
     'questionId',
     'type',
@@ -57,4 +57,3 @@
         </div>
     </div>
 </section>
-

@@ -28,6 +28,17 @@ class SurveyManagerController extends Controller
         return $value === '' ? null : $value;
     }
 
+    private function normalizeOptionalText(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
+    }
+
     private function isAbsoluteUrl(string $value): bool
     {
         return filter_var($value, FILTER_VALIDATE_URL) !== false;
@@ -80,7 +91,7 @@ class SurveyManagerController extends Controller
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
                 'is_active' => (bool)$validated['is_active'],
-                'reward_points' => $validated['reward_points'],
+                'reward_points' => $validated['reward_points'] ?? 10,
             ]);
 
             $survey->questions()->createMany(
@@ -110,7 +121,7 @@ class SurveyManagerController extends Controller
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
                 'is_active' => (bool)$validated['is_active'],
-                'reward_points' => $validated['reward_points'],
+                'reward_points' => $validated['reward_points'] ?? 10,
             ]);
 
             $existingQuestions = $survey->questions()->get()->keyBy('id');
@@ -209,10 +220,12 @@ class SurveyManagerController extends Controller
             ->map(function ($option, int $optionIndex) use ($request, $questionIndex, $type) {
                 $label = '';
                 $existingImage = null;
+                $imageAlt = null;
 
                 if (is_array($option)) {
                     $label = trim((string)($option['label'] ?? ''));
                     $existingImage = $this->normalizeExistingImage($option['existing_image'] ?? null);
+                    $imageAlt = $this->normalizeOptionalText($option['image_alt'] ?? null);
                 } else {
                     $label = trim((string)$option);
                 }
@@ -242,6 +255,7 @@ class SurveyManagerController extends Controller
                     return [
                         'label' => $label,
                         'image' => $imagePath,
+                        'image_alt' => $imagePath ? $imageAlt : null,
                     ];
                 }
 
@@ -253,8 +267,8 @@ class SurveyManagerController extends Controller
 
         if ($type === 'swipe' && count($normalized) < 2) {
             return [
-                ['label' => 'Nee', 'image' => null],
-                ['label' => 'Ja', 'image' => null],
+                ['label' => 'Nee', 'image' => null, 'image_alt' => null],
+                ['label' => 'Ja', 'image' => null, 'image_alt' => null],
             ];
         }
 

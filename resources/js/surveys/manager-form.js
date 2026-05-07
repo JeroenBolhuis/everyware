@@ -25,12 +25,46 @@ document.addEventListener('DOMContentLoaded', () => {
     function calculateTotalSelectedImageSize() {
         let total = 0;
 
-        // Sum currently selected files across all option image inputs.
         document.querySelectorAll('[data-option-image]').forEach((input) => {
             total += getSelectedFileSize(input);
         });
 
         return total;
+    }
+
+    function getPreviewAlt(row) {
+        return row?.querySelector('[data-option-image-alt]')?.value.trim()
+            || row?.querySelector('[data-option-label]')?.value.trim()
+            || 'Voorbeeld van antwoordoptie';
+    }
+
+    function updatePreviewAlt(row) {
+        const previewImage = row?.querySelector('[data-image-preview]');
+
+        if (previewImage) {
+            previewImage.alt = getPreviewAlt(row);
+        }
+    }
+
+    function setLocalPreview(row, file) {
+        const previewWrapper = row?.querySelector('[data-image-preview-wrapper]');
+        const previewImage = row?.querySelector('[data-image-preview]');
+
+        if (!previewWrapper || !previewImage || !file) {
+            return;
+        }
+
+        const previousUrl = row.dataset.previewObjectUrl;
+
+        if (previousUrl) {
+            URL.revokeObjectURL(previousUrl);
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        row.dataset.previewObjectUrl = objectUrl;
+        previewImage.src = objectUrl;
+        previewWrapper.classList.remove('hidden');
+        updatePreviewAlt(row);
     }
 
     function validateImageInput(input) {
@@ -64,9 +98,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
+    function bindPreviewFields(scope = document) {
+        scope.querySelectorAll('.option-row').forEach((row) => {
+            const labelInput = row.querySelector('[data-option-label]');
+            const altInput = row.querySelector('[data-option-image-alt]');
+
+            [labelInput, altInput].forEach((field) => {
+                if (!field || field.dataset.previewBound === 'true') {
+                    return;
+                }
+
+                field.dataset.previewBound = 'true';
+                field.addEventListener('input', () => updatePreviewAlt(row));
+            });
+        });
+    }
+
     function bindImageValidation(scope = document) {
         scope.querySelectorAll('[data-option-image]').forEach((input) => {
-            // Guard to avoid binding duplicate listeners when rows are re-rendered/reused.
             if (input.dataset.validationBound === 'true') {
                 return;
             }
@@ -74,6 +123,16 @@ document.addEventListener('DOMContentLoaded', () => {
             input.dataset.validationBound = 'true';
 
             input.addEventListener('change', async () => {
+                const file = input.files?.[0];
+                const row = input.closest('.option-row');
+
+                if (!file) {
+                    updatePreviewAlt(row);
+                    return;
+                }
+
+                setLocalPreview(row, file);
+
                 if (!validateImageInput(input)) {
                     return;
                 }
@@ -82,23 +141,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                if (!blobUploadUrl) {
+                if (!blobUploadUrl || !row) {
+                    updatePreviewAlt(row);
                     return;
                 }
 
-                const file = input.files?.[0];
-                if (!file) {
-                    return;
-                }
-
-                const row = input.closest('.option-row');
-                const existingImageInput = row?.querySelector('[data-option-existing-image]');
-                const previewWrapper = row?.querySelector('[data-image-preview-wrapper]');
-                const previewImage = row?.querySelector('[data-image-preview]');
+                const existingImageInput = row.querySelector('[data-option-existing-image]');
+                const previewWrapper = row.querySelector('[data-image-preview-wrapper]');
+                const previewImage = row.querySelector('[data-image-preview]');
                 const submitButton = surveyForm.querySelector('button[type="submit"]');
 
                 const uploadPromise = (async () => {
                     input.disabled = true;
+
                     if (submitButton) {
                         submitButton.disabled = true;
                     }
@@ -130,12 +185,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             previewWrapper.classList.remove('hidden');
                         }
 
+                        updatePreviewAlt(row);
                         input.value = '';
                     } catch (error) {
                         console.error(error);
                         alert('De afbeelding kon niet naar Vercel Blob worden geüpload. Probeer het opnieuw.');
                     } finally {
                         input.disabled = false;
+
                         if (submitButton && pendingUploads.size <= 1) {
                             submitButton.disabled = false;
                         }
@@ -156,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const isSwipe = typeField?.value === 'swipe';
         const optionCount = optionsWrapper?.querySelectorAll('.option-row').length ?? 0;
 
-        // Switch between radio and swipe layouts by changing grid spans and image visibility.
         card.querySelectorAll('.option-row').forEach((row) => {
             const labelCol = row.querySelector('.option-label-col');
             const imageField = row.querySelector('.swipe-image-field');
@@ -185,14 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 removeCol?.classList.remove('md:col-span-2');
                 removeCol?.classList.add('md:col-span-1');
             }
+
+            updatePreviewAlt(row);
         });
 
         if (addOptionButton) {
-            if (isSwipe && optionCount >= 2) {
-                addOptionButton.classList.add('hidden');
-            } else {
-                addOptionButton.classList.remove('hidden');
-            }
+            addOptionButton.classList.toggle('hidden', isSwipe && optionCount >= 2);
         }
     }
 
@@ -209,7 +263,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Non-text questions need at least 2 options; swipe questions are locked to exactly 2.
         while (optionsWrapper.querySelectorAll('.option-row').length < 2) {
             optionsWrapper.appendChild(createOptionRow());
         }
@@ -222,16 +275,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateOptionLayout(card);
         bindImageValidation(card);
+        bindPreviewFields(card);
     }
 
     function renameOptionFields(card, questionIndex) {
         const optionRows = card.querySelectorAll('.option-row');
 
-        // Keep indexed names aligned with DOM order so Laravel parses nested arrays correctly.
         optionRows.forEach((row, optionIndex) => {
             const labelInput = row.querySelector('[data-option-label]');
             const existingImageInput = row.querySelector('[data-option-existing-image]');
             const imageInput = row.querySelector('[data-option-image]');
+            const imageAltInput = row.querySelector('[data-option-image-alt]');
 
             if (labelInput) {
                 labelInput.setAttribute('name', `questions[${questionIndex}][options][${optionIndex}][label]`);
@@ -244,15 +298,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (imageInput) {
                 imageInput.setAttribute('name', `questions[${questionIndex}][options][${optionIndex}][image]`);
             }
+
+            if (imageAltInput) {
+                imageAltInput.setAttribute('name', `questions[${questionIndex}][options][${optionIndex}][image_alt]`);
+            }
+
+            updatePreviewAlt(row);
         });
     }
 
     function renameQuestionFields() {
         const cards = wrapper.querySelectorAll('.question-card');
 
-        // Re-number and re-index every question after add/remove operations.
         cards.forEach((card, index) => {
             const number = card.querySelector('.question-number');
+
             if (number) {
                 number.textContent = index + 1;
             }
@@ -267,6 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             Object.entries(fieldMap).forEach(([key, name]) => {
                 const field = card.querySelector(`[data-field="${key}"]`) || card.querySelector(`[name$="[${key}]"]`);
+
                 if (field) {
                     field.setAttribute('name', name);
                 }
@@ -319,11 +380,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const minimum = typeField?.value === 'textarea' ? 0 : 2;
 
                 if (currentCount <= minimum) {
-                    if (isSwipe) {
-                        alert('Een swipe-vraag moet precies 2 opties hebben.');
-                    } else {
-                        alert('Een radio-vraag moet minimaal 2 opties hebben.');
-                    }
+                    alert(isSwipe
+                        ? 'Een swipe-vraag moet precies 2 opties hebben.'
+                        : 'Een radio-vraag moet minimaal 2 opties hebben.');
                     return;
                 }
 
@@ -334,49 +393,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function attachOptionEvents(card) {
-        card.querySelector('.add-option')?.addEventListener('click', () => {
-            const optionsWrapper = card.querySelector('.options-wrapper');
-            const typeField = card.querySelector('.question-type');
+        const addOptionButton = card.querySelector('.add-option');
 
-            if (!optionsWrapper || !typeField) {
-                return;
-            }
+        if (addOptionButton && addOptionButton.dataset.bound !== 'true') {
+            addOptionButton.dataset.bound = 'true';
 
-            const optionCount = optionsWrapper.querySelectorAll('.option-row').length;
+            addOptionButton.addEventListener('click', () => {
+                const optionsWrapper = card.querySelector('.options-wrapper');
+                const typeField = card.querySelector('.question-type');
 
-            if (typeField.value === 'swipe' && optionCount >= 2) {
-                alert('Een swipe-vraag mag precies 2 opties hebben.');
+                if (!optionsWrapper || !typeField) {
+                    return;
+                }
+
+                const optionCount = optionsWrapper.querySelectorAll('.option-row').length;
+
+                if (typeField.value === 'swipe' && optionCount >= 2) {
+                    alert('Een swipe-vraag mag precies 2 opties hebben.');
+                    updateOptionLayout(card);
+                    return;
+                }
+
+                const newRow = createOptionRow();
+                optionsWrapper.appendChild(newRow);
+                renameQuestionFields();
+                attachOptionRowEvents(card);
+                bindImageValidation(card);
+                bindPreviewFields(card);
                 updateOptionLayout(card);
-                return;
-            }
-
-            const newRow = createOptionRow();
-
-            optionsWrapper.appendChild(newRow);
-            renameQuestionFields();
-            attachOptionRowEvents(card);
-            bindImageValidation(card);
-            updateOptionLayout(card);
-        });
+                newRow.querySelector('[data-option-label]')?.focus();
+            });
+        }
 
         attachOptionRowEvents(card);
         bindImageValidation(card);
+        bindPreviewFields(card);
     }
 
     function attachCardEvents(card) {
-        card.querySelector('.remove-question')?.addEventListener('click', () => {
-            if (wrapper.querySelectorAll('.question-card').length === 1) {
-                alert('Een enquête moet minimaal 1 vraag hebben.');
-                return;
-            }
+        const removeButton = card.querySelector('.remove-question');
+        const typeField = card.querySelector('.question-type');
 
-            card.remove();
-            renameQuestionFields();
-        });
+        if (removeButton && removeButton.dataset.bound !== 'true') {
+            removeButton.dataset.bound = 'true';
 
-        card.querySelector('.question-type')?.addEventListener('change', () => {
-            toggleOptionsVisibility(card);
-        });
+            removeButton.addEventListener('click', () => {
+                if (wrapper.querySelectorAll('.question-card').length === 1) {
+                    alert('Een enquête moet minimaal 1 vraag hebben.');
+                    return;
+                }
+
+                card.remove();
+                renameQuestionFields();
+            });
+        }
+
+        if (typeField && typeField.dataset.bound !== 'true') {
+            typeField.dataset.bound = 'true';
+            typeField.addEventListener('change', () => toggleOptionsVisibility(card));
+        }
 
         attachOptionEvents(card);
         toggleOptionsVisibility(card);
@@ -393,6 +468,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renameQuestionFields();
         attachCardEvents(clone);
         bindImageValidation(clone);
+        bindPreviewFields(clone);
+        clone.querySelector('[data-field="question"]')?.focus();
     });
 
     surveyForm.addEventListener('submit', (event) => {
@@ -402,17 +479,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const imageInputs = document.querySelectorAll('[data-option-image]');
-        let hasTooLargeSingleFile = false;
+        const hasTooLargeFile = [...document.querySelectorAll('[data-option-image]')]
+            .some((input) => getSelectedFileSize(input) > MAX_IMAGE_SIZE);
 
-        // Final client-side safety check before the form is posted.
-        imageInputs.forEach((input) => {
-            if (getSelectedFileSize(input) > MAX_IMAGE_SIZE) {
-                hasTooLargeSingleFile = true;
-            }
-        });
-
-        if (hasTooLargeSingleFile) {
+        if (hasTooLargeFile) {
             event.preventDefault();
             alert('Een afbeelding mag maximaal 2 MB groot zijn.');
             return;
@@ -426,4 +496,5 @@ document.addEventListener('DOMContentLoaded', () => {
     wrapper.querySelectorAll('.question-card').forEach((card) => attachCardEvents(card));
     renameQuestionFields();
     bindImageValidation(document);
+    bindPreviewFields(document);
 });

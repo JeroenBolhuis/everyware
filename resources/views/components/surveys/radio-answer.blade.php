@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'question',
     'oldAnswer' => null,
 ])
@@ -24,4 +24,3 @@
         </label>
     @endforeach
 </div>
-

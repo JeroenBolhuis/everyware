@@ -56,12 +56,18 @@
                                 ? $leftRawOption['image']
                                 : Storage::disk($surveyImagesDisk)->url($leftRawOption['image']))
                             : null;
+                        $leftOptionImageAlt = is_array($leftRawOption)
+                            ? ($leftRawOption['image_alt'] ?? $leftOptionLabel)
+                            : $leftOptionLabel;
 
                         $rightOptionImage = is_array($rightRawOption) && !empty($rightRawOption['image'])
                             ? (filter_var($rightRawOption['image'], FILTER_VALIDATE_URL)
                                 ? $rightRawOption['image']
                                 : Storage::disk($surveyImagesDisk)->url($rightRawOption['image']))
                             : null;
+                        $rightOptionImageAlt = is_array($rightRawOption)
+                            ? ($rightRawOption['image_alt'] ?? $rightOptionLabel)
+                            : $rightOptionLabel;
 
                         $currentQuestionNumber = $index + 1;
                         $progressPercentage = (int) round(($currentQuestionNumber / $totalSteps) * 100);
@@ -90,7 +96,9 @@
                                 :left-option="$leftOptionLabel"
                                 :right-option="$rightOptionLabel"
                                 :left-image="$leftOptionImage"
+                                :left-image-alt="$leftOptionImageAlt"
                                 :right-image="$rightOptionImage"
+                                :right-image-alt="$rightOptionImageAlt"
                                 :index="$index"
                             />
                         @endif

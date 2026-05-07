@@ -19,7 +19,7 @@ class UpsertSurveyRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'is_active' => ['required', 'boolean'],
-            'reward_points' => ['required', 'integer', 'min:0'],
+            'reward_points' => ['nullable', 'integer', 'min:0'],
 
             'questions' => ['required', 'array', 'min:1'],
             'questions.*.id' => ['nullable', 'integer'],
@@ -32,6 +32,7 @@ class UpsertSurveyRequest extends FormRequest
             'questions.*.options.*.label' => ['nullable', 'string', 'max:255'],
             'questions.*.options.*.existing_image' => ['nullable', 'string', 'max:2048'],
             'questions.*.options.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'questions.*.options.*.image_alt' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -66,6 +67,7 @@ class UpsertSurveyRequest extends FormRequest
                         'Een swipe-vraag moet precies 2 opties hebben.'
                     );
                 }
+
             }
 
             $totalUploadSize = 0;
@@ -100,6 +102,7 @@ class UpsertSurveyRequest extends FormRequest
             'questions.*.options.*.image.image' => 'Upload een geldig afbeeldingsbestand.',
             'questions.*.options.*.image.mimes' => 'Gebruik een JPG, JPEG, PNG of WEBP afbeelding.',
             'questions.*.options.*.image.max' => 'Een afbeelding mag maximaal 2 MB groot zijn.',
+            'questions.*.options.*.image_alt.max' => 'Alt-tekst mag maximaal 255 tekens bevatten.',
         ];
     }
 }
