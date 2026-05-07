@@ -3,13 +3,15 @@
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyManagerController;
 use App\Http\Controllers\SurveyWithdrawalController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
-    Route::view('enquetes', 'enquetes')->name('enquetes');
+    Route::get('dashboard', function (Request $request) {
+        return redirect()->route($request->user()->homeRouteName());
+    })->name('dashboard');
 });
 Route::middleware(['auth', 'verified', 'role:admin|LICEmployee'])
     ->prefix('enquetes')
