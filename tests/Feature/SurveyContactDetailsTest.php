@@ -32,7 +32,6 @@ it('does not show the thank-you contact form on the survey page', function () {
         ->assertOk()
         ->assertSee('Wat vind je van deze module?')
         ->assertSee('Deze enquête kun je anoniem invullen.')
-        ->assertSee('Je antwoorden worden opgeslagen zonder je naam of e-mailadres.')
         ->assertDontSee('Contactgegevens opslaan');
 });
 

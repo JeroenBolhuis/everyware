@@ -28,12 +28,8 @@
                 aria-label="Uitleg over anonimiteit"
             >
                 <div class="text-xs font-bold uppercase tracking-[0.08em] text-red-700">Belangrijk</div>
-                <h1 class="mt-2 text-2xl font-bold leading-tight text-gray-900">
+                <p class="mt-2 text-xl font-bold leading-tight text-gray-900">
                     Deze enquête kun je anoniem invullen.
-                </h1>
-                <p class="mt-3 max-w-2xl text-base leading-relaxed text-gray-700">
-                    Je antwoorden worden opgeslagen zonder je naam of e-mailadres. Alleen als je na afloop
-                    zelf contactgegevens invult, kunnen we je feedback aan jou koppelen.
                 </p>
             </section>
 
