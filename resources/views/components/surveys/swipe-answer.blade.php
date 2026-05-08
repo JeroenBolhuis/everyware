@@ -46,16 +46,22 @@
             <div class="mb-6 grid gap-4 md:grid-cols-2">
                 <div class="flex h-full flex-col">
                     @if ($leftImage)
-                        <div class="swipe-option-media">
+                        <div
+                            class="flex h-48 w-full items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white"
+                        >
                             <img
                                 src="{{ $leftImage }}"
                                 alt="{{ $leftImageAlt ?: $leftOption }}"
-                                class="swipe-option-image"
+                                class="block h-full max-h-full w-full max-w-full object-contain object-center"
                             >
                         </div>
                     @else
-                        <div class="swipe-option-media swipe-option-media-empty border-dashed border-gray-300">
-                            <span class="swipe-option-empty-text">Geen afbeelding</span>
+                        <div
+                            class="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-white"
+                        >
+                            <span
+                                class="absolute inset-0 flex items-center justify-center p-4 text-center text-sm leading-5 text-gray-400"
+                            >Geen afbeelding</span>
                         </div>
                     @endif
 
@@ -64,16 +70,22 @@
 
                 <div class="flex h-full flex-col">
                     @if ($rightImage)
-                        <div class="swipe-option-media">
+                        <div
+                            class="flex h-48 w-full items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white"
+                        >
                             <img
                                 src="{{ $rightImage }}"
                                 alt="{{ $rightImageAlt ?: $rightOption }}"
-                                class="swipe-option-image"
+                                class="block h-full max-h-full w-full max-w-full object-contain object-center"
                             >
                         </div>
                     @else
-                        <div class="swipe-option-media swipe-option-media-empty border-dashed border-gray-300">
-                            <span class="swipe-option-empty-text">Geen afbeelding</span>
+                        <div
+                            class="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-white"
+                        >
+                            <span
+                                class="absolute inset-0 flex items-center justify-center p-4 text-center text-sm leading-5 text-gray-400"
+                            >Geen afbeelding</span>
                         </div>
                     @endif
 

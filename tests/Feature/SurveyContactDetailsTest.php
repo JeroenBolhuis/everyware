@@ -31,6 +31,8 @@ it('does not show the thank-you contact form on the survey page', function () {
     get(route('survey.show', $survey))
         ->assertOk()
         ->assertSee('Wat vind je van deze module?')
+        ->assertSee('Deze enquête kun je anoniem invullen.')
+        ->assertSee('Je antwoorden worden opgeslagen zonder je naam of e-mailadres.')
         ->assertDontSee('Contactgegevens opslaan');
 });
 
@@ -51,6 +53,7 @@ it('shows optional contact fields on the thank you page', function () {
         ->assertSee('Contactgegevens')
         ->assertSee('E-mailadres')
         ->assertSee('Je telefoonnummer is optioneel')
+        ->assertSee('Je enquête is al anoniem opgeslagen.')
         ->assertSee('Contactgegevens opslaan');
 });
 

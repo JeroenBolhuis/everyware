@@ -48,6 +48,10 @@
                         <p class="mt-2 text-gray-700">
                             Wil je dat we contact met je opnemen? Vul hieronder je naam en e-mailadres in. Je telefoonnummer is optioneel.
                         </p>
+                        <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-900">
+                            Je enquête is al anoniem opgeslagen. Alleen als je hieronder zelf contactgegevens deelt,
+                            kunnen we je feedback aan jou koppelen.
+                        </div>
                         <form method="POST" action="{{ route('survey.contact-details.store', $response) }}"
                               class="mt-4 space-y-4">
                             @csrf

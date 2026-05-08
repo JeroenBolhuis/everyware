@@ -1,5 +1,5 @@
 <x-layout>
-    @vite(['resources/css/surveys/show.css', 'resources/js/surveys/show.js'])
+    @vite(['resources/js/surveys/show.js'])
 
     @php
         $totalQuestions = $survey->questions->count();
@@ -17,13 +17,25 @@
         }
     @endphp
 
-    <div class="survey-page">
-        <div class="avans-header">
-            <x-surveys.page-header/>
-        </div>
+    <div class="min-h-screen flex flex-col overflow-x-hidden">
+        <x-surveys.page-header/>
 
-        <main class="survey-main max-w-3xl mx-auto w-full px-4 pb-10 pt-0">
+        <main class="flex-1 overflow-visible max-w-3xl mx-auto w-full px-4 pb-10 pt-0">
             <x-surveys.validation-notices/>
+
+            <section
+                class="mb-6 rounded-[1.25rem] border border-red-200 bg-gradient-to-br from-orange-50 to-white p-6 shadow-[0_10px_30px_rgba(215,25,32,0.08)]"
+                aria-label="Uitleg over anonimiteit"
+            >
+                <div class="text-xs font-bold uppercase tracking-[0.08em] text-red-700">Belangrijk</div>
+                <h1 class="mt-2 text-2xl font-bold leading-tight text-gray-900">
+                    Deze enquête kun je anoniem invullen.
+                </h1>
+                <p class="mt-3 max-w-2xl text-base leading-relaxed text-gray-700">
+                    Je antwoorden worden opgeslagen zonder je naam of e-mailadres. Alleen als je na afloop
+                    zelf contactgegevens invult, kunnen we je feedback aan jou koppelen.
+                </p>
+            </section>
 
             <form
                 method="POST"

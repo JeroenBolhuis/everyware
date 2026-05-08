@@ -4,7 +4,7 @@
     'progressPercentage',
 ])
 
-<div class="mb-4 space-y-2" data-test="survey-progress-bar">
+<div class="mb-4 max-h-none space-y-2 overflow-visible" data-test="survey-progress-bar">
     <div class="flex items-center justify-between gap-3">
         <div class="text-sm font-medium text-red-700">
             Vraag {{ $currentQuestionNumber }} van {{ $totalQuestions }}
