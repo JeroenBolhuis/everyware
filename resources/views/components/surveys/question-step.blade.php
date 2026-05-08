@@ -12,7 +12,7 @@
 ])
 
 <section
-    class="question-step {{ $isFirst ? '' : 'hidden' }}"
+    class="question-step h-auto overflow-visible {{ $isFirst ? '' : 'hidden' }}"
     data-step="{{ $step }}"
     data-question-id="{{ $questionId }}"
     data-type="{{ $type }}"
@@ -25,7 +25,7 @@
         :progress-percentage="$progressPercentage"
     />
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+    <div class="max-h-none overflow-visible rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <h2 class="text-3xl font-semibold text-gray-900 mb-3">
             {{ $question }}
         </h2>
