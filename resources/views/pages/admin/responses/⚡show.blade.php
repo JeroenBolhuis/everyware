@@ -13,10 +13,12 @@ new #[Title('Enquete-inzending')] class extends Component {
     public SurveyResponse $response;
     public ?string $respondentEmail = null;
     public bool $respondentIsBlocked = false;
+    public bool $canViewPersonalData = false;
 
     public function mount(): void
     {
         $this->authorize('view', $this->response);
+        $this->canViewPersonalData = auth()->user()->isAdmin();
         $this->refreshResponse();
     }
 
@@ -39,6 +41,9 @@ new #[Title('Enquete-inzending')] class extends Component {
     public function blockRespondent(): void
     {
         $this->authorize('delete', $this->response);
+
+        abort_unless($this->canViewPersonalData, 403);
+
 
         if ($this->respondentEmail === null) {
             return;
@@ -67,10 +72,19 @@ new #[Title('Enquete-inzending')] class extends Component {
         $this->redirect(route('admin.surveys.show', $survey));
     }
 
-    protected function refreshResponse(): void
+   protected function refreshResponse(): void
     {
         $this->response->refresh();
-        $this->response->load('survey', 'answers.question', 'contactInformationSubmission');
+        $this->response->load('survey', 'answers.question');
+
+        if (! $this->canViewPersonalData) {
+            $this->respondentEmail = null;
+            $this->respondentIsBlocked = false;
+
+            return;
+        }
+
+        $this->response->load('contactInformationSubmission');
 
         $this->respondentEmail = $this->normalizeEmail($this->response->contactInformationSubmission?->email);
         $this->respondentIsBlocked = $this->respondentEmail !== null
@@ -104,7 +118,7 @@ new #[Title('Enquete-inzending')] class extends Component {
                 <a href="{{ route('admin.surveys.show', $response->survey) }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquete-inzendingen') }}</a>
 
                 <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                    @if ($respondentEmail !== null && ! $respondentIsBlocked)
+                    @if ($canViewPersonalData && $respondentEmail !== null && ! $respondentIsBlocked)
                         <flux:modal.trigger name="confirm-respondent-blocking">
                             <flux:button
                                 variant="danger"
@@ -134,7 +148,7 @@ new #[Title('Enquete-inzending')] class extends Component {
                 </div>
             @endif
 
-            @if ($respondentEmail !== null && ! $respondentIsBlocked)
+            @if ($canViewPersonalData && $respondentEmail !== null && ! $respondentIsBlocked)
                 <flux:modal name="confirm-respondent-blocking" class="max-w-lg">
                     <div class="space-y-6">
                         <div>
@@ -225,24 +239,28 @@ new #[Title('Enquete-inzending')] class extends Component {
                 <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
                     <flux:heading size="lg">{{ __('Contactgegevens') }}</flux:heading>
 
-                    @if ($response->hasSharedContactDetails())
-                        <dl class="mt-4 space-y-3 text-sm">
-                            <div>
-                                <dt class="font-medium text-zinc-500">{{ __('Naam') }}</dt>
-                                <dd>{{ $response->contactInformationSubmission?->name ?: '—' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="font-medium text-zinc-500">{{ __('E-mail') }}</dt>
-                                <dd>{{ $response->contactInformationSubmission?->email ?: '—' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="font-medium text-zinc-500">{{ __('Telefoon') }}</dt>
-                                <dd>{{ $response->contactInformationSubmission?->phone ?: '—' }}</dd>
-                            </div>
-                        </dl>
-                    @else
-                        <flux:text class="mt-4">{{ __('Er zijn geen contactgegevens gedeeld voor deze inzending.') }}</flux:text>
-                    @endif
+                @if (! $canViewPersonalData)
+                    <flux:text class="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
+                        {{ __('Je hebt geen rechten om deze persoonsgegevens te bekijken.') }}
+                    </flux:text>
+                @elseif ($response->hasSharedContactDetails())
+                    <dl class="mt-4 space-y-3 text-sm">
+                        <div>
+                            <dt class="font-medium text-zinc-500">{{ __('Naam') }}</dt>
+                            <dd>{{ $response->contactInformationSubmission?->name ?: '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="font-medium text-zinc-500">{{ __('E-mail') }}</dt>
+                            <dd>{{ $response->contactInformationSubmission?->email ?: '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="font-medium text-zinc-500">{{ __('Telefoon') }}</dt>
+                            <dd>{{ $response->contactInformationSubmission?->phone ?: '—' }}</dd>
+                        </div>
+                    </dl>
+                @else
+                    <flux:text class="mt-4">{{ __('Er zijn geen contactgegevens gedeeld voor deze inzending.') }}</flux:text>
+                @endif
                 </div>
             </div>
 
