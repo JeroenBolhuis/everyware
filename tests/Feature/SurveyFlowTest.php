@@ -254,6 +254,9 @@ it('requires answers for required questions', function () {
 
 /* Contact details can be stored encrypted */
 it('saves contact details after submission', function () {
+    $participant = Participant::factory()->create(['email' => 'ali@example.com']);
+    loginParticipantAs($participant);
+
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
@@ -267,7 +270,6 @@ it('saves contact details after submission', function () {
 
     $response = post('/survey/response/'.$surveyResponse->id.'/contact-details', [
         'contact_name' => 'Ali Test',
-        'contact_email' => 'Ali@Example.com',
         'contact_phone' => '06 12345678',
     ]);
 
@@ -285,10 +287,7 @@ it('saves contact details after submission', function () {
     expect($contactSubmission->phone)->toBe('0612345678');
     expect($contactSubmission->getRawOriginal('email'))->not->toBe('ali@example.com');
 
-    $participant = Participant::where('email', 'ali@example.com')->first();
-
-    expect($participant)->not->toBeNull()
-        ->and($participant->current_points)->toBe(10);
+    expect($participant->refresh()->current_points)->toBe(10);
 
     assertDatabaseHas('participant_points_history', [
         'participant_id' => $participant->id,
@@ -302,11 +301,12 @@ it('deletes an existing submission when blocked contact details are added afterw
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
-    Participant::create([
+    $participant = Participant::create([
         'name' => 'Ali Test',
         'email' => 'ali@example.com',
         'blocked_at' => now(),
     ]);
+    loginParticipantAs($participant);
 
     post(route('survey.store', $survey), [
         'answers' => [
@@ -318,7 +318,6 @@ it('deletes an existing submission when blocked contact details are added afterw
 
     post(route('survey.contact-details.store', $surveyResponse), [
         'contact_name' => 'Ali Test',
-        'contact_email' => 'Ali@Example.com',
         'contact_phone' => '06 12345678',
     ])->assertRedirect(route('survey.thankyou.generic'));
 

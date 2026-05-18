@@ -41,7 +41,7 @@ it('does not show the thank-you contact form on the survey page', function () {
         ->assertDontSee('Contactgegevens opslaan');
 });
 
-it('shows optional contact fields on the thank you page', function () {
+it('shows only the name contact field on the thank you page for logged-in participants', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -56,8 +56,8 @@ it('shows optional contact fields on the thank you page', function () {
     get(route('survey.thankyou', $response))
         ->assertOk()
         ->assertSee('Contactgegevens')
-        ->assertSee('E-mailadres')
-        ->assertSee('Je telefoonnummer is optioneel')
+        ->assertSee('Naam')
+        ->assertDontSee('E-mailadres')
         ->assertSee('Je enquête is al anoniem opgeslagen.')
         ->assertSee('Contactgegevens opslaan');
 });
@@ -79,10 +79,13 @@ it('submits survey without contact details', function () {
 
     get(route('survey.thankyou', $response))
         ->assertOk()
-        ->assertSee('Wil je dat we contact met je opnemen? Vul hieronder je naam en e-mailadres in. Je telefoonnummer is optioneel.');
+        ->assertSee('Wil je dat we contact met je opnemen? Vul hieronder je naam in.');
 });
 
-it('stores encrypted contact details on the thank you page when provided', function () {
+it('stores encrypted contact details using the logged-in participant email', function () {
+    $participant = Participant::factory()->create(['email' => 'jamie@example.com']);
+    loginParticipantAs($participant);
+
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -97,8 +100,6 @@ it('stores encrypted contact details on the thank you page when provided', funct
     from(route('survey.thankyou', $response))
         ->post(route('survey.contact-details.store', $response), [
             'contact_name' => 'Jamie Jansen',
-            'contact_email' => 'jamie@example.com',
-            'contact_phone' => '+31 6 12345678',
         ])
         ->assertRedirect(route('survey.thankyou', $response));
 
@@ -108,23 +109,24 @@ it('stores encrypted contact details on the thank you page when provided', funct
         ->and($contactSubmission->survey_response_id)->toBe($response->id)
         ->and($contactSubmission->name)->toBe('Jamie Jansen')
         ->and($contactSubmission->email)->toBe('jamie@example.com')
-        ->and($contactSubmission->phone)->toBe('+31612345678');
+        ->and($contactSubmission->phone)->toBeNull();
 
     expect($contactSubmission->getRawOriginal('name'))->not->toBe('Jamie Jansen');
     expect($contactSubmission->getRawOriginal('email'))->not->toBe('jamie@example.com');
-    expect($contactSubmission->getRawOriginal('phone'))->not->toBe('+31612345678');
 
     get(route('survey.thankyou', $response))
         ->assertOk()
         ->assertSee('Je hebt contactgegevens gedeeld.')
         ->assertSee('Naam opgeslagen')
         ->assertSee('E-mailadres opgeslagen')
-        ->assertSee('Telefoonnummer opgeslagen')
         ->assertSee('versleuteld opgeslagen');
 });
 
 it('sends a confirmation email after contact details are saved on the thank you page', function () {
     Mail::fake();
+
+    $participant = Participant::factory()->create(['email' => 'jamie@example.com']);
+    loginParticipantAs($participant);
 
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
@@ -140,8 +142,6 @@ it('sends a confirmation email after contact details are saved on the thank you 
     from(route('survey.thankyou', $response))
         ->post(route('survey.contact-details.store', $response), [
             'contact_name' => 'Jamie Jansen',
-            'contact_email' => 'jamie@example.com',
-            'contact_phone' => '+31 6 12345678',
         ])
         ->assertRedirect(route('survey.thankyou', $response));
 
@@ -152,7 +152,7 @@ it('sends a confirmation email after contact details are saved on the thank you 
     });
 });
 
-it('validates optional contact details when provided', function () {
+it('validates optional phone details when provided', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -166,11 +166,10 @@ it('validates optional contact details when provided', function () {
 
     from(route('survey.thankyou', $response))
         ->post(route('survey.contact-details.store', $response), [
-            'contact_email' => 'geen-geldig-emailadres',
             'contact_phone' => 'abc',
         ])
         ->assertRedirect(route('survey.thankyou', $response))
-        ->assertSessionHasErrors(['contact_email', 'contact_phone']);
+        ->assertSessionHasErrors(['contact_phone']);
 
     expect(ContactInformationSubmission::count())->toBe(0);
 });

@@ -3,12 +3,30 @@
 namespace App\Http\Requests\Surveys;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class StoreSurveyContactDetailsRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if ($this->user('participant') && ($this->filled('contact_name') || $this->filled('contact_phone'))) {
+            $this->merge([
+                'contact_email' => $this->user('participant')->email,
+            ]);
+
+            return;
+        }
+
+        if ($this->filled('contact_email')) {
+            $this->merge([
+                'contact_email' => Str::lower(trim((string) $this->input('contact_email'))),
+            ]);
+        }
     }
 
     public function rules(): array
