@@ -3,6 +3,7 @@
 use App\Mail\ParticipantSurveyMagicLinkMail;
 use App\Models\Participant;
 use App\Models\Survey;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
@@ -53,4 +54,34 @@ it('logs a participant in via the signed verify link', function () {
 
     expect(auth('participant')->check())->toBeTrue()
         ->and(auth('participant')->id())->toBe($participant->id);
+});
+
+it('does not cache authenticated survey pages', function () {
+    loginParticipantAs(Participant::factory()->create());
+
+    $survey = Survey::factory()->active()->create();
+
+    get(route('survey.show', $survey))
+        ->assertOk()
+        ->assertHeader('Cache-Control', 'no-store, private');
+});
+
+it('redirects stale survey submissions after logout to participant login', function () {
+    $this->withMiddleware(ValidateCsrfToken::class);
+
+    $participant = Participant::factory()->create();
+    $survey = Survey::factory()->active()->hasQuestions(1)->create();
+
+    loginParticipantAs($participant);
+
+    post(route('survey.participant.logout'), [
+        '_token' => csrf_token(),
+    ])->assertRedirect(route('survey.participant.login'));
+
+    post(route('survey.store', $survey), [
+        'answers' => [
+            $survey->questions->first()->id => 'yes',
+        ],
+        '_token' => 'stale-token',
+    ])->assertRedirect(route('survey.participant.login', ['redirect' => '/survey/'.$survey->id]));
 });

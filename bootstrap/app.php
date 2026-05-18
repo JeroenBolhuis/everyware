@@ -1,12 +1,11 @@
 <?php
 
-use App\Http\Middleware\AuthenticateParticipant;
-use App\Http\Middleware\RedirectIfParticipantAuthenticated;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -29,11 +28,33 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
-            'participant.auth' => AuthenticateParticipant::class,
-            'participant.guest' => RedirectIfParticipantAuthenticated::class,
         ]);
+
+        $middleware->redirectGuestsTo(function (Request $request): string {
+            if ($request->is('survey/*') || $request->is('s/*')) {
+                return route('survey.participant.login', [
+                    'redirect' => '/'.$request->path(),
+                ]);
+            }
+
+            return route('login');
+        });
+
+        $middleware->redirectUsersTo(function (Request $request): string {
+            if ($request->is('survey/deelnemer/inloggen')) {
+                return '/surveys';
+            }
+
+            return route('dashboard');
+        });
     })
     ->withExceptions(function ($exceptions): void {
+        $exceptions->render(function (TokenMismatchException $e, Request $request) {
+            if ($request->is('survey/*') || $request->is('s/*')) {
+                return redirect()->route('survey.participant.login');
+            }
+        });
+
         $exceptions->render(function (PostTooLargeException $e, Request $request) {
             return back()
                 ->withInput($request->except([]))

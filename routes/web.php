@@ -29,7 +29,7 @@ Route::middleware(['auth', 'verified', 'role:admin|LICEmployee'])
 Route::prefix('survey')->name('survey.')->group(function () {
     Route::get('/thank-you', [SurveyController::class, 'genericThankYou'])->name('thankyou.generic');
 
-    Route::middleware('participant.guest')->group(function () {
+    Route::middleware('guest:participant')->group(function () {
         Route::get('/deelnemer/inloggen', [ParticipantSurveyAuthController::class, 'create'])->name('participant.login');
         Route::post('/deelnemer/inloggen', [ParticipantSurveyAuthController::class, 'store'])
             ->middleware('throttle:6,1')
@@ -38,7 +38,7 @@ Route::prefix('survey')->name('survey.')->group(function () {
 
     Route::get('/deelnemer/verify', [ParticipantSurveyAuthController::class, 'verify'])->name('participant.verify');
 
-    Route::middleware('participant.auth')->group(function () {
+    Route::middleware(['auth:participant', 'cache.headers:no_store'])->group(function () {
         Route::post('/deelnemer/uitloggen', [ParticipantSurveyAuthController::class, 'destroy'])->name('participant.logout');
         Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
         Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
@@ -47,7 +47,7 @@ Route::prefix('survey')->name('survey.')->group(function () {
     });
 });
 
-Route::middleware('participant.auth')->group(function () {
+Route::middleware(['auth:participant', 'cache.headers:no_store'])->group(function () {
     Route::prefix('s')->name('survey.share.')->group(function () {
         Route::get('/{token}', [SurveyController::class, 'showByToken'])->name('show');
         Route::post('/{token}', [SurveyController::class, 'storeByToken'])->middleware('throttle:5,1')->name('store');
