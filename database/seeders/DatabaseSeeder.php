@@ -17,11 +17,18 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             SurveySeeder::class,
+            SurveyAnswerSeeder::class,
         ]);
 
         User::factory()->admin()->create([
             'name' => 'Admin',
             'email' => 'p.groep@everyware.nl',
+            'password' => Hash::make('QSpx34P32Jt!pfZ'),
+        ]);
+
+        User::factory()->licEmployee()->create([
+            'name' => 'LIC Medewerker',
+            'email' => 'lic.medewerker@everyware.nl',
             'password' => Hash::make('QSpx34P32Jt!pfZ'),
         ]);
     }
