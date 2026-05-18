@@ -144,6 +144,60 @@ it('shows retention value to lic employees and explains only admins can edit', f
         ->assertForbidden();
 });
 
+it('shows upcoming auto-deletion warning to admins and lic employees', function () {
+    $survey = Survey::factory()->createOne();
+
+    SurveyResponse::create([
+        'survey_id' => $survey->id,
+        'withdrawal_token' => (string) str()->uuid(),
+        'submitted_at' => now()->subDays(2),
+        'delete_on_date' => now()->addDays(3)->toDateString(),
+    ]);
+
+    $admin = User::factory()->admin()->createOne();
+    actingAs($admin);
+
+    get(route('admin.surveys.index'))
+        ->assertOk()
+        ->assertSee('Waarschuwing automatische verwijdering')
+        ->assertSee('Toon inzendingen die binnenkort verwijderd worden')
+        ->assertSee('Open inzending')
+        ->assertSee('Eerstvolgende verwijderdatum: '.now()->addDays(3)->format('d-m-Y'));
+
+    $employee = User::factory()->licEmployee()->createOne();
+    actingAs($employee);
+
+    get(route('admin.surveys.index'))
+        ->assertOk()
+        ->assertSee('Waarschuwing automatische verwijdering')
+        ->assertSee('Toon inzendingen die binnenkort verwijderd worden')
+        ->assertSee('Open inzending')
+        ->assertSee('Eerstvolgende verwijderdatum: '.now()->addDays(3)->format('d-m-Y'));
+});
+
+it('shows warning card when there are no upcoming automatic deletions', function () {
+    $admin = User::factory()->admin()->createOne();
+    actingAs($admin);
+
+    get(route('admin.surveys.index'))
+        ->assertOk()
+        ->assertSee('Waarschuwing automatische verwijdering')
+        ->assertSee('Er staan momenteel geen automatische verwijderingen gepland binnen 7 dagen.');
+});
+
+it('allows dismissing the upcoming deletion warning', function () {
+    $admin = User::factory()->admin()->createOne();
+    actingAs($admin);
+
+    Livewire::test('pages::admin.surveys.index')
+        ->call('dismissUpcomingDeletionWarning')
+        ->assertDontSee('Waarschuwing automatische verwijdering');
+
+    get(route('admin.surveys.index'))
+        ->assertOk()
+        ->assertSee('Waarschuwing automatische verwijdering');
+});
+
 it('prunes expired responses and deletes related answers and contact data', function () {
     $survey = Survey::factory()->createOne();
     $question = SurveyQuestion::factory()->for($survey)->createOne();

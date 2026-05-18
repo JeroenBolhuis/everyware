@@ -28,12 +28,17 @@ class SurveyAnswerSeeder extends Seeder
 
                 for ($index = 0; $index < $responseCount; $index++) {
                     $submittedAt = now()->subDays(fake()->numberBetween(1, 45));
+                    $deleteOnDate = match ($index) {
+                        0 => now()->addDays(3)->toDateString(),
+                        1 => now()->addDays(10)->toDateString(),
+                        default => $submittedAt->copy()->addDays(30)->toDateString(),
+                    };
 
                     $response = SurveyResponse::create([
                         'survey_id' => $survey->id,
                         'withdrawal_token' => (string) Str::uuid(),
                         'submitted_at' => $submittedAt,
-                        'delete_on_date' => $submittedAt->copy()->addDays(30)->toDateString(),
+                        'delete_on_date' => $deleteOnDate,
                     ]);
 
                     $survey->questions->each(function (SurveyQuestion $question) use ($response): void {

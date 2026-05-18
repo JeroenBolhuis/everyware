@@ -11,6 +11,8 @@ new #[Title('Enquete-inzendingen')] class extends Component {
     use WithPagination;
 
     public ?int $autoDeleteAfterDays = null;
+    public int $upcomingDeletionWarningDays = 7;
+    public bool $showUpcomingDeletionWarning = true;
 
     public function mount(): void
     {
@@ -18,6 +20,11 @@ new #[Title('Enquete-inzendingen')] class extends Component {
 
         $this->autoDeleteAfterDays = SurveyAnswerRetentionSetting::query()
             ->value('auto_delete_after_days');
+    }
+
+    public function dismissUpcomingDeletionWarning(): void
+    {
+        $this->showUpcomingDeletionWarning = false;
     }
 
     public function saveAutoDeleteAfterDays(): void
@@ -122,6 +129,43 @@ new #[Title('Enquete-inzendingen')] class extends Component {
             ->orderBy('title')
             ->paginate(15);
     }
+
+    public function getUpcomingDeletionWarningProperty(): ?array
+    {
+        $today = now()->toDateString();
+        $warningThreshold = now()->addDays($this->upcomingDeletionWarningDays)->toDateString();
+
+        $upcomingResponses = SurveyResponse::query()
+            ->whereNotNull('delete_on_date')
+            ->whereDate('delete_on_date', '>=', $today)
+            ->whereDate('delete_on_date', '<=', $warningThreshold);
+
+        $count = (clone $upcomingResponses)->count();
+
+        if ($count === 0) {
+            return null;
+        }
+
+        return [
+            'count' => $count,
+            'next_delete_on_date' => (clone $upcomingResponses)->min('delete_on_date'),
+        ];
+    }
+
+    public function getUpcomingDeletionResponsesProperty()
+    {
+        $today = now()->toDateString();
+        $warningThreshold = now()->addDays($this->upcomingDeletionWarningDays)->toDateString();
+
+        return SurveyResponse::query()
+            ->with('survey')
+            ->whereNotNull('delete_on_date')
+            ->whereDate('delete_on_date', '>=', $today)
+            ->whereDate('delete_on_date', '<=', $warningThreshold)
+            ->orderBy('delete_on_date')
+            ->limit(25)
+            ->get();
+    }
 }; ?>
 
 <section class="w-full">
@@ -133,6 +177,55 @@ new #[Title('Enquete-inzendingen')] class extends Component {
         :heading="__('Enquete-inzendingen')"
         :subheading="__('Bekijk enquetes en open individuele inzendingen, inclusief gedeelde contactgegevens.')"
     >
+        @if ($showUpcomingDeletionWarning)
+            <div class="my-6 rounded-lg sm:rounded-xl border border-amber-300 bg-amber-50 p-4 sm:p-6 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
+                <div class="flex items-start justify-between gap-3">
+                    <flux:heading size="lg">{{ __('Waarschuwing automatische verwijdering') }}</flux:heading>
+                    <button
+                        type="button"
+                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-300 bg-white/70 text-amber-900 hover:bg-white dark:border-amber-600 dark:bg-amber-950/40 dark:text-amber-100"
+                        wire:click="dismissUpcomingDeletionWarning"
+                        aria-label="{{ __('Melding sluiten') }}"
+                    >
+                        &times;
+                    </button>
+                </div>
+
+                @if ($this->upcomingDeletionWarning !== null)
+                    <flux:text class="mt-2 text-sm">
+                        {{ __('Er worden binnenkort :count inzendingen automatisch verwijderd. Eerstvolgende verwijderdatum: :date.', ['count' => $this->upcomingDeletionWarning['count'], 'date' => \Illuminate\Support\Carbon::parse($this->upcomingDeletionWarning['next_delete_on_date'])->format('d-m-Y')]) }}
+                    </flux:text>
+
+                    <details class="mt-4 rounded-lg border border-amber-300 bg-white/70 p-3 text-sm dark:border-amber-600 dark:bg-amber-950/40">
+                        <summary class="cursor-pointer font-medium">
+                            {{ __('Toon inzendingen die binnenkort verwijderd worden') }}
+                        </summary>
+
+                        <div class="mt-3 space-y-2">
+                            @foreach ($this->upcomingDeletionResponses as $upcomingResponse)
+                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                    <span>
+                                        {{ __('Inzending #:id (:survey) - verwijdering op :date', ['id' => $upcomingResponse->id, 'survey' => $upcomingResponse->survey?->title ?? __('Onbekende enquete'), 'date' => $upcomingResponse->delete_on_date?->format('d-m-Y')]) }}
+                                    </span>
+                                    <a
+                                        href="{{ route('admin.responses.show', $upcomingResponse) }}"
+                                        class="btn-secondary w-fit text-xs"
+                                        wire:navigate
+                                    >
+                                        {{ __('Open inzending') }}
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                @else
+                    <flux:text class="mt-2 text-sm">
+                        {{ __('Er staan momenteel geen automatische verwijderingen gepland binnen :days dagen.', ['days' => $upcomingDeletionWarningDays]) }}
+                    </flux:text>
+                @endif
+            </div>
+        @endif
+
         <div
             class="my-6 rounded-lg sm:rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('Automatische verwijdering van antwoorden') }}</flux:heading>
