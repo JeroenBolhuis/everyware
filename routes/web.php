@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ParticipantSurveyAuthController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\SurveyManagerController;
 use App\Http\Controllers\SurveyWithdrawalController;
@@ -27,15 +28,30 @@ Route::middleware(['auth', 'verified', 'role:admin|LICEmployee'])
 
 Route::prefix('survey')->name('survey.')->group(function () {
     Route::get('/thank-you', [SurveyController::class, 'genericThankYou'])->name('thankyou.generic');
-    Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
-    Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
-    Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');
-    Route::post('/response/{response}/contact-details', [SurveyController::class, 'storeContactDetails'])->name('contact-details.store');
+
+    Route::middleware('participant.guest')->group(function () {
+        Route::get('/deelnemer/inloggen', [ParticipantSurveyAuthController::class, 'create'])->name('participant.login');
+        Route::post('/deelnemer/inloggen', [ParticipantSurveyAuthController::class, 'store'])
+            ->middleware('throttle:6,1')
+            ->name('participant.login.store');
+    });
+
+    Route::get('/deelnemer/verify', [ParticipantSurveyAuthController::class, 'verify'])->name('participant.verify');
+
+    Route::middleware('participant.auth')->group(function () {
+        Route::post('/deelnemer/uitloggen', [ParticipantSurveyAuthController::class, 'destroy'])->name('participant.logout');
+        Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
+        Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
+        Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');
+        Route::post('/response/{response}/contact-details', [SurveyController::class, 'storeContactDetails'])->name('contact-details.store');
+    });
 });
 
-Route::prefix('s')->name('survey.share.')->group(function () {
-    Route::get('/{token}', [SurveyController::class, 'showByToken'])->name('show');
-    Route::post('/{token}', [SurveyController::class, 'storeByToken'])->middleware('throttle:5,1')->name('store');
+Route::middleware('participant.auth')->group(function () {
+    Route::prefix('s')->name('survey.share.')->group(function () {
+        Route::get('/{token}', [SurveyController::class, 'showByToken'])->name('show');
+        Route::post('/{token}', [SurveyController::class, 'storeByToken'])->middleware('throttle:5,1')->name('store');
+    });
 });
 
 Route::prefix('survey-withdraw')->name('survey.withdraw.')->group(function () {

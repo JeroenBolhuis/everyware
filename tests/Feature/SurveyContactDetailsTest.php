@@ -2,13 +2,19 @@
 
 use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\ContactInformationSubmission;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use Illuminate\Support\Facades\Mail;
+
 use function Pest\Laravel\from;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
+
+beforeEach(function () {
+    loginParticipantAs(Participant::factory()->create());
+});
 
 function createSurveyWithQuestion(): Survey
 {

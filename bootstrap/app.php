@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Middleware\AuthenticateParticipant;
+use App\Http\Middleware\RedirectIfParticipantAuthenticated;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
 use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -27,19 +29,21 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'participant.auth' => AuthenticateParticipant::class,
+            'participant.guest' => RedirectIfParticipantAuthenticated::class,
         ]);
     })
     ->withExceptions(function ($exceptions): void {
-    $exceptions->render(function (PostTooLargeException $e, Request $request) {
-        return back()
-            ->withInput($request->except([]))
-            ->withErrors([
-                'questions' => 'De upload is te groot. Gebruik kleinere afbeeldingen. Per afbeelding geldt maximaal 2 MB en in totaal maximaal 5 MB.',
-            ]);
+        $exceptions->render(function (PostTooLargeException $e, Request $request) {
+            return back()
+                ->withInput($request->except([]))
+                ->withErrors([
+                    'questions' => 'De upload is te groot. Gebruik kleinere afbeeldingen. Per afbeelding geldt maximaal 2 MB en in totaal maximaal 5 MB.',
+                ]);
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->report(function (\Throwable $exception): void {
+        $exceptions->report(function (Throwable $exception): void {
             logger()->error('Unhandled exception summary', [
                 'exception_class' => $exception::class,
                 'message' => $exception->getMessage(),
@@ -51,4 +55,3 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->create();
-    

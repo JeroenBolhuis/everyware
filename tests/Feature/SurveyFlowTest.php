@@ -1,15 +1,16 @@
 <?php
 
 use App\Mail\SurveySubmissionConfirmationMail;
+use App\Models\ContactInformationSubmission;
 use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
-use App\Models\ContactInformationSubmission;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\from;
@@ -18,6 +19,10 @@ use function Pest\Laravel\post;
 
 // Reset database between tests
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    loginParticipantAs(Participant::factory()->create());
+});
 
 /* Create a test survey with 2 questions */
 function createSurvey(array $attributes = []): Survey
@@ -65,7 +70,7 @@ function createSurveyResponse(?Survey $survey = null, array $attributes = []): S
 it('opens the survey page', function () {
     $survey = createSurvey(['is_active' => true]);
 
-    $response = get('/survey/' . $survey->id);
+    $response = get('/survey/'.$survey->id);
 
     $response->assertOk();
     $response->assertSee('Are you satisfied?');
@@ -99,7 +104,7 @@ it('renders stored alt text for swipe images', function () {
         'sort_order' => 1,
     ]);
 
-    $response = get('/survey/' . $survey->id);
+    $response = get('/survey/'.$survey->id);
 
     $response->assertOk();
     $response->assertSee('alt="Student geeft presentatie voor de klas"', false);
@@ -110,7 +115,7 @@ it('renders stored alt text for swipe images', function () {
 it('returns 404 for inactive survey', function () {
     $survey = createSurvey(['is_active' => false]);
 
-    $response = get('/survey/' . $survey->id);
+    $response = get('/survey/'.$survey->id);
 
     $response->assertNotFound();
 });
@@ -122,7 +127,7 @@ it('submits a survey and sends a confirmation email when an email address is pro
     $question1 = $survey->questions[0];
     $question2 = $survey->questions[1];
 
-    $response = post('/survey/' . $survey->id, [
+    $response = post('/survey/'.$survey->id, [
         'answers' => [
             $question1->id => 'yes',
             $question2->id => 'Because it works',
@@ -184,7 +189,7 @@ it('submits a survey without sending a confirmation email when no email address 
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
-    $response = post('/survey/' . $survey->id, [
+    $response = post('/survey/'.$survey->id, [
         'answers' => [
             $question1->id => 'yes',
         ],
@@ -234,14 +239,14 @@ it('requires answers for required questions', function () {
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
-    $response = from('/survey/' . $survey->id)
-        ->post('/survey/' . $survey->id, [
+    $response = from('/survey/'.$survey->id)
+        ->post('/survey/'.$survey->id, [
             'answers' => [
                 $question1->id => '',
             ],
         ]);
 
-    $response->assertRedirect('/survey/' . $survey->id);
+    $response->assertRedirect('/survey/'.$survey->id);
     $response->assertSessionHasErrors([
         "answers.{$question1->id}",
     ]);
@@ -252,7 +257,7 @@ it('saves contact details after submission', function () {
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
-    post('/survey/' . $survey->id, [
+    post('/survey/'.$survey->id, [
         'answers' => [
             $question1->id => 'yes',
         ],
@@ -260,7 +265,7 @@ it('saves contact details after submission', function () {
 
     $surveyResponse = SurveyResponse::latest()->first();
 
-    $response = post('/survey/response/' . $surveyResponse->id . '/contact-details', [
+    $response = post('/survey/response/'.$surveyResponse->id.'/contact-details', [
         'contact_name' => 'Ali Test',
         'contact_email' => 'Ali@Example.com',
         'contact_phone' => '06 12345678',
@@ -328,7 +333,7 @@ it('deletes an existing submission when blocked contact details are added afterw
 it('skips saving contact details when all fields are empty', function () {
     $surveyResponse = createSurveyResponse();
 
-    $response = post('/survey/response/' . $surveyResponse->id . '/contact-details', [
+    $response = post('/survey/response/'.$surveyResponse->id.'/contact-details', [
         'contact_name' => '',
         'contact_email' => '',
         'contact_phone' => '',
@@ -375,6 +380,8 @@ it('shows the awarded and total points on the thank you page', function () {
         'name' => 'Ali Test',
     ]);
 
+    loginParticipantAs($participant);
+
     $participant->forceFill(['current_points' => 10])->save();
 
     $surveyResponse = createSurveyResponse(null, [
@@ -411,7 +418,7 @@ it('opens the withdrawal page with a valid token', function () {
         'withdrawal_token' => 'test-token-123',
     ]);
 
-    $response = get('/survey-withdraw/' . $surveyResponse->withdrawal_token);
+    $response = get('/survey-withdraw/'.$surveyResponse->withdrawal_token);
 
     $response->assertOk();
 });
@@ -431,7 +438,7 @@ it('removes contact details and marks the response as withdrawn', function () {
         'phone' => '0612345678',
     ]);
 
-    $response = post('/survey-withdraw/' . $surveyResponse->withdrawal_token);
+    $response = post('/survey-withdraw/'.$surveyResponse->withdrawal_token);
 
     $response->assertOk();
 

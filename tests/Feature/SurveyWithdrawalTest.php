@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ContactInformationSubmission;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
@@ -19,6 +20,10 @@ function createWithdrawableSurvey(): Survey
 
     return $survey;
 }
+
+beforeEach(function () {
+    loginParticipantAs(Participant::factory()->create());
+});
 
 it('deletes related contact information when withdrawing', function () {
     $survey = createWithdrawableSurvey();

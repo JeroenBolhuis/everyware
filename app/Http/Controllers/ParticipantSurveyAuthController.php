@@ -27,14 +27,10 @@ class ParticipantSurveyAuthController extends Controller
         $email = $request->validated('email');
         $redirect = ParticipantSurveyRedirect::sanitize($request->input('redirect'));
 
-        $participant = Participant::query()->where('email', $email)->first();
-
-        if ($participant === null) {
-            $participant = Participant::create([
-                'email' => $email,
-                'name' => null,
-            ]);
-        }
+        $participant = Participant::query()->firstOrCreate(
+            ['email' => $email],
+            ['name' => null],
+        );
 
         if (! $participant->isBlocked()) {
             $signedUrl = URL::temporarySignedRoute(
@@ -75,8 +71,6 @@ class ParticipantSurveyAuthController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('participant')->logout();
-
-        $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('survey.participant.login');
