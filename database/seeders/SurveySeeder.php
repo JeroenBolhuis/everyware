@@ -3,12 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\Survey;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class SurveySeeder extends Seeder
 {
     public function run(): void
     {
+        $creator = User::query()->first();
         $surveys = [
             [
                 'title' => 'Studenttevredenheid',
@@ -189,6 +191,7 @@ class SurveySeeder extends Seeder
                 'title' => $surveyData['title'],
                 'description' => $surveyData['description'],
                 'is_active' => $surveyData['is_active'],
+                'created_by' => $creator?->id,
             ]);
 
             $survey->questions()->createMany($surveyData['questions']);

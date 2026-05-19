@@ -116,6 +116,10 @@
                                 <span>{{ $survey->questions_count }} vragen</span>
                                 <span>{{ $survey->responses_count }} Reactie(s)</span>
                                 <span>Aangemaakt op {{ $survey->created_at->format('d-m-Y') }}</span>
+
+                                @if (auth()->user()?->isAdmin() || auth()->user()?->isLicEmployee())
+                                    <span>Maker: {{ $survey->creator?->name ?? 'Onbekend' }}</span>
+                                @endif
                             </div>
                         </div>
 
