@@ -20,7 +20,7 @@ class Survey extends Model
         'is_active',
         'share_token',
         'reward_points',
-        'created_by',
+        'created_by_user_id',
     ];
 
     protected $attributes = [
@@ -43,6 +43,6 @@ class Survey extends Model
     }
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 }

@@ -17,10 +17,10 @@ class SurveyCreatorTest extends TestCase
         $creator = User::factory()->create();
 
         $survey = Survey::factory()->create([
-            'created_by' => $creator->id,
+            'created_by_user_id' => $creator->id,
         ]);
 
-        $this->assertEquals($creator->id, $survey->created_by);
+        $this->assertEquals($creator->id, $survey->created_by_user_id);
     }
 
     public function test_survey_creator_name_can_be_loaded(): void
@@ -30,7 +30,7 @@ class SurveyCreatorTest extends TestCase
         ]);
 
         $survey = Survey::factory()->create([
-            'created_by' => $creator->id,
+            'created_by_user_id' => $creator->id,
         ]);
 
         $this->assertEquals('Rayan Hassan', $survey->creator->name);
@@ -39,7 +39,7 @@ class SurveyCreatorTest extends TestCase
     public function test_unknown_is_used_when_creator_is_missing(): void
     {
         $survey = Survey::factory()->create([
-            'created_by' => null,
+            'created_by_user_id' => null,
         ]);
 
         $creatorName = $survey->creator?->name ?? 'Onbekend';
@@ -70,12 +70,12 @@ class SurveyCreatorTest extends TestCase
 
         $adminSurvey = Survey::factory()->create([
             'title' => 'Enquête van admin',
-            'created_by' => $admin->id,
+            'created_by_user_id' => $admin->id,
         ]);
 
         Survey::factory()->create([
             'title' => 'Enquête van LIC medewerker',
-            'created_by' => $otherUser->id,
+            'created_by_user_id' => $otherUser->id,
         ]);
 
         $search = 'Admin';
@@ -101,13 +101,13 @@ class SurveyCreatorTest extends TestCase
 
         $activeSurvey = Survey::factory()->create([
             'title' => 'Actieve admin enquête',
-            'created_by' => $admin->id,
+            'created_by_user_id' => $admin->id,
             'is_active' => true,
         ]);
 
         Survey::factory()->create([
             'title' => 'Gesloten admin enquête',
-            'created_by' => $admin->id,
+            'created_by_user_id' => $admin->id,
             'is_active' => false,
         ]);
 

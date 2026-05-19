@@ -50,7 +50,11 @@
         </div>
 
         <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-            <form method="GET" action="{{ route('survey-manager.index') }}" class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
+            <form
+                id="survey-filter-form"
+                method="GET"
+                action="{{ route('survey-manager.index') }}"
+                class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
                 <div>
                     <label for="search" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                         Zoek op titel of maker
@@ -92,10 +96,6 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <button type="submit" class="btn-secondary">
-                        Filteren
-                    </button>
-
                     <a href="{{ route('survey-manager.index') }}" class="btn-secondary">
                         Reset
                     </a>
@@ -109,7 +109,10 @@
 
             <div class="divide-y divide-neutral-200 dark:divide-neutral-700">
                 @forelse ($surveys as $survey)
-                    <div class="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-start lg:justify-between">
+                    <div class="survey-card flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-start lg:justify-between"
+                            data-title="{{ strtolower($survey->title) }}"
+                            data-creator="{{ strtolower($survey->creator?->name ?? 'onbekend') }}"
+                            data-status="{{ $survey->is_active ? 'active' : 'closed' }}">
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
                                 <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">{{ $survey->title }}</h3>

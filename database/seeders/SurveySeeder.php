@@ -203,7 +203,7 @@ class SurveySeeder extends Seeder
                 'title' => $surveyData['title'],
                 'description' => $surveyData['description'],
                 'is_active' => $surveyData['is_active'],
-                'created_by' => $creator?->id,
+                'created_by_user_id' => $creator?->id,
             ]);
 
             $survey->questions()->createMany($surveyData['questions']);

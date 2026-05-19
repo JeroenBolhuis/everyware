@@ -1,0 +1,1 @@
+import './surveys/manager-index';

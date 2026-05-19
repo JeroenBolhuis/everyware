@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('surveys', function (Blueprint $table) {
-            $table->foreignId('created_by')
+            $table->foreignId('created_by_user_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
@@ -19,7 +19,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('surveys', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('created_by');
+            $table->dropConstrainedForeignId('created_by_user_id');
         });
     }
 };

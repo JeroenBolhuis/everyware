@@ -117,7 +117,7 @@ class SurveyManagerController extends Controller
                 'description' => $validated['description'] ?? null,
                 'is_active' => (bool)$validated['is_active'],
                 'reward_points' => $validated['reward_points'] ?? 10,
-                'created_by' => $request->user()->id,
+                'created_by_user_id' => $request->user()->id,
             ]);
 
             $survey->questions()->createMany(
