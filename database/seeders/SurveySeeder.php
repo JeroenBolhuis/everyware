@@ -5,13 +5,25 @@ namespace Database\Seeders;
 use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class SurveySeeder extends Seeder
 {
     public function run(): void
     {
-        $creator = User::query()->first();
-        $surveys = [
+        $creator = User::firstOrCreate(
+    ['email' => 'lic@example.com'],
+    [
+        'name' => 'LIC Medewerker',
+        'password' => Hash::make('password'),
+        'email_verified_at' => now(),
+    ]
+    );
+
+    if (method_exists($creator, 'assignRole') && ! $creator->hasRole('LICEmployee')) {
+        $creator->assignRole('LICEmployee');
+    }
+            $surveys = [
             [
                 'title' => 'Studenttevredenheid',
                 'description' => 'Geef snel je mening over jouw ervaring.',

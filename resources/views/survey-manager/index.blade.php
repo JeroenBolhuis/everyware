@@ -52,21 +52,34 @@
         <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <form method="GET" action="{{ route('survey-manager.index') }}" class="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end">
                 <div>
-                    <label for="search" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Zoek op
-                        titel</label>
+                    <label for="search" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                        Zoek op titel of maker
+                    </label>
+
                     <input
                         id="search"
                         name="search"
                         type="text"
+                        list="survey-search-suggestions"
                         value="{{ request('search') }}"
-                        placeholder="Bijvoorbeeld: studentfeedback"
+                        placeholder="Bijvoorbeeld: studentfeedback of naam van maker"
                         class="w-full rounded-full px-4 py-3 border border-zinc-300 bg-white text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                     >
+
+                    @if ($canFilterByCreator)
+                        <datalist id="survey-search-suggestions">
+                            @foreach ($licEmployees as $licEmployee)
+                                <option value="{{ $licEmployee->name }}"></option>
+                            @endforeach
+                        </datalist>
+                    @endif
                 </div>
 
                 <div>
-                    <label for="status"
-                           class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">Status</label>
+                    <label for="status" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                        Status
+                    </label>
+
                     <select
                         id="status"
                         name="status"
@@ -82,13 +95,13 @@
                     <button type="submit" class="btn-secondary">
                         Filteren
                     </button>
+
                     <a href="{{ route('survey-manager.index') }}" class="btn-secondary">
                         Reset
                     </a>
                 </div>
             </form>
         </div>
-
         <div class="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <div class="border-b border-neutral-200 px-6 py-4 dark:border-neutral-700">
                 <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">Bestaande enquêtes</h2>
@@ -185,11 +198,27 @@
                             </div>
                         </div>
                     </div>
-                @empty
-                    <div class="px-6 py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                        Er zijn nog geen enquêtes gevonden.
-                    </div>
-                @endforelse
+                        @empty
+                            <div class="px-6 py-10 text-center">
+                                <p class="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                                    Geen enquêtes gevonden.
+                                </p>
+
+                                <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                                    @if (request()->hasAny(['search', 'status']))
+                                        Er zijn geen enquêtes die passen bij de gekozen filters.
+                                    @else
+                                        Er zijn nog geen enquêtes aangemaakt.
+                                    @endif
+                                </p>
+
+                                @if (request()->hasAny(['search', 'status'  ]))
+                                    <a href="{{ route('survey-manager.index') }}" class="btn-secondary mt-4 inline-flex">
+                                        Filters resetten
+                                    </a>
+                                @endif
+                            </div>
+                        @endforelse
             </div>
 
             @if ($surveys->hasPages())

@@ -58,4 +58,72 @@ class SurveyCreatorTest extends TestCase
 
         $this->assertTrue($viewer->hasRole('LICEmployee'));
     }
+        public function test_surveys_can_be_filtered_by_creator_name(): void
+    {
+        $admin = User::factory()->create([
+            'name' => 'Admin',
+        ]);
+
+        $otherUser = User::factory()->create([
+            'name' => 'LIC Medewerker',
+        ]);
+
+        $adminSurvey = Survey::factory()->create([
+            'title' => 'Enquête van admin',
+            'created_by' => $admin->id,
+        ]);
+
+        Survey::factory()->create([
+            'title' => 'Enquête van LIC medewerker',
+            'created_by' => $otherUser->id,
+        ]);
+
+        $search = 'Admin';
+
+        $surveys = Survey::query()
+            ->where(function ($query) use ($search) {
+                $query->where('title', 'like', '%' . $search . '%')
+                    ->orWhereHas('creator', function ($query) use ($search) {
+                        $query->where('name', 'like', '%' . $search . '%');
+                    });
+            })
+            ->get();
+
+        $this->assertCount(1, $surveys);
+        $this->assertTrue($surveys->contains($adminSurvey));
+    }
+
+    public function test_surveys_can_be_filtered_by_creator_name_and_status(): void
+    {
+        $admin = User::factory()->create([
+            'name' => 'Admin',
+        ]);
+
+        $activeSurvey = Survey::factory()->create([
+            'title' => 'Actieve admin enquête',
+            'created_by' => $admin->id,
+            'is_active' => true,
+        ]);
+
+        Survey::factory()->create([
+            'title' => 'Gesloten admin enquête',
+            'created_by' => $admin->id,
+            'is_active' => false,
+        ]);
+
+        $search = 'Admin';
+
+        $surveys = Survey::query()
+            ->where(function ($query) use ($search) {
+                $query->where('title', 'like', '%' . $search . '%')
+                    ->orWhereHas('creator', function ($query) use ($search) {
+                        $query->where('name', 'like', '%' . $search . '%');
+                    });
+            })
+            ->where('is_active', true)
+            ->get();
+
+        $this->assertCount(1, $surveys);
+        $this->assertTrue($surveys->contains($activeSurvey));
+    }
 }
