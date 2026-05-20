@@ -23,19 +23,29 @@ new #[Title('Gebruikers')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
+<section class="w-full" aria-labelledby="admin-users-page-title">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Gebruikers') }}</flux:heading>
+    <flux:heading class="sr-only" id="admin-users-page-title">{{ __('Gebruikers') }}</flux:heading>
 
     <x-pages::admin.layout
         :heading="__('Gebruikers')"
         :subheading="__('Maak accounts aan en wijs rollen toe. Zelfregistratie staat uit.')"
     >
+        @if (session('status'))
+            <div
+                class="my-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200"
+                role="status"
+                aria-live="polite"
+            >
+                {{ session('status') }}
+            </div>
+        @endif
+
         <div
             class="my-6 flex flex-col gap-4 rounded-lg sm:rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <div class="flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-0">
-                <a href="{{ route('admin.users.create') }}" class="btn-primary w-full sm:w-auto text-center" wire:navigate>
+                <a href="{{ route('admin.users.create') }}" class="btn-primary w-full sm:w-auto text-center" wire:navigate aria-label="{{ __('Gebruiker toevoegen') }}">
                     {{ __('Gebruiker toevoegen') }}
                 </a>
             </div>
@@ -64,7 +74,7 @@ new #[Title('Gebruikers')] class extends Component {
                                     </div>
                                 </flux:table.cell>
                                 <flux:table.cell align="end">
-                                    <a href="{{ route('admin.users.edit', $user) }}" class="btn-secondary text-xs sm:text-sm whitespace-nowrap" wire:navigate>
+                                    <a href="{{ route('admin.users.edit', $user) }}" class="btn-secondary text-xs sm:text-sm whitespace-nowrap" wire:navigate aria-label="{{ __('Bewerk gebruiker :name', ['name' => $user->name]) }}">
                                         {{ __('Bewerken') }}
                                     </a>
                                 </flux:table.cell>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,15 +19,20 @@ class SurveyResponse extends Model
         'withdrawal_token',
         'submitted_at',
         'withdrawn_at',
-        'delete_on_date',
     ];
 
     protected $casts = [
         'submitted_at' => 'datetime',
         'withdrawn_at' => 'datetime',
-        'delete_on_date' => 'date',
         'is_anonymous' => 'boolean',
     ];
+
+    public function deleteOnDate(): ?Carbon
+    {
+        $referenceDate = $this->submitted_at ?? $this->created_at;
+
+        return $referenceDate->copy()->addYears((int)config('surveys.retention_years'));
+    }
 
     public function survey(): BelongsTo
     {
@@ -58,13 +64,13 @@ class SurveyResponse extends Model
         return $query->where(function (Builder $query): void {
             $query
                 ->whereDoesntHave('participant')
-                ->orWhereHas('participant', fn (Builder $participantQuery) => $participantQuery->whereNull('blocked_at'));
+                ->orWhereHas('participant', fn(Builder $participantQuery) => $participantQuery->whereNull('blocked_at'));
         });
     }
 
     public function hasSharedContactDetails(): bool
     {
-        return ! $this->is_anonymous;
+        return !$this->is_anonymous;
     }
 
     public function sharedContactFieldLabels(): array
@@ -74,11 +80,11 @@ class SurveyResponse extends Model
 
     public function awardedPoints(): int
     {
-        return (int) $this->participantPointsHistories->sum('amount');
+        return (int)$this->participantPointsHistories->sum('amount');
     }
 
     public function totalPoints(): int
     {
-        return (int) ($this->participant?->current_points ?? 0);
+        return (int)($this->participant?->current_points ?? 0);
     }
 }

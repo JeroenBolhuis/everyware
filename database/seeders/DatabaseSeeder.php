@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             SurveySeeder::class,
             SurveyAnswerSeeder::class,
+            ParticipantSeeder::class,
         ]);
 
         User::factory()->admin()->create([

@@ -1,9 +1,9 @@
 <x-layouts::app :title="__('Enquetes')">
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
+    <main class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl" aria-labelledby="survey-manager-page-title">
         <div
             class="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-zinc-900 dark:text-white">Enquête-overzicht</h1>
+                <h1 id="survey-manager-page-title" class="text-2xl font-semibold text-zinc-900 dark:text-white">Enquête-overzicht</h1>
                 <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                     Maak, beheer en sluit enquêtes voor LIC-medewerkers en administrators.
                 </p>
@@ -12,6 +12,7 @@
             <a
                 href="{{ route('survey-manager.create') }}"
                 class="btn-primary"
+                aria-label="{{ __('Nieuwe enquête aanmaken') }}"
             >
                 Nieuwe enquête
             </a>
@@ -19,14 +20,20 @@
 
         @if (session('status'))
             <div
-                class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900/50 dark:bg-green-950/40 dark:text-green-200">
+                class="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900/50 dark:bg-green-950/40 dark:text-green-200"
+                role="status"
+                aria-live="polite"
+            >
                 {{ session('status') }}
             </div>
         @endif
 
         @if ($errors->has('questions'))
             <div
-                class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+                class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200"
+                role="alert"
+                aria-live="assertive"
+            >
                 {{ $errors->first('questions') }}
             </div>
         @endif
@@ -109,13 +116,14 @@
 
             <div class="divide-y divide-neutral-200 dark:divide-neutral-700">
                 @forelse ($surveys as $survey)
-                    <div class="survey-card flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-start lg:justify-between"
+                    <article class="survey-card flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-start lg:justify-between"
                             data-title="{{ strtolower($survey->title) }}"
                             data-creator="{{ strtolower($survey->creator?->name ?? 'onbekend') }}"
-                            data-status="{{ $survey->is_active ? 'active' : 'closed' }}">
+                            data-status="{{ $survey->is_active ? 'active' : 'closed' }}"
+                            aria-labelledby="survey-title-{{ $survey->id }}">
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">{{ $survey->title }}</h3>
+                                <h3 id="survey-title-{{ $survey->id }}" class="text-lg font-semibold text-zinc-900 dark:text-white">{{ $survey->title }}</h3>
 
                                 @if ($survey->is_active)
                                     <span
@@ -169,6 +177,7 @@
                                         type="button"
                                         onclick="navigator.clipboard.writeText('{{ route('survey.share.show', $survey->share_token) }}').then(() => { this.textContent = 'Gekopieerd!'; setTimeout(() => this.textContent = 'Kopieer', 2000); })"
                                         class="shrink-0 text-xs text-indigo-600 hover:underline dark:text-indigo-400"
+                                        aria-label="{{ __('Kopieer openbare enquête-link voor :title', ['title' => $survey->title]) }}"
                                     >Kopieer</button>
                                 </div>
                             @endif
@@ -177,19 +186,20 @@
                                 <a
                                     href="{{ route('survey-manager.edit', $survey) }}"
                                     class="btn-secondary"
+                                    aria-label="{{ __('Bewerk enquête :title', ['title' => $survey->title]) }}"
                                 >
                                     Bewerken
                                 </a>
 
                                 @if ($survey->is_active)
-                                    <a href="{{ route('survey.share.show', $survey->share_token) }}" target="_blank" class="btn-secondary">
+                                    <a href="{{ route('survey.share.show', $survey->share_token) }}" target="_blank" rel="noopener" class="btn-secondary" aria-label="{{ __('Open actieve enquête :title in nieuw tabblad', ['title' => $survey->title]) }}">
                                         Open enquête
                                     </a>
 
                                     <form method="POST" action="{{ route('survey-manager.close', $survey) }}" onsubmit="return confirm('Weet je zeker dat je deze enquête wilt sluiten?');">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="btn-primary">
+                                        <button type="submit" class="btn-primary" aria-label="{{ __('Sluit enquête :title', ['title' => $survey->title]) }}">
                                             Sluiten
                                         </button>
                                     </form>
@@ -200,7 +210,7 @@
                                 @endif
                             </div>
                         </div>
-                    </div>
+                    </article>
                         @empty
                             <div class="px-6 py-10 text-center">
                                 <p class="text-sm font-medium text-zinc-700 dark:text-zinc-200">
@@ -230,5 +240,5 @@
                 </div>
             @endif
         </div>
-    </div>
+    </main>
 </x-layouts::app>
