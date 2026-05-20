@@ -20,7 +20,7 @@ class PruneSurveyAnswers extends Command
      *
      * @var string
      */
-    protected $description = 'Delete survey responses whose delete date has passed';
+    protected $description = 'Delete survey responses older than configured retention years';
 
     /**
      * Execute the console command.
@@ -28,11 +28,18 @@ class PruneSurveyAnswers extends Command
     public function handle(): int
     {
         $deleteSurveySubmission = app(DeleteSurveySubmission::class);
+        $cutoff = now()->subYears((int) config('surveys.retention_years'));
 
         $deletedCount = 0;
 
         SurveyResponse::query()
-            ->whereDate('delete_on_date', '<=', now()->toDateString())
+            ->where(function ($query) use ($cutoff): void {
+                $query->where('submitted_at', '<', $cutoff)
+                    ->orWhere(function ($query) use ($cutoff): void {
+                        $query->whereNull('submitted_at')
+                            ->where('created_at', '<', $cutoff);
+                    });
+            })
             ->chunkById(200, function ($responses) use ($deleteSurveySubmission, &$deletedCount): void {
                 foreach ($responses as $response) {
                     $deleteSurveySubmission->handle($response);

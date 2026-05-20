@@ -9,9 +9,7 @@ use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
 use App\Models\Survey;
-use App\Models\SurveyAnswerRetentionSetting;
 use App\Models\SurveyResponse;
-use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -83,7 +81,6 @@ class SurveyController extends Controller
             $response = $survey->responses()->create([
                 'withdrawal_token' => Str::uuid(),
                 'submitted_at' => $submittedAt,
-                'delete_on_date' => $this->resolveResponseDeleteOnDate($submittedAt),
             ]);
 
             $answers = collect($validated['answers'])
@@ -306,17 +303,5 @@ class SurveyController extends Controller
             ->where('email', $contactEmail)
             ->whereNotNull('blocked_at')
             ->exists();
-    }
-
-    private function resolveResponseDeleteOnDate(?CarbonInterface $submittedAt): ?string
-    {
-        $autoDeleteAfterDays = SurveyAnswerRetentionSetting::query()->value('auto_delete_after_days');
-
-        if ($autoDeleteAfterDays === null) {
-            return null;
-        }
-
-        return $submittedAt?->copy()->addDays($autoDeleteAfterDays)->toDateString()
-            ?? now()->addDays($autoDeleteAfterDays)->toDateString();
     }
 }

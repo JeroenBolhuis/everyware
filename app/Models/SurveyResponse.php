@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,14 +17,23 @@ class SurveyResponse extends Model
         'withdrawal_token',
         'submitted_at',
         'withdrawn_at',
-        'delete_on_date',
     ];
 
     protected $casts = [
         'submitted_at' => 'datetime',
         'withdrawn_at' => 'datetime',
-        'delete_on_date' => 'date',
     ];
+
+    public function deleteOnDate(): ?Carbon
+    {
+        $referenceDate = $this->submitted_at ?? $this->created_at;
+
+        if ($referenceDate === null) {
+            return null;
+        }
+
+        return $referenceDate->copy()->addYears((int) config('surveys.retention_years'));
+    }
 
     public function survey(): BelongsTo
     {

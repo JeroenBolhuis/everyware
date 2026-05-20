@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Survey;
-use App\Models\SurveyAnswerRetentionSetting;
 use App\Models\SurveyResponse;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -10,7 +9,7 @@ use Livewire\WithPagination;
 new #[Title('Enquete-inzendingen')] class extends Component {
     use WithPagination;
 
-    public ?int $autoDeleteAfterDays = null;
+    public int $retentionYears = 5;
     public int $upcomingDeletionWarningDays = 7;
     public bool $showUpcomingDeletionWarning = true;
 
@@ -18,8 +17,8 @@ new #[Title('Enquete-inzendingen')] class extends Component {
     {
         $this->authorize('viewAny', Survey::class);
 
-        $this->autoDeleteAfterDays = SurveyAnswerRetentionSetting::query()
-            ->value('auto_delete_after_days');
+        $this->retentionYears = (int) config('surveys.retention_years');
+        $this->upcomingDeletionWarningDays = (int) config('surveys.upcoming_warning_days');
     }
 
     public function dismissUpcomingDeletionWarning(): void
@@ -27,99 +26,45 @@ new #[Title('Enquete-inzendingen')] class extends Component {
         $this->showUpcomingDeletionWarning = false;
     }
 
-    public function saveAutoDeleteAfterDays(): void
+    public function saveRetentionYears(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
 
         $validated = $this->validate([
-            'autoDeleteAfterDays' => ['nullable', 'integer', 'min:1', 'max:3650'],
+            'retentionYears' => ['required', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $setting = SurveyAnswerRetentionSetting::query()->first();
-        $currentAutoDeleteAfterDays = $setting?->auto_delete_after_days;
-        $newAutoDeleteAfterDays = $validated['autoDeleteAfterDays'];
+        $retentionYears = (int) $validated['retentionYears'];
 
-        if ($setting === null) {
-            SurveyAnswerRetentionSetting::query()->create([
-                'auto_delete_after_days' => $newAutoDeleteAfterDays,
-            ]);
-        } else {
-            $setting->update([
-                'auto_delete_after_days' => $newAutoDeleteAfterDays,
-            ]);
+        if (! app()->runningUnitTests()) {
+            $this->updateEnvValue('SURVEYS_RETENTION_YEARS', (string) $retentionYears);
         }
 
-        $this->autoDeleteAfterDays = $newAutoDeleteAfterDays;
-
-        if ($newAutoDeleteAfterDays !== null && $currentAutoDeleteAfterDays === null) {
-            $this->applyDeleteDateToResponsesWithoutDeadline($newAutoDeleteAfterDays);
-        }
-
-        if (
-            $newAutoDeleteAfterDays !== null
-            && $currentAutoDeleteAfterDays !== null
-            && $newAutoDeleteAfterDays < $currentAutoDeleteAfterDays
-        ) {
-            $this->tightenExistingDeleteDates($newAutoDeleteAfterDays);
-            $this->deleteExpiredResponses();
-        }
+        config(['surveys.retention_years' => $retentionYears]);
+        $this->retentionYears = $retentionYears;
 
         $this->dispatch('retention-setting-saved');
     }
 
-    private function applyDeleteDateToResponsesWithoutDeadline(int $days): void
+    private function updateEnvValue(string $key, string $value): void
     {
-        SurveyResponse::query()
-            ->whereNull('delete_on_date')
-            ->chunkById(200, function ($responses) use ($days): void {
-                foreach ($responses as $response) {
-                    $referenceDate = $response->submitted_at ?? $response->created_at;
+        $envPath = base_path('.env');
+        $envContent = file_exists($envPath) ? file_get_contents($envPath) : false;
 
-                    if ($referenceDate === null) {
-                        continue;
-                    }
+        if ($envContent === false) {
+            return;
+        }
 
-                    $response->update([
-                        'delete_on_date' => $referenceDate->copy()->addDays($days)->toDateString(),
-                    ]);
-                }
-            });
-    }
+        $pattern = '/^'.preg_quote($key, '/').'=.*$/m';
+        $replacement = $key.'='.$value;
 
-    private function tightenExistingDeleteDates(int $days): void
-    {
-        SurveyResponse::query()
-            ->chunkById(200, function ($responses) use ($days): void {
-                foreach ($responses as $response) {
-                    $referenceDate = $response->submitted_at ?? $response->created_at;
+        if (preg_match($pattern, $envContent) === 1) {
+            $updatedEnvContent = (string) preg_replace($pattern, $replacement, $envContent);
+        } else {
+            $updatedEnvContent = rtrim($envContent).PHP_EOL.$replacement.PHP_EOL;
+        }
 
-                    if ($referenceDate === null) {
-                        continue;
-                    }
-
-                    $newDeleteOnDate = $referenceDate->copy()->addDays($days)->toDateString();
-                    $currentDeleteOnDate = $response->delete_on_date?->toDateString();
-
-                    if ($currentDeleteOnDate === null || $currentDeleteOnDate > $newDeleteOnDate) {
-                        $response->update([
-                            'delete_on_date' => $newDeleteOnDate,
-                        ]);
-                    }
-                }
-            });
-    }
-
-    private function deleteExpiredResponses(): void
-    {
-        $deleteSurveySubmission = app(\App\Actions\Surveys\DeleteSurveySubmission::class);
-
-        SurveyResponse::query()
-            ->whereDate('delete_on_date', '<=', now()->toDateString())
-            ->chunkById(200, function ($responses) use ($deleteSurveySubmission): void {
-                foreach ($responses as $response) {
-                    $deleteSurveySubmission->handle($response);
-                }
-            });
+        file_put_contents($envPath, $updatedEnvContent);
     }
 
     public function getSurveysProperty()
@@ -130,39 +75,37 @@ new #[Title('Enquete-inzendingen')] class extends Component {
             ->paginate(15);
     }
 
-    public function getUpcomingDeletionWarningProperty(): ?array
+    public function getUpcomingDeletionWarningProperty(): array
     {
-        $today = now()->toDateString();
-        $warningThreshold = now()->addDays($this->upcomingDeletionWarningDays)->toDateString();
-
-        $upcomingResponses = SurveyResponse::query()
-            ->whereNotNull('delete_on_date')
-            ->whereDate('delete_on_date', '>=', $today)
-            ->whereDate('delete_on_date', '<=', $warningThreshold);
-
-        $count = (clone $upcomingResponses)->count();
-
-        if ($count === 0) {
-            return null;
-        }
+        $upcomingResponses = $this->upcomingDeletionResponses;
+        $count = $upcomingResponses->count();
+        $nextDeleteOnDate = $upcomingResponses
+            ->map(fn (SurveyResponse $response) => $response->deleteOnDate())
+            ->filter()
+            ->sort()
+            ->first();
 
         return [
             'count' => $count,
-            'next_delete_on_date' => (clone $upcomingResponses)->min('delete_on_date'),
+            'next_delete_on_date' => $nextDeleteOnDate,
         ];
     }
 
     public function getUpcomingDeletionResponsesProperty()
     {
-        $today = now()->toDateString();
-        $warningThreshold = now()->addDays($this->upcomingDeletionWarningDays)->toDateString();
+        $windowStart = now()->subYears($this->retentionYears);
+        $windowEnd = now()->addDays($this->upcomingDeletionWarningDays)->subYears($this->retentionYears);
 
         return SurveyResponse::query()
             ->with('survey')
-            ->whereNotNull('delete_on_date')
-            ->whereDate('delete_on_date', '>=', $today)
-            ->whereDate('delete_on_date', '<=', $warningThreshold)
-            ->orderBy('delete_on_date')
+            ->where(function ($query) use ($windowStart, $windowEnd): void {
+                $query->whereBetween('submitted_at', [$windowStart, $windowEnd])
+                    ->orWhere(function ($query) use ($windowStart, $windowEnd): void {
+                        $query->whereNull('submitted_at')
+                            ->whereBetween('created_at', [$windowStart, $windowEnd]);
+                    });
+            })
+            ->orderBy('submitted_at')
             ->limit(25)
             ->get();
     }
@@ -191,9 +134,9 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                     </button>
                 </div>
 
-                @if ($this->upcomingDeletionWarning !== null)
+                @if ($this->upcomingDeletionWarning['count'] > 0)
                     <flux:text class="mt-2 text-sm">
-                        {{ __('Er worden binnenkort :count inzendingen automatisch verwijderd. Eerstvolgende verwijderdatum: :date.', ['count' => $this->upcomingDeletionWarning['count'], 'date' => \Illuminate\Support\Carbon::parse($this->upcomingDeletionWarning['next_delete_on_date'])->format('d-m-Y')]) }}
+                        {{ __('Er worden binnenkort :count inzendingen automatisch verwijderd. Eerstvolgende verwijderdatum: :date.', ['count' => $this->upcomingDeletionWarning['count'], 'date' => $this->upcomingDeletionWarning['next_delete_on_date']?->format('d-m-Y')]) }}
                     </flux:text>
 
                     <details class="mt-4 rounded-lg border border-amber-300 bg-white/70 p-3 text-sm dark:border-amber-600 dark:bg-amber-950/40">
@@ -205,7 +148,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                             @foreach ($this->upcomingDeletionResponses as $upcomingResponse)
                                 <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                                     <span>
-                                        {{ __('Inzending #:id (:survey) - verwijdering op :date', ['id' => $upcomingResponse->id, 'survey' => $upcomingResponse->survey?->title ?? __('Onbekende enquete'), 'date' => $upcomingResponse->delete_on_date?->format('d-m-Y')]) }}
+                                        {{ __('Inzending #:id (:survey) - verwijdering op :date', ['id' => $upcomingResponse->id, 'survey' => $upcomingResponse->survey?->title ?? __('Onbekende enquete'), 'date' => $upcomingResponse->deleteOnDate()?->format('d-m-Y')]) }}
                                     </span>
                                     <a
                                         href="{{ route('admin.responses.show', $upcomingResponse) }}"
@@ -230,14 +173,14 @@ new #[Title('Enquete-inzendingen')] class extends Component {
             class="my-6 rounded-lg sm:rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('Automatische verwijdering van antwoorden') }}</flux:heading>
             <flux:text class="mt-2 text-sm text-zinc-500">
-                {{ __('Ingestelde bewaartermijn: :value', ['value' => $autoDeleteAfterDays !== null ? $autoDeleteAfterDays.' dagen' : __('Uitgeschakeld')]) }}
+                {{ __('Ingestelde bewaartermijn: :value jaar', ['value' => $retentionYears]) }}
             </flux:text>
 
             @if (auth()->user()?->isAdmin())
-                <form wire:submit="saveAutoDeleteAfterDays" class="mt-4 space-y-4">
+                <form wire:submit="saveRetentionYears" class="mt-4 space-y-4">
                     <flux:input
-                        wire:model="autoDeleteAfterDays"
-                        :label="__('Verwijder antwoorden na (dagen)')"
+                        wire:model="retentionYears"
+                        :label="__('Bewaartermijn in jaren')"
                         type="number"
                         min="1"
                         inputmode="numeric"

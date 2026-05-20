@@ -5,7 +5,6 @@ use App\Models\ContactInformationSubmission;
 use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
 use App\Models\Survey;
-use App\Models\SurveyAnswerRetentionSetting;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -180,11 +179,7 @@ it('submits a survey and sends a confirmation email when an email address is pro
     });
 });
 
-it('sets delete_on_date for newly submitted responses when retention is configured', function () {
-    SurveyAnswerRetentionSetting::create([
-        'auto_delete_after_days' => 14,
-    ]);
-
+it('stores submitted_at for retention processing on new submissions', function () {
     $survey = createSurvey();
     $question = $survey->questions[0];
 
@@ -196,8 +191,7 @@ it('sets delete_on_date for newly submitted responses when retention is configur
 
     $surveyResponse = SurveyResponse::query()->latest('id')->firstOrFail();
 
-    expect($surveyResponse->delete_on_date)->not->toBeNull()
-        ->and($surveyResponse->delete_on_date->toDateString())->toBe(now()->addDays(14)->toDateString());
+    expect($surveyResponse->submitted_at)->not->toBeNull();
 });
 
 it('submits a survey without sending a confirmation email when no email address is provided', function () {
