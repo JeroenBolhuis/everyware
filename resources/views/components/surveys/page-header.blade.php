@@ -1,9 +1,9 @@
 <header class="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
-        <a href="{{ route('surveys.index') }}" class="flex shrink-0 items-center gap-2 text-red-700" aria-label="Avans enquêtes">
-            <span class="grid size-9 place-items-center rounded-md bg-red-600 text-base font-black leading-none text-white">A</span>
-            <span class="text-xl font-bold tracking-tight">avans</span>
+        <a href="{{ route('surveys.index') }}" class="shrink-0 flex items-center h-10" aria-label="Avans Hogeschool">
+            <img src="/images/Avans_Hogeschool_Logo.svg" alt="Avans Hogeschool Logo" class="h-7 w-auto" />
         </a>
+   
 
         <div class="min-w-0 flex-1 text-center">
             <div class="truncate text-sm font-semibold text-zinc-900 sm:text-base">LIC Feedback</div>
