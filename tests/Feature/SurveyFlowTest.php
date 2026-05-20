@@ -8,6 +8,7 @@ use App\Models\Survey;
 use App\Models\SurveyAnswerRetentionSetting;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -154,6 +155,66 @@ it('submits a survey anonymously without awarding points', function () {
 
     Mail::assertNothingSent();
 });
+
+it('shows an already completed screen when the participant opens a completed survey', function () {
+    $survey = createSurvey();
+    createSurveyResponse($survey, [
+        'participant_id' => auth('participant')->id(),
+    ]);
+
+    get(route('survey.show', $survey))
+        ->assertOk()
+        ->assertSee('Je hebt deze enquête al ingevuld')
+        ->assertSee('Mijn punten bekijken')
+        ->assertSee('Naar alle enquêtes')
+        ->assertDontSee('Are you satisfied?');
+});
+
+it('prevents duplicate survey submissions on the backend', function () {
+    $survey = createSurvey();
+    $question1 = $survey->questions[0];
+
+    createSurveyResponse($survey, [
+        'participant_id' => auth('participant')->id(),
+    ]);
+
+    post(route('survey.store', $survey), [
+        'answers' => [
+            $question1->id => 'yes',
+        ],
+    ])->assertRedirect(route('survey.already-completed', SurveyResponse::firstOrFail()));
+
+    expect(SurveyResponse::query()->where('survey_id', $survey->id)->count())->toBe(1);
+});
+
+it('marks completed surveys as disabled on the survey overview', function () {
+    $completedSurvey = createSurvey(['title' => 'Al ingevulde enquête']);
+    $openSurvey = createSurvey(['title' => 'Nieuwe enquête']);
+
+    createSurveyResponse($completedSurvey, [
+        'participant_id' => auth('participant')->id(),
+    ]);
+
+    get(route('surveys.index'))
+        ->assertOk()
+        ->assertSee('Al ingevulde enquête')
+        ->assertSee('Nieuwe enquête')
+        ->assertSee('Enquête al ingevuld')
+        ->assertSee('Enquete invullen');
+});
+
+it('enforces one response per participant and survey in the database', function () {
+    $survey = createSurvey();
+    $participant = Participant::factory()->create();
+
+    createSurveyResponse($survey, [
+        'participant_id' => $participant->id,
+    ]);
+
+    createSurveyResponse($survey, [
+        'participant_id' => $participant->id,
+    ]);
+})->throws(QueryException::class);
 
 it('awards points and sends confirmation when contact is allowed', function () {
     Mail::fake();
@@ -386,6 +447,8 @@ it('shows the awarded and total points on the thank you page', function () {
     $response->assertOk();
     $response->assertSee('Je hebt 10 punten gekregen.');
     $response->assertSee('Je totaal staat nu op 10 punten.');
+    $response->assertSee('Mijn punten bekijken');
+    $response->assertSee('Naar alle enquêtes');
 });
 
 /* Thank-you page shows form if no contact data */

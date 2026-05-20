@@ -32,6 +32,10 @@
             <div id="surveys-container" class="mt-6">
                 <div class="space-y-4">
                     @forelse ($surveys as $survey)
+                        @php
+                            $hasCompletedSurvey = in_array($survey->id, $completedSurveyIds, true);
+                        @endphp
+
                         <div class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
                             <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
                                 <div class="flex-1 min-w-0">
@@ -52,7 +56,11 @@
                                     </div>
                                 </div>
                                 <div class="w-full sm:w-auto ml-0 sm:ml-4">
-                                    @if ($survey->is_active)
+                                    @if ($hasCompletedSurvey)
+                                        <span class="btn-disabled block w-full text-center sm:w-auto">
+                                            Enquête al ingevuld
+                                        </span>
+                                    @elseif ($survey->is_active)
                                         <a href="{{ route('survey.show', $survey) }}" class="btn-primary block w-full text-center sm:w-auto">
                                             Enquete invullen
                                         </a>

@@ -44,6 +44,7 @@ Route::prefix('survey')->name('survey.')->group(function () {
         Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
         Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
         Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');
+        Route::get('/response/{response}/al-ingevuld', [SurveyController::class, 'alreadyCompleted'])->name('already-completed');
         Route::post('/response/{response}/contact-toestaan', [SurveyController::class, 'allowContact'])->name('contact-details.store');
     });
 });
