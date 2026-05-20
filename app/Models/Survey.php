@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[ObservedBy(SurveyObserver::class)]
 class Survey extends Model
@@ -19,6 +20,7 @@ class Survey extends Model
         'is_active',
         'share_token',
         'reward_points',
+        'created_by_user_id',
     ];
 
     protected $attributes = [
@@ -38,5 +40,9 @@ class Survey extends Model
     public function responses(): HasMany
     {
         return $this->hasMany(SurveyResponse::class);
+    }
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 }

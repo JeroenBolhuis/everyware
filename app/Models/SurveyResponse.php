@@ -16,11 +16,13 @@ class SurveyResponse extends Model
         'withdrawal_token',
         'submitted_at',
         'withdrawn_at',
+        'delete_on_date',
     ];
 
     protected $casts = [
         'submitted_at' => 'datetime',
         'withdrawn_at' => 'datetime',
+        'delete_on_date' => 'date',
     ];
 
     public function survey(): BelongsTo
