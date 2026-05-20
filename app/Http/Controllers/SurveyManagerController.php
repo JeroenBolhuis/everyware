@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Surveys\UpsertSurveyRequest;
 use App\Models\Survey;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Enums\Role;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -46,12 +48,31 @@ class SurveyManagerController extends Controller
 
     public function index(Request $request)
     {
+        $canFilterByCreator = $request->user()->isAdmin() || $request->user()->isLicEmployee();
+
+        $licEmployees = $canFilterByCreator
+            ? User::role(Role::LicEmployee->value)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : collect();
+
         $query = Survey::query()
+            ->when(
+                $request->user()->isAdmin() || $request->user()->isLicEmployee(),
+                fn ($query) => $query->with('creator')
+            )
             ->withCount(['questions', 'responses'])
             ->latest();
 
         if ($request->filled('search')) {
-            $query->where('title', 'like', '%' . $request->string('search') . '%');
+            $search = $request->string('search')->toString();
+
+            $query->where(function ($query) use ($search) {
+                $query->where('title', 'like', '%' . $search . '%')
+                    ->orWhereHas('creator', function ($query) use ($search) {
+                        $query->where('name', 'like', '%' . $search . '%');
+                    });
+            });
         }
 
         $status = $request->string('status')->toString();
@@ -73,9 +94,13 @@ class SurveyManagerController extends Controller
             'responses' => DB::table('survey_responses')->count(),
         ];
 
-        return view('survey-manager.index', compact('surveys', 'stats'));
+        return view('survey-manager.index', compact(
+            'surveys',
+            'stats',
+            'licEmployees',
+            'canFilterByCreator'
+        ));
     }
-
     public function create()
     {
         return view('survey-manager.create');
@@ -86,12 +111,13 @@ class SurveyManagerController extends Controller
         $validated = $request->validated();
         $questions = $this->buildQuestionsPayload($request, $validated['questions']);
 
-        DB::transaction(function () use ($validated, $questions): void {
+        DB::transaction(function () use ($request, $validated, $questions): void {
             $survey = Survey::create([
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
                 'is_active' => (bool)$validated['is_active'],
                 'reward_points' => $validated['reward_points'] ?? 10,
+                'created_by_user_id' => $request->user()->id,
             ]);
 
             $survey->questions()->createMany(
