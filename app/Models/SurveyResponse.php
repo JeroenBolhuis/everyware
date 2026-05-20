@@ -31,11 +31,7 @@ class SurveyResponse extends Model
     {
         $referenceDate = $this->submitted_at ?? $this->created_at;
 
-        if ($referenceDate === null) {
-            return null;
-        }
-
-        return $referenceDate->copy()->addYears((int) config('surveys.retention_years'));
+        return $referenceDate->copy()->addYears((int)config('surveys.retention_years'));
     }
 
     public function survey(): BelongsTo
@@ -68,13 +64,13 @@ class SurveyResponse extends Model
         return $query->where(function (Builder $query): void {
             $query
                 ->whereDoesntHave('participant')
-                ->orWhereHas('participant', fn (Builder $participantQuery) => $participantQuery->whereNull('blocked_at'));
+                ->orWhereHas('participant', fn(Builder $participantQuery) => $participantQuery->whereNull('blocked_at'));
         });
     }
 
     public function hasSharedContactDetails(): bool
     {
-        return ! $this->is_anonymous;
+        return !$this->is_anonymous;
     }
 
     public function sharedContactFieldLabels(): array
@@ -84,11 +80,11 @@ class SurveyResponse extends Model
 
     public function awardedPoints(): int
     {
-        return (int) $this->participantPointsHistories->sum('amount');
+        return (int)$this->participantPointsHistories->sum('amount');
     }
 
     public function totalPoints(): int
     {
-        return (int) ($this->participant?->current_points ?? 0);
+        return (int)($this->participant?->current_points ?? 0);
     }
 }
