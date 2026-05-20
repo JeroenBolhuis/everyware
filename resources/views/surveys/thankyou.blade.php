@@ -29,6 +29,15 @@
                     <p class="font-semibold">Je hebt {{ $response->awardedPoints() }} punten gekregen.</p>
                     <p class="mt-1">Je totaal staat nu op {{ $response->totalPoints() }} punten.</p>
                 </div>
+
+                <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <a href="{{ route('student.points') }}" class="btn-primary text-center">
+                        Mijn punten bekijken
+                    </a>
+                    <a href="{{ route('surveys.index') }}" class="btn-secondary text-center">
+                        Naar alle enquêtes
+                    </a>
+                </div>
             @endif
 
             <div class="mt-6 rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:p-5">
