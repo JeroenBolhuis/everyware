@@ -13,6 +13,7 @@ use App\Models\SurveyAnswerRetentionSetting;
 use App\Models\SurveyResponse;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -45,6 +46,10 @@ class SurveyController extends Controller
 
         abort_unless($survey->is_active, 404);
 
+        if ($survey->hasEnded()) {
+            return $this->expiredSurveyResponse($survey);
+        }
+
         return view('surveys.show', compact('survey'));
     }
 
@@ -55,6 +60,10 @@ class SurveyController extends Controller
 
         abort_unless($survey->is_active, 404);
 
+        if ($survey->hasEnded()) {
+            return $this->expiredSurveyResponse($survey);
+        }
+
         return view('surveys.show', compact('survey'));
     }
 
@@ -64,6 +73,10 @@ class SurveyController extends Controller
 
         abort_unless($survey->is_active, 404);
 
+        if ($survey->hasEnded()) {
+            return $this->expiredSurveyResponse($survey);
+        }
+
         return $this->store($request, $survey);
     }
 
@@ -72,6 +85,10 @@ class SurveyController extends Controller
         $validated = $request->validated();
         $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
         $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
+
+        if ($survey->hasEnded()) {
+            return $this->expiredSurveyResponse($survey);
+        }
 
         if ($this->isBlockedEmail($contactEmail)) {
             return to_route('survey.thankyou.generic');
@@ -318,5 +335,10 @@ class SurveyController extends Controller
 
         return $submittedAt?->copy()->addDays($autoDeleteAfterDays)->toDateString()
             ?? now()->addDays($autoDeleteAfterDays)->toDateString();
+    }
+
+    private function expiredSurveyResponse(Survey $survey): Response
+    {
+        return response()->view('surveys.expired', compact('survey'), 410);
     }
 }

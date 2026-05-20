@@ -32,10 +32,37 @@ it('uses the default reward points value and applies casts', function () {
         'title' => 'Beloningen',
         'description' => 'Beschrijving',
         'is_active' => 1,
+        'ends_at' => today()->toDateString(),
     ]);
 
     expect($survey->reward_points)->toBe(10);
     expect($survey->is_active)->toBeTrue();
+    expect($survey->ends_at->toDateString())->toBe(today()->toDateString());
+});
+
+it('knows whether it is accepting responses based on status and end date', function () {
+    $activeWithoutEndDate = Survey::factory()->make([
+        'is_active' => true,
+        'ends_at' => null,
+    ]);
+    $activeEndingToday = Survey::factory()->make([
+        'is_active' => true,
+        'ends_at' => today(),
+    ]);
+    $expired = Survey::factory()->make([
+        'is_active' => true,
+        'ends_at' => today()->subDay(),
+    ]);
+    $closed = Survey::factory()->make([
+        'is_active' => false,
+        'ends_at' => null,
+    ]);
+
+    expect($activeWithoutEndDate->isAcceptingResponses())->toBeTrue()
+        ->and($activeEndingToday->isAcceptingResponses())->toBeTrue()
+        ->and($expired->hasEnded())->toBeTrue()
+        ->and($expired->isAcceptingResponses())->toBeFalse()
+        ->and($closed->isAcceptingResponses())->toBeFalse();
 });
 
 it('returns questions ordered by sort order', function () {

@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Surveys\UpsertSurveyRequest;
 use App\Models\Survey;
-use Illuminate\Http\Request;
 use App\Models\User;
-use App\Enums\Role;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -48,30 +47,24 @@ class SurveyManagerController extends Controller
 
     public function index(Request $request)
     {
-        $canFilterByCreator = $request->user()->isAdmin() || $request->user()->isLicEmployee();
-
-        $licEmployees = $canFilterByCreator
-            ? User::role(Role::LicEmployee->value)
-                ->orderBy('name')
-                ->get(['id', 'name'])
-            : collect();
+        $user = $request->user();
+        $canFilterByCreator = (bool) ($user?->isAdmin() || $user?->isLicEmployee());
+        $search = $request->string('search')->toString();
 
         $query = Survey::query()
-            ->when(
-                $request->user()->isAdmin() || $request->user()->isLicEmployee(),
-                fn ($query) => $query->with('creator')
-            )
+            ->with('creator')
             ->withCount(['questions', 'responses'])
             ->latest();
 
-        if ($request->filled('search')) {
-            $search = $request->string('search')->toString();
+        if ($search !== '') {
+            $query->where(function ($query) use ($canFilterByCreator, $search): void {
+                $query->where('title', 'like', '%'.$search.'%');
 
-            $query->where(function ($query) use ($search) {
-                $query->where('title', 'like', '%' . $search . '%')
-                    ->orWhereHas('creator', function ($query) use ($search) {
-                        $query->where('name', 'like', '%' . $search . '%');
+                if ($canFilterByCreator) {
+                    $query->orWhereHas('creator', function ($query) use ($search): void {
+                        $query->where('name', 'like', '%'.$search.'%');
                     });
+                }
             });
         }
 
@@ -94,13 +87,18 @@ class SurveyManagerController extends Controller
             'responses' => DB::table('survey_responses')->count(),
         ];
 
+        $licEmployees = $canFilterByCreator
+            ? User::role('LICEmployee')->orderBy('name')->get(['id', 'name'])
+            : collect();
+
         return view('survey-manager.index', compact(
             'surveys',
             'stats',
+            'canFilterByCreator',
             'licEmployees',
-            'canFilterByCreator'
         ));
     }
+
     public function create()
     {
         return view('survey-manager.create');
@@ -111,18 +109,19 @@ class SurveyManagerController extends Controller
         $validated = $request->validated();
         $questions = $this->buildQuestionsPayload($request, $validated['questions']);
 
-        DB::transaction(function () use ($request, $validated, $questions): void {
+        DB::transaction(function () use ($validated, $questions): void {
             $survey = Survey::create([
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
-                'is_active' => (bool)$validated['is_active'],
+                'is_active' => (bool) $validated['is_active'],
+                'ends_at' => $validated['ends_at'] ?? null,
                 'reward_points' => $validated['reward_points'] ?? 10,
-                'created_by_user_id' => $request->user()->id,
+                'created_by_user_id' => auth()->id(),
             ]);
 
             $survey->questions()->createMany(
                 collect($questions)
-                    ->map(fn(array $question) => Arr::except($question, ['id']))
+                    ->map(fn (array $question) => Arr::except($question, ['id']))
                     ->all()
             );
         });
@@ -146,7 +145,8 @@ class SurveyManagerController extends Controller
             $survey->update([
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
-                'is_active' => (bool)$validated['is_active'],
+                'is_active' => (bool) $validated['is_active'],
+                'ends_at' => $validated['ends_at'] ?? null,
                 'reward_points' => $validated['reward_points'] ?? 10,
             ]);
 
@@ -214,7 +214,7 @@ class SurveyManagerController extends Controller
             ->values()
             ->map(function (array $question, int $index) use ($request): array {
                 return [
-                    'id' => isset($question['id']) && $question['id'] !== '' ? (int)$question['id'] : null,
+                    'id' => isset($question['id']) && $question['id'] !== '' ? (int) $question['id'] : null,
                     'question' => trim($question['question']),
                     'type' => $question['type'],
                     'options' => $this->normalizeOptions(
@@ -223,7 +223,7 @@ class SurveyManagerController extends Controller
                         $question['type'],
                         $question['options'] ?? []
                     ),
-                    'required' => (bool)($question['required'] ?? false),
+                    'required' => (bool) ($question['required'] ?? false),
                     'sort_order' => $index + 1,
                 ];
             })
@@ -232,11 +232,10 @@ class SurveyManagerController extends Controller
 
     private function normalizeOptions(
         UpsertSurveyRequest $request,
-        int                 $questionIndex,
-        string              $type,
-        array               $options
-    ): ?array
-    {
+        int $questionIndex,
+        string $type,
+        array $options
+    ): ?array {
         if ($type === 'textarea') {
             return null;
         }
@@ -249,11 +248,11 @@ class SurveyManagerController extends Controller
                 $imageAlt = null;
 
                 if (is_array($option)) {
-                    $label = trim((string)($option['label'] ?? ''));
+                    $label = trim((string) ($option['label'] ?? ''));
                     $existingImage = $this->normalizeExistingImage($option['existing_image'] ?? null);
                     $imageAlt = $this->normalizeOptionalText($option['image_alt'] ?? null);
                 } else {
-                    $label = trim((string)$option);
+                    $label = trim((string) $option);
                 }
 
                 if ($label === '') {

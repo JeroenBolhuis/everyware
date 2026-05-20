@@ -143,6 +143,22 @@
                         </div>
 
                         <div>
+                            <label for="ends_at" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                                Einddatum
+                            </label>
+                            <input
+                                id="ends_at"
+                                name="ends_at"
+                                type="date"
+                                value="{{ old('ends_at', isset($survey) ? $survey->ends_at?->toDateString() : '') }}"
+                                class="w-full rounded-full border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                            >
+                            <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                Laat leeg om de enquête actief te houden totdat je deze handmatig sluit.
+                            </p>
+                        </div>
+
+                        <div>
                             <label for="reward_points" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                                 Beloningspunten
                             </label>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Participant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,7 +13,7 @@ it('knows whether a participant is blocked', function () {
     ]);
 
     expect($participant->isBlocked())->toBeTrue();
-    expect((new Participant())->isBlocked())->toBeFalse();
+    expect((new Participant)->isBlocked())->toBeFalse();
 });
 
 it('blocks a participant once and persists the timestamp', function () {
@@ -30,4 +31,18 @@ it('blocks a participant once and persists the timestamp', function () {
 
     expect($participant->fresh()->blocked_at?->toDateTimeString())
         ->toBe($firstBlockedAt?->toDateTimeString());
+});
+
+it('shows real details only to admins', function () {
+    $admin = User::factory()->admin()->createOne();
+    $employee = User::factory()->licEmployee()->createOne();
+    $participant = Participant::create([
+        'email' => 'jamie@example.com',
+        'name' => 'Jamie Jansen',
+    ]);
+
+    expect($participant->displayNameFor($admin))->toBe('Jamie Jansen')
+        ->and($participant->displayEmailFor($admin))->toBe('jamie@example.com')
+        ->and($participant->displayNameFor($employee))->toBe("#{$participant->id}")
+        ->and($participant->displayEmailFor($employee))->toBe('Afgeschermd');
 });

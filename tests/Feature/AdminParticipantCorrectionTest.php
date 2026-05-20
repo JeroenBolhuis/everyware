@@ -3,10 +3,11 @@
 use App\Models\Participant;
 use App\Models\User;
 use Livewire\Livewire;
+
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 
-it('lets admins apply negative point corrections', function () {
+it('lets admins deduct participant points', function () {
     $admin = User::factory()->admin()->createOne();
     $participant = Participant::create([
         'name' => 'Jamie Jansen',
@@ -20,9 +21,9 @@ it('lets admins apply negative point corrections', function () {
     actingAs($admin);
 
     Livewire::test('pages::admin.participants.show', ['participant' => $participant])
-        ->set('amount', -5)
+        ->set('pointsToDeduct', 5)
         ->set('reason', 'Handmatige correctie')
-        ->call('addCorrection')
+        ->call('deductPoints')
         ->assertHasNoErrors();
 
     expect($participant->fresh()->current_points)->toBe(-2);

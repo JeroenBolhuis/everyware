@@ -4,13 +4,16 @@ namespace App\Http\Requests\Surveys;
 
 use App\Models\Survey;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Str;
 
 class StoreSurveyResponseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $survey = $this->surveyFromRoute();
+
+        return ! $survey?->hasEnded();
     }
 
     protected function prepareForValidation(): void
@@ -24,7 +27,7 @@ class StoreSurveyResponseRequest extends FormRequest
 
     public function rules(): array
     {
-        $survey = $this->route('survey');
+        $survey = $this->surveyFromRoute();
 
         $rules = [
             'answers' => ['required', 'array'],
@@ -49,5 +52,35 @@ class StoreSurveyResponseRequest extends FormRequest
         return [
             'contact_email.email' => 'Vul een geldig e-mailadres in.',
         ];
+    }
+
+    protected function failedAuthorization(): void
+    {
+        $survey = $this->surveyFromRoute();
+
+        if ($survey?->hasEnded()) {
+            throw new HttpResponseException(
+                response()->view('surveys.expired', compact('survey'), 410)
+            );
+        }
+
+        parent::failedAuthorization();
+    }
+
+    private function surveyFromRoute(): ?Survey
+    {
+        $survey = $this->route('survey');
+
+        if ($survey instanceof Survey) {
+            return $survey;
+        }
+
+        $token = $this->route('token');
+
+        if (is_string($token)) {
+            return Survey::query()->where('share_token', $token)->first();
+        }
+
+        return null;
     }
 }

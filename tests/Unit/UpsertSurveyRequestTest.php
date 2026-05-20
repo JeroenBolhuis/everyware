@@ -34,7 +34,7 @@ it('authorizes users who can manage surveys', function (?string $factoryState, b
 ]);
 
 it('returns the survey validation rules and custom messages', function () {
-    $request = new UpsertSurveyRequest();
+    $request = new UpsertSurveyRequest;
 
     $rules = $request->rules();
     $messages = $request->messages();
@@ -43,6 +43,7 @@ it('returns the survey validation rules and custom messages', function () {
         'title',
         'description',
         'is_active',
+        'ends_at',
         'reward_points',
         'questions',
         'questions.*.type',
@@ -50,8 +51,28 @@ it('returns the survey validation rules and custom messages', function () {
     ]);
 
     expect($messages['title.required'])->toContain('titel');
+    expect($messages['ends_at.date_format'])->toContain('einddatum');
     expect($messages['questions.*.type.required'])->toContain('vraagtype');
     expect($messages['questions.*.options.*.image.max'])->toContain('2 MB');
+});
+
+it('validates optional survey end dates', function () {
+    $request = new UpsertSurveyRequest;
+    $rules = $request->rules();
+
+    $valid = Validator::make(['ends_at' => today()->addWeek()->toDateString()], [
+        'ends_at' => $rules['ends_at'],
+    ]);
+    $empty = Validator::make(['ends_at' => null], [
+        'ends_at' => $rules['ends_at'],
+    ]);
+    $invalid = Validator::make(['ends_at' => 'not-a-date'], [
+        'ends_at' => $rules['ends_at'],
+    ]);
+
+    expect($valid->passes())->toBeTrue()
+        ->and($empty->passes())->toBeTrue()
+        ->and($invalid->passes())->toBeFalse();
 });
 
 it('adds an error when a radio question has fewer than two filled options', function () {

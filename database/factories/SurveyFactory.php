@@ -23,6 +23,7 @@ class SurveyFactory extends Factory
             'title' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'is_active' => false,
+            'ends_at' => null,
         ];
     }
 
