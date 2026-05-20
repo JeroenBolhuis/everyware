@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\ContactInformationSubmission;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\User;
 use Illuminate\Testing\TestResponse;
+
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
@@ -81,7 +83,7 @@ function xlsxContents(TestResponse $response): array
     @unlink($tempFile);
     file_put_contents($zipFile, $response->getContent());
 
-    $archive = new \PharData($zipFile);
+    $archive = new PharData($zipFile);
     $contents = [
         'sheet' => $archive['xl/worksheets/sheet1.xml']->getContent(),
         'workbook' => $archive['xl/workbook.xml']->getContent(),
@@ -95,7 +97,7 @@ function xlsxContents(TestResponse $response): array
 }
 
 it('exports all feedback for a survey as an xlsx file', function () {
-    $employee = User::factory()->licEmployee()->createOne();
+    $employee = User::factory()->admin()->createOne();
     $survey = createExportableSurvey();
 
     addSurveyResponseWithAnswers(
@@ -157,7 +159,7 @@ it('exports all feedback for a survey as an xlsx file', function () {
 });
 
 it('exports all feedback for a survey as a csv file', function () {
-    $employee = User::factory()->licEmployee()->createOne();
+    $employee = User::factory()->admin()->createOne();
     $survey = createExportableSurvey();
 
     addSurveyResponseWithAnswers(
@@ -199,6 +201,48 @@ it('preserves answer values like 0 in exports', function () {
     expect($response->getContent())
         ->toContain('0')
         ->not->toContain(';-;"1"');
+});
+
+it('does not expose contact details to lic employees in exports', function () {
+    $employee = User::factory()->licEmployee()->createOne();
+    $survey = createExportableSurvey();
+
+    addSurveyResponseWithAnswers(
+        $survey,
+        ['Sterke uitleg', 'Meer voorbeelden'],
+        ['name' => 'Alex', 'email' => 'alex@example.com', 'phone' => '+31611111111'],
+    );
+
+    $response = exportSurveyFeedback($employee, $survey, 'csv');
+
+    $response->assertOk();
+
+    expect($response->getContent())
+        ->toContain('Contactgegevens')
+        ->toContain('Gedeeld')
+        ->toContain('Sterke uitleg')
+        ->not->toContain('Alex')
+        ->not->toContain('alex@example.com')
+        ->not->toContain('+31611111111');
+});
+
+it('excludes blocked participant responses from exports', function () {
+    $employee = User::factory()->admin()->createOne();
+    $survey = createExportableSurvey();
+
+    addSurveyResponseWithAnswers($survey, ['Zichtbaar antwoord', '']);
+
+    $blockedParticipant = Participant::factory()->create(['blocked_at' => now()]);
+    $blockedResponse = addSurveyResponseWithAnswers($survey, ['Geblokkeerd antwoord', '']);
+    $blockedResponse->update(['participant_id' => $blockedParticipant->id]);
+
+    $response = exportSurveyFeedback($employee, $survey, 'csv');
+
+    $response->assertOk();
+
+    expect($response->getContent())
+        ->toContain('Zichtbaar antwoord')
+        ->not->toContain('Geblokkeerd antwoord');
 });
 
 it('returns 404 for unsupported export formats', function () {

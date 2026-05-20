@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -48,6 +49,15 @@ class SurveyResponse extends Model
     public function participantPointsHistories(): MorphMany
     {
         return $this->morphMany(ParticipantPointsHistory::class, 'source');
+    }
+
+    public function scopeVisibleInResults(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->whereDoesntHave('participant')
+                ->orWhereHas('participant', fn (Builder $participantQuery) => $participantQuery->whereNull('blocked_at'));
+        });
     }
 
     public function hasSharedContactDetails(): bool

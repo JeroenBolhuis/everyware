@@ -125,7 +125,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
     public function getSurveysProperty()
     {
         return Survey::query()
-            ->withCount('responses')
+            ->withCount(['responses' => fn ($query) => $query->visibleInResults()])
             ->orderBy('title')
             ->paginate(15);
     }
