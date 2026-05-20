@@ -18,7 +18,6 @@ class Participant extends Model implements AuthenticatableContract
 
     protected $fillable = [
         'email',
-        'name',
         'blocked_at',
     ];
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ContactInformationSubmission;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyAnswer;
 use App\Models\SurveyAnswerRetentionSetting;
@@ -14,6 +15,11 @@ use function Pest\Laravel\artisan;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\get;
+
+function participantIdForRetainedResponse(): int
+{
+    return Participant::factory()->create()->id;
+}
 
 it('lets admins edit the survey answer retention lookup value', function () {
     $admin = User::factory()->admin()->createOne();
@@ -40,6 +46,7 @@ it('deletes responses that fall outside a newly shortened retention period', fun
     $question = SurveyQuestion::factory()->for($survey)->createOne();
     $expiredAfterShortening = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now()->subDays(10),
         'delete_on_date' => now()->addDays(20)->toDateString(),
@@ -59,6 +66,7 @@ it('deletes responses that fall outside a newly shortened retention period', fun
 
     $stillActive = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now()->subDays(5),
         'delete_on_date' => now()->addDays(10)->toDateString(),
@@ -101,6 +109,7 @@ it('keeps existing response delete dates unchanged when retention is extended', 
     $question = SurveyQuestion::factory()->for($survey)->createOne();
     $response = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now()->subDays(5),
         'delete_on_date' => now()->addDays(2)->toDateString(),
@@ -149,6 +158,7 @@ it('shows upcoming auto-deletion warning to admins and lic employees', function 
 
     SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now()->subDays(2),
         'delete_on_date' => now()->addDays(3)->toDateString(),
@@ -203,6 +213,7 @@ it('prunes expired responses and deletes related answers and contact data', func
     $question = SurveyQuestion::factory()->for($survey)->createOne();
     $expiredResponse = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now()->subDays(10),
         'delete_on_date' => now()->subDay()->toDateString(),
@@ -222,6 +233,7 @@ it('prunes expired responses and deletes related answers and contact data', func
 
     $activeResponse = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now()->subDays(2),
         'delete_on_date' => now()->addDay()->toDateString(),

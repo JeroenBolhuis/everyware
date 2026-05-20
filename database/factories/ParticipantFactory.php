@@ -19,7 +19,6 @@ class ParticipantFactory extends Factory
     {
         return [
             'email' => fake()->unique()->safeEmail(),
-            'name' => fake()->name(),
         ];
     }
 }

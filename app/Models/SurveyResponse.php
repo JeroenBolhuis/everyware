@@ -14,6 +14,7 @@ class SurveyResponse extends Model
     protected $fillable = [
         'survey_id',
         'participant_id',
+        'is_anonymous',
         'withdrawal_token',
         'submitted_at',
         'withdrawn_at',
@@ -24,6 +25,7 @@ class SurveyResponse extends Model
         'submitted_at' => 'datetime',
         'withdrawn_at' => 'datetime',
         'delete_on_date' => 'date',
+        'is_anonymous' => 'boolean',
     ];
 
     public function survey(): BelongsTo
@@ -62,20 +64,12 @@ class SurveyResponse extends Model
 
     public function hasSharedContactDetails(): bool
     {
-        $contactInformation = $this->contactInformationSubmission;
-
-        return (bool) ($contactInformation?->name || $contactInformation?->email || $contactInformation?->phone);
+        return ! $this->is_anonymous;
     }
 
     public function sharedContactFieldLabels(): array
     {
-        $contactInformation = $this->contactInformationSubmission;
-
-        return array_values(array_filter([
-            $contactInformation?->name ? 'Naam opgeslagen' : null,
-            $contactInformation?->email ? 'E-mailadres opgeslagen' : null,
-            $contactInformation?->phone ? 'Telefoonnummer opgeslagen' : null,
-        ]));
+        return $this->is_anonymous ? [] : ['E-mailadres zichtbaar voor LIC'];
     }
 
     public function awardedPoints(): int

@@ -1,7 +1,6 @@
 <?php
 
 use App\Mail\SurveySubmissionConfirmationMail;
-use App\Models\ContactInformationSubmission;
 use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
@@ -41,7 +40,7 @@ it('does not show the thank-you contact form on the survey page', function () {
         ->assertDontSee('Contactgegevens opslaan');
 });
 
-it('shows only the name contact field on the thank you page for logged-in participants', function () {
+it('shows the contact permission button on the thank you page for logged-in participants', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -55,11 +54,10 @@ it('shows only the name contact field on the thank you page for logged-in partic
 
     get(route('survey.thankyou', $response))
         ->assertOk()
-        ->assertSee('Contactgegevens')
-        ->assertSee('Naam')
+        ->assertSee('Anonimiteit')
+        ->assertSee('LIC-medewerkers mogen mij benaderen')
         ->assertDontSee('E-mailadres')
-        ->assertSee('Je enquête is al anoniem opgeslagen.')
-        ->assertSee('Contactgegevens opslaan');
+        ->assertSee('Je inzending is anoniem opgeslagen.');
 });
 
 it('submits survey without contact details', function () {
@@ -75,14 +73,14 @@ it('submits survey without contact details', function () {
     $response = SurveyResponse::first();
 
     expect($response)->not->toBeNull();
-    expect(ContactInformationSubmission::count())->toBe(0);
+    expect($response->is_anonymous)->toBeTrue();
 
     get(route('survey.thankyou', $response))
         ->assertOk()
-        ->assertSee('Wil je dat we contact met je opnemen? Vul hieronder je naam in.');
+        ->assertSee('Je inzending is anoniem opgeslagen.');
 });
 
-it('stores encrypted contact details using the logged-in participant email', function () {
+it('marks a response not anonymous using the logged-in participant email', function () {
     $participant = Participant::factory()->create(['email' => 'jamie@example.com']);
     loginParticipantAs($participant);
 
@@ -98,28 +96,16 @@ it('stores encrypted contact details using the logged-in participant email', fun
     $response = SurveyResponse::firstOrFail();
 
     from(route('survey.thankyou', $response))
-        ->post(route('survey.contact-details.store', $response), [
-            'contact_name' => 'Jamie Jansen',
-        ])
+        ->post(route('survey.contact-details.store', $response))
         ->assertRedirect(route('survey.thankyou', $response));
 
-    $contactSubmission = ContactInformationSubmission::firstOrFail();
-
-    expect($contactSubmission->survey_id)->toBe($survey->id)
-        ->and($contactSubmission->survey_response_id)->toBe($response->id)
-        ->and($contactSubmission->name)->toBe('Jamie Jansen')
-        ->and($contactSubmission->email)->toBe('jamie@example.com')
-        ->and($contactSubmission->phone)->toBeNull();
-
-    expect($contactSubmission->getRawOriginal('name'))->not->toBe('Jamie Jansen');
-    expect($contactSubmission->getRawOriginal('email'))->not->toBe('jamie@example.com');
+    expect($response->fresh()->is_anonymous)->toBeFalse()
+        ->and($response->fresh()->participant->email)->toBe('jamie@example.com');
 
     get(route('survey.thankyou', $response))
         ->assertOk()
-        ->assertSee('Je hebt contactgegevens gedeeld.')
-        ->assertSee('Naam opgeslagen')
-        ->assertSee('E-mailadres opgeslagen')
-        ->assertSee('versleuteld opgeslagen');
+        ->assertSee('Je inzending is niet anoniem')
+        ->assertSee('E-mailadres zichtbaar voor LIC');
 });
 
 it('sends a confirmation email after contact details are saved on the thank you page', function () {
@@ -140,19 +126,17 @@ it('sends a confirmation email after contact details are saved on the thank you 
     $response = SurveyResponse::firstOrFail();
 
     from(route('survey.thankyou', $response))
-        ->post(route('survey.contact-details.store', $response), [
-            'contact_name' => 'Jamie Jansen',
-        ])
+        ->post(route('survey.contact-details.store', $response))
         ->assertRedirect(route('survey.thankyou', $response));
 
     Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) use ($response) {
         return $mail->response->is($response)
-            && $mail->recipientName === 'Jamie Jansen'
+            && $mail->recipientName === null
             && $mail->hasTo('jamie@example.com');
     });
 });
 
-it('validates optional phone details when provided', function () {
+it('does not allow a different participant to reveal a response', function () {
     $survey = createSurveyWithQuestion();
     $question = $survey->questions()->firstOrFail();
 
@@ -164,12 +148,11 @@ it('validates optional phone details when provided', function () {
 
     $response = SurveyResponse::firstOrFail();
 
-    from(route('survey.thankyou', $response))
-        ->post(route('survey.contact-details.store', $response), [
-            'contact_phone' => 'abc',
-        ])
-        ->assertRedirect(route('survey.thankyou', $response))
-        ->assertSessionHasErrors(['contact_phone']);
+    loginParticipantAs(Participant::factory()->create());
 
-    expect(ContactInformationSubmission::count())->toBe(0);
+    from(route('survey.thankyou', $response))
+        ->post(route('survey.contact-details.store', $response))
+        ->assertForbidden();
+
+    expect($response->fresh()->is_anonymous)->toBeTrue();
 });

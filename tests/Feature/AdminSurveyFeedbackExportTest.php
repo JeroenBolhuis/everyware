@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\ContactInformationSubmission;
 use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
@@ -43,8 +42,14 @@ function addSurveyResponseWithAnswers(
     array $contact = [],
     ?string $submittedAt = null,
 ): SurveyResponse {
+    $participant = Participant::factory()->create([
+        'email' => $contact['email'] ?? fake()->unique()->safeEmail(),
+    ]);
+
     $response = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => $participant->id,
+        'is_anonymous' => $contact === [],
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => $submittedAt ?? now(),
     ]);
@@ -56,17 +61,7 @@ function addSurveyResponseWithAnswers(
         ]);
     }
 
-    if ($contact !== []) {
-        ContactInformationSubmission::create([
-            'survey_id' => $survey->id,
-            'survey_response_id' => $response->id,
-            'name' => $contact['name'] ?? null,
-            'email' => $contact['email'] ?? null,
-            'phone' => $contact['phone'] ?? null,
-        ]);
-    }
-
-    return $response->fresh('answers.question', 'contactInformationSubmission');
+    return $response->fresh('answers.question', 'participant');
 }
 
 function exportSurveyFeedback(User $employee, Survey $survey, string $format): TestResponse
@@ -138,13 +133,11 @@ it('exports all feedback for a survey as an xlsx file', function () {
         ->toContain('Docentenfeedback kwartaal 1');
 
     expect($xlsx['sheet'])
-        ->toContain('<autoFilter ref="A1:H3"/>')
+        ->toContain('<autoFilter ref="A1:F3"/>')
         ->toContain('Inzending ID')
         ->toContain('Wat ging er goed?')
         ->toContain('Wat kan beter?')
-        ->toContain('Sam Student')
         ->toContain('sam@example.com')
-        ->toContain('+31611111111')
         ->toContain('De docent legde de stof helder uit.')
         ->toContain('Meer praktijkvoorbeelden toevoegen.')
         ->toContain('Fijn tempo tijdens de les.');
@@ -203,14 +196,13 @@ it('preserves answer values like 0 in exports', function () {
         ->not->toContain(';-;"1"');
 });
 
-it('does not expose contact details to lic employees in exports', function () {
+it('does not expose participant email for anonymous responses in exports', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $survey = createExportableSurvey();
 
     addSurveyResponseWithAnswers(
         $survey,
         ['Sterke uitleg', 'Meer voorbeelden'],
-        ['name' => 'Alex', 'email' => 'alex@example.com', 'phone' => '+31611111111'],
     );
 
     $response = exportSurveyFeedback($employee, $survey, 'csv');
@@ -218,12 +210,9 @@ it('does not expose contact details to lic employees in exports', function () {
     $response->assertOk();
 
     expect($response->getContent())
-        ->toContain('Contactgegevens')
-        ->toContain('Gedeeld')
+        ->toContain('E-mail')
         ->toContain('Sterke uitleg')
-        ->not->toContain('Alex')
-        ->not->toContain('alex@example.com')
-        ->not->toContain('+31611111111');
+        ->not->toContain('alex@example.com');
 });
 
 it('excludes blocked participant responses from exports', function () {

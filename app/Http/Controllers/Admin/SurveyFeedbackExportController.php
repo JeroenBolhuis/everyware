@@ -21,7 +21,7 @@ class SurveyFeedbackExportController extends Controller
         $format = strtolower((string) $request->query('format', 'xlsx'));
         abort_unless($buildSurveyFeedbackExport->supports($format), 404);
 
-        return response($buildSurveyFeedbackExport->build($survey, $format, $request->user()->isAdmin()), 200, [
+        return response($buildSurveyFeedbackExport->build($survey, $format, $request->user()->canReviewSurveyResponses()), 200, [
             'Content-Type' => $buildSurveyFeedbackExport->contentType($format),
             'Content-Disposition' => 'attachment; filename="'.$buildSurveyFeedbackExport->fileName($survey, $format).'"',
         ]);

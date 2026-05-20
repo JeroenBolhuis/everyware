@@ -20,12 +20,10 @@ class BuildSurveyFeedbackExport
         'Inzending ID',
         'Ingestuurd op',
         'Status',
-        'Naam',
         'E-mail',
-        'Telefoon',
     ];
 
-    private const BASE_WIDTHS = [70, 110, 90, 130, 180, 120];
+    private const BASE_WIDTHS = [70, 110, 90, 180];
 
     private const ANONYMOUS_BASE_HEADERS = [
         'Inzending ID',
@@ -71,7 +69,7 @@ class BuildSurveyFeedbackExport
             'questions',
             'responses' => fn ($query) => $query->visibleInResults(),
             'responses.answers',
-            'responses.contactInformationSubmission',
+            'responses.participant',
         ]);
 
         $questions = $survey->questions->sortBy('sort_order')->values();
@@ -90,20 +88,16 @@ class BuildSurveyFeedbackExport
             ->sortByDesc(fn ($response) => $response->submitted_at?->getTimestamp() ?? 0)
             ->map(function ($response) use ($questions, $includePersonalData) {
                 $answers = $response->answers->pluck('answer', 'survey_question_id');
-                $contact = $response->contactInformationSubmission;
-
                 $baseColumns = $includePersonalData ? [
                     (string) $response->id,
                     $response->submitted_at?->format('d-m-Y H:i') ?? self::EMPTY_VALUE,
                     $response->withdrawn_at ? 'Ingetrokken' : 'Actief',
-                    $this->cellValue($contact?->name),
-                    $this->cellValue($contact?->email),
-                    $this->cellValue($contact?->phone),
+                    $response->is_anonymous ? self::EMPTY_VALUE : $this->cellValue($response->participant?->email),
                 ] : [
                     (string) $response->id,
                     $response->submitted_at?->format('d-m-Y H:i') ?? self::EMPTY_VALUE,
                     $response->withdrawn_at ? 'Ingetrokken' : 'Actief',
-                    $response->hasSharedContactDetails() ? 'Gedeeld' : 'Niet gedeeld',
+                    $response->is_anonymous ? 'Anoniem' : 'Niet anoniem',
                 ];
 
                 return [

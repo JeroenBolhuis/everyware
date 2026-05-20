@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Surveys\DeleteSurveySubmission;
-use App\Http\Requests\Surveys\StoreSurveyContactDetailsRequest;
 use App\Http\Requests\Surveys\StoreSurveyResponseRequest;
 use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\Participant;
@@ -70,8 +69,6 @@ class SurveyController extends Controller
     public function store(StoreSurveyResponseRequest $request, Survey $survey)
     {
         $validated = $request->validated();
-        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
-        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
         /** @var Participant $participant */
         $participant = $request->user('participant');
 
@@ -79,11 +76,12 @@ class SurveyController extends Controller
             return to_route('survey.thankyou.generic');
         }
 
-        $response = DB::transaction(function () use ($validated, $survey, $contactName, $participant) {
+        $response = DB::transaction(function () use ($validated, $survey, $participant) {
             $submittedAt = now();
 
             $response = $survey->responses()->create([
                 'participant_id' => $participant->id,
+                'is_anonymous' => true,
                 'withdrawal_token' => Str::uuid(),
                 'submitted_at' => $submittedAt,
                 'delete_on_date' => $this->resolveResponseDeleteOnDate($submittedAt),
@@ -99,29 +97,10 @@ class SurveyController extends Controller
 
             $response->answers()->createMany($answers);
 
-            $contactInformationPayload = $this->buildContactInformationPayload($validated, $response);
-
-            if ($contactInformationPayload !== null) {
-                $response->contactInformationSubmission()->updateOrCreate(
-                    ['survey_response_id' => $response->id],
-                    $contactInformationPayload,
-                );
-            }
-
-            if ($contactInformationPayload !== null) {
-                $this->syncParticipantForResponse($response, $participant, $contactName);
-            }
-
             return $response;
         });
 
-        $confirmationMailStatus = $response->hasSharedContactDetails()
-            ? $this->sendConfirmationMail($response, $participant->email, $contactName)
-            : 'skipped';
-
-        return to_route('survey.thankyou', $response)->with([
-            'confirmationMailStatus' => $confirmationMailStatus,
-        ]);
+        return to_route('survey.thankyou', $response);
     }
 
     public function thankYou(SurveyResponse $response)
@@ -136,15 +115,14 @@ class SurveyController extends Controller
         return view('surveys.thankyou', ['response' => null]);
     }
 
-    public function storeContactDetails(
-        StoreSurveyContactDetailsRequest $request,
-        SurveyResponse $response,
-        DeleteSurveySubmission $deleteSurveySubmission,
-    ) {
-        $validated = $request->validated();
-        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
+    public function allowContact(SurveyResponse $response, DeleteSurveySubmission $deleteSurveySubmission)
+    {
+        /** @var Participant $participant */
+        $participant = request()->user('participant');
 
-        if ($response->participant?->isBlocked() || $this->isBlockedEmail($contactEmail)) {
+        abort_unless($response->participant_id === $participant->id, 403);
+
+        if ($participant->isBlocked() || $this->isBlockedEmail($participant->email)) {
             DB::transaction(function () use ($deleteSurveySubmission, $response): void {
                 $deleteSurveySubmission->handle($response);
             });
@@ -152,100 +130,18 @@ class SurveyController extends Controller
             return to_route('survey.thankyou.generic');
         }
 
-        $contactInformationPayload = $this->buildContactInformationPayload($validated, $response);
+        DB::transaction(function () use ($response, $participant): void {
+            $response->forceFill(['is_anonymous' => false])->save();
+            $this->awardPointsForResponse($response, $participant);
+        });
 
-        if ($contactInformationPayload === null) {
-            return to_route('survey.thankyou', $response)
-                ->with('contactDetailsSkipped', true);
-        }
-
-        $response->contactInformationSubmission()->updateOrCreate(
-            ['survey_response_id' => $response->id],
-            $contactInformationPayload,
-        );
-
-        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
-        $participant = $request->user('participant') ?? $response->participant;
-
-        if ($participant !== null) {
-            $this->syncParticipantForResponse($response, $participant, $contactName);
-        }
-
-        $confirmationMailStatus = $this->sendConfirmationMail($response, $contactEmail, $contactName);
+        $confirmationMailStatus = $this->sendConfirmationMail($response, $participant->email);
 
         return to_route('survey.thankyou', $response)
             ->with([
-                'contactDetailsSaved' => true,
+                'contactAllowed' => true,
                 'confirmationMailStatus' => $confirmationMailStatus,
             ]);
-    }
-
-    private function buildContactInformationPayload(array $validated, SurveyResponse $response): ?array
-    {
-        $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
-        $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
-        $contactPhone = $this->normalizePhoneForHash($validated['contact_phone'] ?? null);
-
-        if (! filled($contactName) && ! filled($contactEmail) && ! filled($contactPhone)) {
-            return null;
-        }
-
-        return [
-            'survey_id' => $response->survey_id,
-            'survey_response_id' => $response->id,
-            'name' => $contactName,
-            'email' => $contactEmail,
-            'phone' => $contactPhone,
-        ];
-    }
-
-    private function normalizeContactValue(?string $value): ?string
-    {
-        if (! filled($value)) {
-            return null;
-        }
-
-        return trim($value);
-    }
-
-    private function normalizeEmailForHash(?string $value): ?string
-    {
-        $normalizedValue = $this->normalizeContactValue($value);
-
-        return $normalizedValue !== null ? Str::lower($normalizedValue) : null;
-    }
-
-    private function normalizePhoneForHash(?string $value): ?string
-    {
-        $normalizedValue = $this->normalizeContactValue($value);
-
-        if ($normalizedValue === null) {
-            return null;
-        }
-
-        $hasLeadingPlus = str_starts_with($normalizedValue, '+');
-        $digitsOnly = preg_replace('/\D+/', '', $normalizedValue) ?? '';
-
-        if ($digitsOnly === '') {
-            return null;
-        }
-
-        return $hasLeadingPlus ? '+'.$digitsOnly : $digitsOnly;
-    }
-
-    private function syncParticipantForResponse(SurveyResponse $response, Participant $participant, ?string $contactName): void
-    {
-        if ($contactName !== null && $participant->name !== $contactName) {
-            $participant->forceFill(['name' => $contactName])->save();
-        }
-
-        if ($response->participant_id !== $participant->id) {
-            $response->update(['participant_id' => $participant->id]);
-        }
-
-        if (! $participant->isBlocked()) {
-            $this->awardPointsForResponse($response, $participant);
-        }
     }
 
     private function awardPointsForResponse(SurveyResponse $response, Participant $participant): void
@@ -276,7 +172,7 @@ class SurveyController extends Controller
         $response->setRelation('participant', $participant);
     }
 
-    private function sendConfirmationMail(SurveyResponse $response, ?string $contactEmail, ?string $contactName): string
+    private function sendConfirmationMail(SurveyResponse $response, ?string $contactEmail): string
     {
         if ($contactEmail === null) {
             return 'skipped';
@@ -286,7 +182,7 @@ class SurveyController extends Controller
             Mail::to($contactEmail)->send(
                 new SurveySubmissionConfirmationMail(
                     $response->fresh(['survey', 'participant', 'participantPointsHistories']),
-                    $contactName
+                    null
                 )
             );
 

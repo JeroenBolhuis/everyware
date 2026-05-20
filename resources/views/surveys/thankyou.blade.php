@@ -18,9 +18,9 @@
                 </div>
             @endif
 
-            @if (session('contactDetailsSaved'))
+            @if (session('contactAllowed'))
                 <div class="mb-4 sm:mb-6 rounded-lg border border-green-200 bg-green-50 p-3 sm:p-4 text-sm sm:text-base text-green-800">
-                    Je contactgegevens zijn opgeslagen.
+                    LIC-medewerkers mogen je via je e-mailadres benaderen.
                 </div>
             @endif
 
@@ -32,10 +32,10 @@
             @endif
 
             <div class="mb-4 sm:mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:p-4 md:p-6">
-                <p class="font-semibold text-sm sm:text-base text-gray-900">Contactgegevens</p>
+                <p class="font-semibold text-sm sm:text-base text-gray-900">Anonimiteit</p>
 
                 @if ($response?->hasSharedContactDetails())
-                    <p class="mt-2 text-sm sm:text-base text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn versleuteld opgeslagen.</p>
+                    <p class="mt-2 text-sm sm:text-base text-gray-700">Je inzending is niet anoniem. LIC-medewerkers kunnen je e-mailadres zien.</p>
 
                     <ul class="mt-3 flex flex-wrap gap-2 text-xs sm:text-sm text-gray-700">
                         @foreach ($response->sharedContactFieldLabels() as $fieldLabel)
@@ -46,21 +46,19 @@
                     </ul>
                 @else
                     <p class="mt-2 text-sm sm:text-base text-gray-700">
-                        Wil je dat we contact met je opnemen? Vul hieronder je naam in.
+                        Je inzending is anoniem opgeslagen. LIC-medewerkers kunnen niet zien welke deelnemer hierbij hoort.
                     </p>
                     <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-900">
-                        Je enquête is al anoniem opgeslagen. Alleen als je hieronder zelf je naam deelt,
-                        kunnen we je feedback aan jou koppelen.
+                        Wil je punten ontvangen en mogen LIC-medewerkers je benaderen? Dan wordt alleen je e-mailadres zichtbaar bij deze inzending.
                     </div>
                     @if ($response)
                     <form method="POST" action="{{ route('survey.contact-details.store', $response) }}"
-                          class="mt-4 space-y-4">
+                          class="mt-4">
                         @csrf
-                        <x-surveys.contact-details/>
 
                         <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3">
-                            <button type="submit" class="btn-secondary w-full sm:w-auto">
-                                Contactgegevens opslaan
+                            <button type="submit" class="btn-primary w-full sm:w-auto">
+                                LIC-medewerkers mogen mij benaderen
                             </button>
                         </div>
                     </form>

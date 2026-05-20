@@ -59,9 +59,11 @@ function createSurvey(array $attributes = []): Survey
 function createSurveyResponse(?Survey $survey = null, array $attributes = []): SurveyResponse
 {
     $survey ??= createSurvey();
+    $participantId = $attributes['participant_id'] ?? auth('participant')->id() ?? Participant::factory()->create()->id;
 
     return SurveyResponse::create(array_merge([
         'survey_id' => $survey->id,
+        'participant_id' => $participantId,
         'withdrawal_token' => (string) Str::uuid(),
         'submitted_at' => now(),
     ], $attributes));
@@ -121,7 +123,7 @@ it('returns 404 for inactive survey', function () {
     $response->assertNotFound();
 });
 
-it('submits a survey and sends a confirmation email when an email address is provided', function () {
+it('submits a survey anonymously without awarding points', function () {
     Mail::fake();
 
     $survey = createSurvey();
@@ -133,8 +135,6 @@ it('submits a survey and sends a confirmation email when an email address is pro
             $question1->id => 'yes',
             $question2->id => 'Because it works',
         ],
-        'contact_name' => 'Ali Test',
-        'contact_email' => 'ignored@example.com',
     ]);
 
     $surveyResponse = SurveyResponse::latest()->first();
@@ -145,28 +145,31 @@ it('submits a survey and sends a confirmation email when an email address is pro
         'survey_id' => $survey->id,
     ]);
 
-    assertDatabaseHas('contact_information_submissions', [
-        'survey_id' => $survey->id,
-        'survey_response_id' => $surveyResponse->id,
-    ]);
-
-    $contactSubmission = ContactInformationSubmission::where('survey_response_id', $surveyResponse->id)->first();
-
-    expect($contactSubmission)->not->toBeNull()
-        ->and($contactSubmission->name)->toBe('Ali Test')
-        ->and($contactSubmission->email)->toBe('student@example.com');
-
-    Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) use ($surveyResponse) {
-        return $mail->response->is($surveyResponse)
-            && $mail->recipientName === 'Ali Test'
-            && $mail->hasTo('student@example.com');
-    });
-
     $participant = Participant::where('email', 'student@example.com')->first();
 
     expect($participant)->not->toBeNull()
-        ->and($participant->current_points)->toBe(10)
-        ->and($surveyResponse->fresh()->participant_id)->toBe($participant->id);
+        ->and($participant->current_points)->toBe(0)
+        ->and($surveyResponse->fresh()->participant_id)->toBe($participant->id)
+        ->and($surveyResponse->fresh()->is_anonymous)->toBeTrue();
+
+    Mail::assertNothingSent();
+});
+
+it('awards points and sends confirmation when contact is allowed', function () {
+    Mail::fake();
+
+    $participant = Participant::factory()->create(['email' => 'ali@example.com']);
+    loginParticipantAs($participant);
+
+    $surveyResponse = createSurveyResponse(null, [
+        'participant_id' => $participant->id,
+    ]);
+
+    post(route('survey.contact-details.store', $surveyResponse))
+        ->assertRedirect(route('survey.thankyou', $surveyResponse));
+
+    expect($surveyResponse->fresh()->is_anonymous)->toBeFalse()
+        ->and($participant->fresh()->current_points)->toBe(10);
 
     assertDatabaseHas('participant_points_history', [
         'participant_id' => $participant->id,
@@ -175,13 +178,7 @@ it('submits a survey and sends a confirmation email when an email address is pro
         'source_id' => $surveyResponse->id,
     ]);
 
-    Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) {
-        $rendered = $mail->render();
-
-        return str_contains($rendered, '10 punten')
-            && str_contains($rendered, 'Je totaal staat nu op')
-            && str_contains($rendered, '10 punten');
-    });
+    Mail::assertSent(SurveySubmissionConfirmationMail::class);
 });
 
 it('sets delete_on_date for newly submitted responses when retention is configured', function () {
@@ -214,8 +211,6 @@ it('submits a survey without sending a confirmation email when no email address 
         'answers' => [
             $question1->id => 'yes',
         ],
-        'contact_name' => '',
-        'contact_email' => '',
     ]);
 
     $surveyResponse = SurveyResponse::latest()->first();
@@ -248,7 +243,6 @@ it('silently discards a survey submission when the participant is blocked', func
         'answers' => [
             $question1->id => 'yes',
         ],
-        'contact_name' => 'Ali Test',
     ])->assertRedirect(route('survey.thankyou.generic'));
 
     expect(SurveyResponse::count())->toBe(0)
@@ -276,8 +270,7 @@ it('requires answers for required questions', function () {
     ]);
 });
 
-/* Contact details can be stored encrypted */
-it('saves contact details after submission', function () {
+it('marks the response not anonymous after contact is allowed', function () {
     $participant = Participant::factory()->create(['email' => 'ali@example.com']);
     loginParticipantAs($participant);
 
@@ -292,26 +285,12 @@ it('saves contact details after submission', function () {
 
     $surveyResponse = SurveyResponse::latest()->first();
 
-    $response = post('/survey/response/'.$surveyResponse->id.'/contact-details', [
-        'contact_name' => 'Ali Test',
-        'contact_phone' => '06 12345678',
-    ]);
+    $response = post(route('survey.contact-details.store', $surveyResponse));
 
     $response->assertRedirect(route('survey.thankyou', ['response' => $surveyResponse->id]));
 
-    assertDatabaseHas('contact_information_submissions', [
-        'survey_id' => $surveyResponse->survey_id,
-        'survey_response_id' => $surveyResponse->id,
-    ]);
-
-    $contactSubmission = ContactInformationSubmission::where('survey_response_id', $surveyResponse->id)->first();
-
-    expect($contactSubmission->name)->toBe('Ali Test');
-    expect($contactSubmission->email)->toBe('ali@example.com');
-    expect($contactSubmission->phone)->toBe('0612345678');
-    expect($contactSubmission->getRawOriginal('email'))->not->toBe('ali@example.com');
-
-    expect($participant->refresh()->current_points)->toBe(10);
+    expect($surveyResponse->fresh()->is_anonymous)->toBeFalse()
+        ->and($participant->refresh()->current_points)->toBe(10);
 
     assertDatabaseHas('participant_points_history', [
         'participant_id' => $participant->id,
@@ -326,7 +305,6 @@ it('deletes an existing submission when blocked contact details are added afterw
     $question1 = $survey->questions[0];
 
     $participant = Participant::create([
-        'name' => 'Ali Test',
         'email' => 'ali@example.com',
     ]);
     loginParticipantAs($participant);
@@ -340,10 +318,8 @@ it('deletes an existing submission when blocked contact details are added afterw
     $surveyResponse = SurveyResponse::firstOrFail();
     $participant->block();
 
-    post(route('survey.contact-details.store', $surveyResponse), [
-        'contact_name' => 'Ali Test',
-        'contact_phone' => '06 12345678',
-    ])->assertRedirect(route('survey.thankyou.generic'));
+    post(route('survey.contact-details.store', $surveyResponse))
+        ->assertRedirect(route('survey.thankyou.generic'));
 
     assertDatabaseMissing('survey_responses', [
         'id' => $surveyResponse->id,
@@ -353,38 +329,26 @@ it('deletes an existing submission when blocked contact details are added afterw
 });
 
 /* Empty contact form should not store data */
-it('skips saving contact details when all fields are empty', function () {
+it('allows contact with the saved participant email', function () {
     $surveyResponse = createSurveyResponse();
 
-    $response = post('/survey/response/'.$surveyResponse->id.'/contact-details', [
-        'contact_name' => '',
-        'contact_email' => '',
-        'contact_phone' => '',
-    ]);
+    $response = post(route('survey.contact-details.store', $surveyResponse));
 
     $response->assertRedirect(route('survey.thankyou', ['response' => $surveyResponse->id]));
 
-    assertDatabaseMissing('contact_information_submissions', [
-        'survey_response_id' => $surveyResponse->id,
-    ]);
+    expect($surveyResponse->fresh()->is_anonymous)->toBeFalse();
 });
 
 /* Thank-you page shows shared contact fields */
 it('shows shared contact details on the thank you page', function () {
     $surveyResponse = createSurveyResponse();
 
-    ContactInformationSubmission::create([
-        'survey_id' => $surveyResponse->survey_id,
-        'survey_response_id' => $surveyResponse->id,
-        'name' => 'Ali Test',
-        'email' => 'ali@example.com',
-        'phone' => null,
-    ]);
+    $surveyResponse->forceFill(['is_anonymous' => false])->save();
 
     $response = get(route('survey.thankyou', ['response' => $surveyResponse->id]));
 
     $response->assertOk();
-    $response->assertSee('Je hebt contactgegevens gedeeld');
+    $response->assertSee('Je inzending is niet anoniem');
 });
 
 it('shows the mail confirmation state on the thank you page', function () {
@@ -400,7 +364,6 @@ it('shows the mail confirmation state on the thank you page', function () {
 it('shows the awarded and total points on the thank you page', function () {
     $participant = Participant::create([
         'email' => 'ali@example.com',
-        'name' => 'Ali Test',
     ]);
 
     loginParticipantAs($participant);
@@ -432,7 +395,7 @@ it('shows the contact form on the thank you page when no contact details exist',
     $response = get(route('survey.thankyou', ['response' => $surveyResponse->id]));
 
     $response->assertOk();
-    $response->assertSee('Contactgegevens opslaan');
+    $response->assertSee('LIC-medewerkers mogen mij benaderen');
 });
 
 /* Withdrawal page opens with valid token */

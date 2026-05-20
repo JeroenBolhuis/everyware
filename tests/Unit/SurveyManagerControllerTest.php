@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\SurveyManagerController;
 use App\Http\Requests\Surveys\UpsertSurveyRequest;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
 use App\Models\User;
@@ -17,6 +18,11 @@ uses(TestCase::class, RefreshDatabase::class);
 function callSurveyManagerPrivateMethod(object $object, string $method, array $arguments = []): mixed
 {
     return (fn (...$args) => $this->{$method}(...$args))->call($object, ...$arguments);
+}
+
+function participantIdForSurveyManagerResponse(): int
+{
+    return Participant::factory()->create()->id;
 }
 
 it('normalizes existing image values', function () {
@@ -280,12 +286,14 @@ it('returns the survey overview view with filtered surveys and aggregate stats',
 
     SurveyResponse::create([
         'survey_id' => $matchingSurvey->id,
+        'participant_id' => participantIdForSurveyManagerResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now(),
     ]);
 
     SurveyResponse::create([
         'survey_id' => $closedSurvey->id,
+        'participant_id' => participantIdForSurveyManagerResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now(),
     ]);
@@ -439,6 +447,7 @@ it('rejects changing the type of an existing question once responses exist', fun
 
     SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForSurveyManagerResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now(),
     ]);

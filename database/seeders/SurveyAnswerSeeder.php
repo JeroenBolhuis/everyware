@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
@@ -36,6 +37,9 @@ class SurveyAnswerSeeder extends Seeder
 
                     $response = SurveyResponse::create([
                         'survey_id' => $survey->id,
+                        'participant_id' => Participant::firstOrCreate([
+                            'email' => fake()->unique()->safeEmail(),
+                        ])->id,
                         'withdrawal_token' => (string) Str::uuid(),
                         'submitted_at' => $submittedAt,
                         'delete_on_date' => $deleteOnDate,
