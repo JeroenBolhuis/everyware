@@ -1,7 +1,5 @@
 <x-layout>
-    <div class="min-h-screen bg-gray-50">
-        <x-surveys.page-header/>
-
+    <div>
         <main class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
             <div class="space-y-6">
                 <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">

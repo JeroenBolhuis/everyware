@@ -54,10 +54,10 @@ it('shows the contact permission button on the thank you page for logged-in part
 
     get(route('survey.thankyou', $response))
         ->assertOk()
-        ->assertSee('Anonimiteit')
-        ->assertSee('LIC-medewerkers mogen mij benaderen')
+        ->assertSee('Punten en contact')
+        ->assertSee('Ontvang mijn punten')
         ->assertDontSee('E-mailadres')
-        ->assertSee('Je inzending is anoniem opgeslagen.');
+        ->assertSee('Hiervoor wordt alleen je e-mailadres zichtbaar bij deze inzending.');
 });
 
 it('submits survey without contact details', function () {
@@ -77,7 +77,7 @@ it('submits survey without contact details', function () {
 
     get(route('survey.thankyou', $response))
         ->assertOk()
-        ->assertSee('Je inzending is anoniem opgeslagen.');
+        ->assertSee('Hiervoor wordt alleen je e-mailadres zichtbaar bij deze inzending.');
 });
 
 it('marks a response not anonymous using the logged-in participant email', function () {

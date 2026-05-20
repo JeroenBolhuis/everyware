@@ -8,11 +8,14 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.vercel-analytics')
 </head>
-<body class="bg-gray-50">
+<body class="bg-zinc-50 text-zinc-900">
+    <div class="min-h-screen">
+        <x-surveys.page-header/>
 
-    <main>
-        {{ $slot }}
-    </main>
+        <main>
+            {{ $slot }}
+        </main>
+    </div>
 
 </body>
 </html>

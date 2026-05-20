@@ -1,29 +1,34 @@
-<header class="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:px-6">
-    <a href="{{ route('surveys.index') }}" class="shrink-0 text-xl font-bold tracking-tight text-red-600">
-        avans
-    </a>
+<header class="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="{{ route('surveys.index') }}" class="flex shrink-0 items-center gap-2 text-red-700" aria-label="Avans enquêtes">
+            <span class="grid size-9 place-items-center rounded-md bg-red-600 text-base font-black leading-none text-white">A</span>
+            <span class="text-xl font-bold tracking-tight">avans</span>
+        </a>
 
-    <div class="min-w-0 flex-1 text-center">
-        <div class="truncate text-sm font-semibold text-gray-900 sm:text-base">LIC Feedback Demo</div>
-    </div>
+        <div class="min-w-0 flex-1 text-center">
+            <div class="truncate text-sm font-semibold text-zinc-900 sm:text-base">LIC Feedback</div>
+        </div>
 
-    <div class="flex shrink-0 items-center justify-end">
+        <div class="flex shrink-0 items-center justify-end">
         @auth('participant')
             <details class="group relative">
                 <summary
-                    class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-sm font-semibold text-red-700 transition hover:border-red-200 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 [&::-webkit-details-marker]:hidden"
+                    class="flex h-10 items-center gap-2 rounded-full border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-red-200 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 [&::-webkit-details-marker]:hidden"
                     aria-label="Studentmenu"
                 >
-                    {{ str(auth('participant')->user()->email)->substr(0, 1)->upper() }}
+                    <span class="grid size-7 place-items-center rounded-full bg-red-50 text-xs font-bold text-red-700">
+                        {{ str(auth('participant')->user()->email)->substr(0, 1)->upper() }}
+                    </span>
+                    <span class="hidden max-w-36 truncate sm:block">{{ auth('participant')->user()->email }}</span>
                 </summary>
 
-                <div class="absolute right-0 z-20 mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
-                    <div class="border-b border-gray-100 px-4 py-3">
-                        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Ingelogd</p>
-                        <p class="mt-1 truncate text-sm text-gray-700">{{ auth('participant')->user()->email }}</p>
+                <div class="absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg">
+                    <div class="border-b border-zinc-100 px-4 py-3">
+                        <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Ingelogd als student</p>
+                        <p class="mt-1 truncate text-sm text-zinc-700">{{ auth('participant')->user()->email }}</p>
                     </div>
 
-                    <a href="{{ route('student.points') }}" class="block px-4 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50">
+                    <a href="{{ route('student.points') }}" class="block px-4 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50">
                         Mijn punten
                     </a>
 
@@ -36,7 +41,8 @@
                 </div>
             </details>
         @else
-            <span class="text-sm text-gray-400">Demo</span>
+            <span class="rounded-full border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-500">Student</span>
         @endauth
+        </div>
     </div>
 </header>

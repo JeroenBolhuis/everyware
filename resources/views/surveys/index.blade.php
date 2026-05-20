@@ -1,21 +1,21 @@
-﻿<x-layout>
-    <div class="max-w-7xl mx-auto py-6 sm:py-10 px-3 sm:px-4 md:px-6 lg:px-8">
-        <div class="bg-white border rounded-lg sm:rounded-2xl shadow-md p-4 sm:p-6 md:p-8">
-            <h1 class="text-2xl sm:text-3xl font-bold mb-6">Enquete overzicht</h1>
+<x-layout>
+    <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <div>
+            <h1 class="text-2xl font-bold text-zinc-950 sm:text-3xl">Enquêtes</h1>
+            <p class="mt-2 text-sm text-zinc-600">Kies een actieve enquête om feedback te geven.</p>
 
-            <!-- Filters -->
-            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-end">
+            <div class="mt-6 flex flex-col gap-3 border-y border-zinc-200 py-4 sm:flex-row sm:items-end sm:gap-4">
                 <div class="w-full sm:flex-1">
-                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Zoeken op titel</label>
+                    <label for="search" class="mb-1 block text-sm font-medium text-zinc-700">Zoeken op titel</label>
                     <input type="text" name="search" id="search" value="{{ request('search') }}"
                            placeholder="Zoeken..."
-                           class="w-full rounded-full px-4 py-3 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                           class="w-full rounded-lg border-zinc-300 px-4 py-3 shadow-sm focus:border-red-500 focus:ring-red-500">
                 </div>
 
                 <div class="w-full sm:flex-1">
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <label for="status" class="mb-1 block text-sm font-medium text-zinc-700">Status</label>
                     <select name="status" id="status"
-                            class="w-full rounded-full px-4 py-3 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            class="w-full rounded-lg border-zinc-300 px-4 py-3 shadow-sm focus:border-red-500 focus:ring-red-500">
                         <option value="">Alles</option>
                         <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Actief
                         </option>
@@ -29,32 +29,31 @@
                 </button>
             </div>
 
-            <!-- Surveys List -->
-            <div id="surveys-container">
+            <div id="surveys-container" class="mt-6">
                 <div class="space-y-4">
                     @forelse ($surveys as $survey)
-                        <div class="border border-white rounded-lg p-4 sm:p-6 bg-white">
+                        <div class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
                             <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
                                 <div class="flex-1 min-w-0">
-                                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900 break-words">{{ $survey->title }}</h2>
+                                    <h2 class="break-words text-lg font-semibold text-zinc-950 sm:text-xl">{{ $survey->title }}</h2>
                                     <x-truncated-text
                                         :text="$survey->description"
                                         :maxLength="150"
-                                        class="text-sm sm:text-base text-gray-600 mt-1"
+                                        class="mt-1 text-sm text-zinc-600 sm:text-base"
                                     />
-                                    <div class="mt-2 flex flex-wrap gap-2 items-center">
+                                    <div class="mt-3 flex flex-wrap gap-2 items-center">
                                     <span
                                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $survey->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                         {{ $survey->is_active ? 'Actief' : 'Inactief' }}
                                     </span>
-                                        <span class="text-xs sm:text-sm text-gray-500">
+                                        <span class="text-xs text-zinc-500 sm:text-sm">
                                         {{ $survey->questions->count() }} vragen
                                     </span>
                                     </div>
                                 </div>
                                 <div class="w-full sm:w-auto ml-0 sm:ml-4">
                                     @if ($survey->is_active)
-                                        <a href="{{ route('survey.show', $survey) }}" class="btn-primary w-full sm:w-auto block text-center">
+                                        <a href="{{ route('survey.show', $survey) }}" class="btn-primary block w-full text-center sm:w-auto">
                                             Enquete invullen
                                         </a>
                                     @else
@@ -66,13 +65,12 @@
                             </div>
                         </div>
                     @empty
-                        <div class="text-center py-12">
-                            <p class="text-gray-500">Geen enquetes gevonden die overeenkomen met je criteria.</p>
+                        <div class="py-12 text-center">
+                            <p class="text-zinc-500">Geen enquetes gevonden die overeenkomen met je criteria.</p>
                         </div>
                     @endforelse
                 </div>
 
-                <!-- Pagination -->
                 @if ($surveys->hasPages())
                     <div class="mt-6">
                         {{ $surveys->appends(request()->query())->links() }}

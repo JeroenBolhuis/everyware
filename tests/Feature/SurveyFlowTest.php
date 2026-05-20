@@ -395,7 +395,7 @@ it('shows the contact form on the thank you page when no contact details exist',
     $response = get(route('survey.thankyou', ['response' => $surveyResponse->id]));
 
     $response->assertOk();
-    $response->assertSee('LIC-medewerkers mogen mij benaderen');
+    $response->assertSee('Ontvang mijn punten');
 });
 
 /* Withdrawal page opens with valid token */

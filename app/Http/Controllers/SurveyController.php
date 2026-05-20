@@ -105,7 +105,7 @@ class SurveyController extends Controller
 
     public function thankYou(SurveyResponse $response)
     {
-        $response->loadMissing('contactInformationSubmission', 'participant', 'participantPointsHistories');
+        $response->loadMissing('contactInformationSubmission', 'participant', 'participantPointsHistories', 'survey');
 
         return view('surveys.thankyou', compact('response'));
     }
