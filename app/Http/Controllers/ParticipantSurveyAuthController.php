@@ -85,7 +85,7 @@ class ParticipantSurveyAuthController extends Controller
             return '/surveys';
         }
 
-        if (str_starts_with($value, '/survey') || str_starts_with($value, '/s/') || $value === '/surveys') {
+        if (str_starts_with($value, '/survey') || str_starts_with($value, '/s/') || $value === '/surveys' || $value === '/student/punten') {
             return $value;
         }
 

@@ -15,6 +15,14 @@ class StoreSurveyResponseRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->user('participant') && ($this->filled('contact_name') || $this->filled('contact_phone'))) {
+            $this->merge([
+                'contact_email' => $this->user('participant')->email,
+            ]);
+
+            return;
+        }
+
         if ($this->filled('contact_email')) {
             $this->merge([
                 'contact_email' => Str::lower(trim($this->input('contact_email'))),

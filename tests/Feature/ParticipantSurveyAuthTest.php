@@ -56,6 +56,27 @@ it('logs a participant in via the signed verify link', function () {
         ->and(auth('participant')->id())->toBe($participant->id);
 });
 
+it('rejects a blocked participant signed verify link', function () {
+    $participant = Participant::factory()->create([
+        'email' => 'geblokkeerd@example.com',
+        'blocked_at' => now(),
+    ]);
+
+    $signed = URL::temporarySignedRoute(
+        'survey.participant.verify',
+        now()->addMinutes(5),
+        [
+            'participant' => $participant->id,
+            'redirect' => '/surveys',
+        ],
+    );
+
+    get($signed)
+        ->assertForbidden();
+
+    expect(auth('participant')->check())->toBeFalse();
+});
+
 it('does not cache authenticated survey pages', function () {
     loginParticipantAs(Participant::factory()->create());
 

@@ -72,15 +72,18 @@ class SurveyController extends Controller
         $validated = $request->validated();
         $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
         $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
+        /** @var Participant $participant */
+        $participant = $request->user('participant');
 
-        if ($this->isBlockedEmail($contactEmail)) {
+        if ($participant->isBlocked()) {
             return to_route('survey.thankyou.generic');
         }
 
-        $response = DB::transaction(function () use ($validated, $survey, $contactEmail, $contactName) {
+        $response = DB::transaction(function () use ($validated, $survey, $contactName, $participant) {
             $submittedAt = now();
 
             $response = $survey->responses()->create([
+                'participant_id' => $participant->id,
                 'withdrawal_token' => Str::uuid(),
                 'submitted_at' => $submittedAt,
                 'delete_on_date' => $this->resolveResponseDeleteOnDate($submittedAt),
@@ -105,12 +108,16 @@ class SurveyController extends Controller
                 );
             }
 
-            $this->syncParticipantForResponse($response, $contactEmail, $contactName);
+            if ($contactInformationPayload !== null) {
+                $this->syncParticipantForResponse($response, $participant, $contactName);
+            }
 
             return $response;
         });
 
-        $confirmationMailStatus = $this->sendConfirmationMail($response, $contactEmail, $contactName);
+        $confirmationMailStatus = $response->hasSharedContactDetails()
+            ? $this->sendConfirmationMail($response, $participant->email, $contactName)
+            : 'skipped';
 
         return to_route('survey.thankyou', $response)->with([
             'confirmationMailStatus' => $confirmationMailStatus,
@@ -137,7 +144,7 @@ class SurveyController extends Controller
         $validated = $request->validated();
         $contactEmail = $this->normalizeEmailForHash($validated['contact_email'] ?? null);
 
-        if ($this->isBlockedEmail($contactEmail)) {
+        if ($response->participant?->isBlocked() || $this->isBlockedEmail($contactEmail)) {
             DB::transaction(function () use ($deleteSurveySubmission, $response): void {
                 $deleteSurveySubmission->handle($response);
             });
@@ -158,7 +165,12 @@ class SurveyController extends Controller
         );
 
         $contactName = $this->normalizeContactValue($validated['contact_name'] ?? null);
-        $this->syncParticipantForResponse($response, $contactEmail, $contactName);
+        $participant = $request->user('participant') ?? $response->participant;
+
+        if ($participant !== null) {
+            $this->syncParticipantForResponse($response, $participant, $contactName);
+        }
+
         $confirmationMailStatus = $this->sendConfirmationMail($response, $contactEmail, $contactName);
 
         return to_route('survey.thankyou', $response)
@@ -221,17 +233,8 @@ class SurveyController extends Controller
         return $hasLeadingPlus ? '+'.$digitsOnly : $digitsOnly;
     }
 
-    private function syncParticipantForResponse(SurveyResponse $response, ?string $contactEmail, ?string $contactName): void
+    private function syncParticipantForResponse(SurveyResponse $response, Participant $participant, ?string $contactName): void
     {
-        if ($contactEmail === null) {
-            return;
-        }
-
-        $participant = Participant::firstOrCreate(
-            ['email' => $contactEmail],
-            ['name' => $contactName],
-        );
-
         if ($contactName !== null && $participant->name !== $contactName) {
             $participant->forceFill(['name' => $contactName])->save();
         }
@@ -240,7 +243,9 @@ class SurveyController extends Controller
             $response->update(['participant_id' => $participant->id]);
         }
 
-        $this->awardPointsForResponse($response, $participant);
+        if (! $participant->isBlocked()) {
+            $this->awardPointsForResponse($response, $participant);
+        }
     }
 
     private function awardPointsForResponse(SurveyResponse $response, Participant $participant): void

@@ -22,7 +22,7 @@ use function Pest\Laravel\post;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    loginParticipantAs(Participant::factory()->create());
+    loginParticipantAs(Participant::factory()->create(['email' => 'student@example.com']));
 });
 
 /* Create a test survey with 2 questions */
@@ -134,7 +134,7 @@ it('submits a survey and sends a confirmation email when an email address is pro
             $question2->id => 'Because it works',
         ],
         'contact_name' => 'Ali Test',
-        'contact_email' => 'Ali@Example.com',
+        'contact_email' => 'ignored@example.com',
     ]);
 
     $surveyResponse = SurveyResponse::latest()->first();
@@ -154,15 +154,15 @@ it('submits a survey and sends a confirmation email when an email address is pro
 
     expect($contactSubmission)->not->toBeNull()
         ->and($contactSubmission->name)->toBe('Ali Test')
-        ->and($contactSubmission->email)->toBe('ali@example.com');
+        ->and($contactSubmission->email)->toBe('student@example.com');
 
     Mail::assertSent(SurveySubmissionConfirmationMail::class, function (SurveySubmissionConfirmationMail $mail) use ($surveyResponse) {
         return $mail->response->is($surveyResponse)
             && $mail->recipientName === 'Ali Test'
-            && $mail->hasTo('ali@example.com');
+            && $mail->hasTo('student@example.com');
     });
 
-    $participant = Participant::where('email', 'ali@example.com')->first();
+    $participant = Participant::where('email', 'student@example.com')->first();
 
     expect($participant)->not->toBeNull()
         ->and($participant->current_points)->toBe(10)
@@ -226,31 +226,34 @@ it('submits a survey without sending a confirmation email when no email address 
         'survey_response_id' => $surveyResponse->id,
     ]);
 
+    expect($surveyResponse->participant_id)->toBe(auth('participant')->id())
+        ->and(Participant::firstWhere('email', 'student@example.com')->current_points)->toBe(0);
+
     Mail::assertNothingSent();
 });
 
-it('silently discards a survey submission when the email address is blocked', function () {
+it('silently discards a survey submission when the participant is blocked', function () {
     Mail::fake();
 
-    $survey = createSurvey();
-    $question1 = $survey->questions[0];
-
-    Participant::create([
-        'name' => 'Ali Test',
+    $participant = Participant::factory()->create([
         'email' => 'ali@example.com',
         'blocked_at' => now(),
     ]);
+    loginParticipantAs($participant);
+
+    $survey = createSurvey();
+    $question1 = $survey->questions[0];
 
     post(route('survey.store', $survey), [
         'answers' => [
             $question1->id => 'yes',
         ],
         'contact_name' => 'Ali Test',
-        'contact_email' => 'Ali@Example.com',
     ])->assertRedirect(route('survey.thankyou.generic'));
 
     expect(SurveyResponse::count())->toBe(0)
-        ->and(ContactInformationSubmission::count())->toBe(0);
+        ->and(ContactInformationSubmission::count())->toBe(0)
+        ->and($participant->fresh()->current_points)->toBe(0);
 
     Mail::assertNothingSent();
 });
@@ -325,7 +328,6 @@ it('deletes an existing submission when blocked contact details are added afterw
     $participant = Participant::create([
         'name' => 'Ali Test',
         'email' => 'ali@example.com',
-        'blocked_at' => now(),
     ]);
     loginParticipantAs($participant);
 
@@ -336,6 +338,7 @@ it('deletes an existing submission when blocked contact details are added afterw
     ])->assertRedirect();
 
     $surveyResponse = SurveyResponse::firstOrFail();
+    $participant->block();
 
     post(route('survey.contact-details.store', $surveyResponse), [
         'contact_name' => 'Ali Test',
