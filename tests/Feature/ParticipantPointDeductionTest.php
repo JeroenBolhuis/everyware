@@ -11,7 +11,6 @@ use function Pest\Laravel\get;
 it('lets admins deduct points from a participant', function () {
     $admin = User::factory()->admin()->createOne();
     $participant = Participant::create([
-        'name' => 'Jamie Jansen',
         'email' => 'jamie@example.com',
     ]);
 
@@ -21,12 +20,10 @@ it('lets admins deduct points from a participant', function () {
 
     get(route('admin.participants.index'))
         ->assertSuccessful()
-        ->assertSee('Jamie Jansen')
         ->assertSee('jamie@example.com');
 
     get(route('admin.participants.show', $participant))
         ->assertSuccessful()
-        ->assertSee('Jamie Jansen')
         ->assertSee('jamie@example.com');
 
     Livewire::test('pages::admin.participants.show', ['participant' => $participant])
@@ -49,7 +46,6 @@ it('lets admins deduct points from a participant', function () {
 it('lets lic employees view participants and deduct points', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $participant = Participant::create([
-        'name' => 'Sam Student',
         'email' => 'sam@example.com',
     ]);
 
@@ -60,13 +56,11 @@ it('lets lic employees view participants and deduct points', function () {
     get(route('admin.participants.index'))
         ->assertSuccessful()
         ->assertSee("#{$participant->id}")
-        ->assertDontSee('Sam Student')
         ->assertDontSee('sam@example.com');
 
     get(route('admin.participants.show', $participant))
         ->assertSuccessful()
         ->assertSee("#{$participant->id}")
-        ->assertDontSee('Sam Student')
         ->assertDontSee('sam@example.com');
 
     Livewire::test('pages::admin.participants.show', ['participant' => $participant])
@@ -87,7 +81,6 @@ it('lets lic employees view participants and deduct points', function () {
 it('keeps regular users from deducting participant points', function () {
     $user = User::factory()->createOne();
     $participant = Participant::create([
-        'name' => 'Sam Student',
         'email' => 'sam@example.com',
     ]);
 
@@ -102,7 +95,6 @@ it('keeps regular users from deducting participant points', function () {
 it('validates the deduction form', function () {
     $admin = User::factory()->admin()->createOne();
     $participant = Participant::create([
-        'name' => 'Jamie Jansen',
         'email' => 'jamie@example.com',
     ]);
 
@@ -124,7 +116,6 @@ it('validates the deduction form', function () {
 it('does not let admins deduct more points than the participant has', function () {
     $admin = User::factory()->admin()->createOne();
     $participant = Participant::create([
-        'name' => 'Jamie Jansen',
         'email' => 'jamie@example.com',
     ]);
 

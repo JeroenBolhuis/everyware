@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\SurveyManagerController;
 use App\Http\Requests\Surveys\UpsertSurveyRequest;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
-use Illuminate\Http\UploadedFile;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -18,8 +20,13 @@ function callSurveyManagerPrivateMethod(object $object, string $method, array $a
     return (fn (...$args) => $this->{$method}(...$args))->call($object, ...$arguments);
 }
 
+function participantIdForSurveyManagerResponse(): int
+{
+    return Participant::factory()->create()->id;
+}
+
 it('normalizes existing image values', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     expect(callSurveyManagerPrivateMethod($controller, 'normalizeExistingImage', [null]))->toBeNull();
     expect(callSurveyManagerPrivateMethod($controller, 'normalizeExistingImage', ['   ']))->toBeNull();
@@ -29,21 +36,21 @@ it('normalizes existing image values', function () {
 });
 
 it('uses the configured survey images disk', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     config(['filesystems.survey_images_disk' => 'survey_images']);
     expect(callSurveyManagerPrivateMethod($controller, 'surveyImagesDisk'))->toBe('survey_images');
 });
 
 it('detects absolute urls', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     expect(callSurveyManagerPrivateMethod($controller, 'isAbsoluteUrl', ['https://example.com/image.jpg']))->toBeTrue();
     expect(callSurveyManagerPrivateMethod($controller, 'isAbsoluteUrl', ['survey-options/image.jpg']))->toBeFalse();
 });
 
 it('builds question payload with normalized values and sort order', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $request = Mockery::mock(UpsertSurveyRequest::class);
     $request->shouldReceive('hasFile')->andReturnFalse();
@@ -92,7 +99,7 @@ it('builds question payload with normalized values and sort order', function () 
 });
 
 it('normalizes non swipe options and ignores empty labels', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $request = Mockery::mock(UpsertSurveyRequest::class);
     $request->shouldReceive('hasFile')->andReturnFalse();
@@ -113,7 +120,7 @@ it('normalizes non swipe options and ignores empty labels', function () {
 });
 
 it('returns null options for textarea questions', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
     $request = Mockery::mock(UpsertSurveyRequest::class);
 
     $normalized = callSurveyManagerPrivateMethod($controller, 'normalizeOptions', [
@@ -127,7 +134,7 @@ it('returns null options for textarea questions', function () {
 });
 
 it('normalizes swipe options, replaces existing images and stores the new upload', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     config(['filesystems.survey_images_disk' => 'survey_images']);
     Storage::fake('survey_images');
@@ -190,7 +197,7 @@ it('normalizes swipe options, replaces existing images and stores the new upload
 });
 
 it('returns default swipe options when fewer than two usable options remain', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $request = Mockery::mock(UpsertSurveyRequest::class);
     $request->shouldReceive('hasFile')->andReturnFalse();
@@ -212,7 +219,7 @@ it('returns default swipe options when fewer than two usable options remain', fu
 });
 
 it('throws a validation exception when an uploaded swipe image cannot be stored', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     config(['filesystems.survey_images_disk' => 'survey_images']);
 
@@ -245,7 +252,7 @@ it('throws a validation exception when an uploaded swipe image cannot be stored'
 });
 
 it('deletes only local option images', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     config(['filesystems.survey_images_disk' => 'survey_images']);
     Storage::fake('survey_images');
@@ -263,7 +270,7 @@ it('deletes only local option images', function () {
 });
 
 it('returns the survey overview view with filtered surveys and aggregate stats', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $matchingSurvey = Survey::factory()->active()->create([
         'title' => 'Matchende actieve enquete',
@@ -279,20 +286,26 @@ it('returns the survey overview view with filtered surveys and aggregate stats',
 
     SurveyResponse::create([
         'survey_id' => $matchingSurvey->id,
+        'participant_id' => participantIdForSurveyManagerResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now(),
     ]);
 
     SurveyResponse::create([
         'survey_id' => $closedSurvey->id,
+        'participant_id' => participantIdForSurveyManagerResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now(),
     ]);
 
-    $response = $controller->index(Request::create('/enquetes', 'GET', [
+    $user = User::factory()->admin()->create();
+    $request = Request::create('/enquetes', 'GET', [
         'search' => 'Matchende',
         'status' => 'active',
-    ]));
+    ]);
+    $request->setUserResolver(fn () => $user);
+
+    $response = $controller->index($request);
 
     $surveys = $response->getData()['surveys'];
     $stats = $response->getData()['stats'];
@@ -308,7 +321,7 @@ it('returns the survey overview view with filtered surveys and aggregate stats',
 });
 
 it('stores a survey and its normalized questions', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $request = Mockery::mock(UpsertSurveyRequest::class);
     $request->shouldReceive('validated')->once()->andReturn([
@@ -334,6 +347,7 @@ it('stores a survey and its normalized questions', function () {
         ],
     ]);
     $request->shouldReceive('hasFile')->andReturnFalse();
+    $request->shouldReceive('user')->andReturn(User::factory()->admin()->create());
 
     $response = $controller->store($request);
 
@@ -348,7 +362,7 @@ it('stores a survey and its normalized questions', function () {
 });
 
 it('updates a survey by keeping, creating and deleting questions', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $survey = Survey::create([
         'title' => 'Oude titel',
@@ -414,7 +428,7 @@ it('updates a survey by keeping, creating and deleting questions', function () {
 });
 
 it('rejects changing the type of an existing question once responses exist', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $survey = Survey::create([
         'title' => 'Bestaande enquete',
@@ -433,6 +447,7 @@ it('rejects changing the type of an existing question once responses exist', fun
 
     SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForSurveyManagerResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now(),
     ]);
@@ -459,13 +474,13 @@ it('rejects changing the type of an existing question once responses exist', fun
 });
 
 it('returns the create view', function () {
-    $response = (new SurveyManagerController())->create();
+    $response = (new SurveyManagerController)->create();
 
     expect($response->name())->toBe('survey-manager.create');
 });
 
 it('loads survey questions into the edit view', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $survey = Mockery::mock(Survey::class);
     $survey->shouldReceive('load')->once()->with('questions')->andReturnSelf();
@@ -477,7 +492,7 @@ it('loads survey questions into the edit view', function () {
 });
 
 it('closes the survey and redirects back to the overview', function () {
-    $controller = new SurveyManagerController();
+    $controller = new SurveyManagerController;
 
     $survey = Mockery::mock(Survey::class);
     $survey->shouldReceive('update')->once()->with(['is_active' => false]);

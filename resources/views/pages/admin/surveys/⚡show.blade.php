@@ -18,16 +18,17 @@ new #[Title('Enquete-inzendingen')] class extends Component {
     public function getResponsesProperty()
     {
         return $this->survey->responses()
+            ->visibleInResults()
             ->with('contactInformationSubmission')
             ->latest('submitted_at')
             ->paginate(15);
     }
 }; ?>
 
-<section class="w-full">
+<section class="w-full" aria-labelledby="admin-survey-show-page-title">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Enquete-inzendingen') }}</flux:heading>
+    <flux:heading class="sr-only" id="admin-survey-show-page-title">{{ __('Enquete-inzendingen') }}</flux:heading>
 
     <x-pages::admin.layout
         :heading="$survey->title"
@@ -39,7 +40,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
             </div>
 
             @if (session('status'))
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status" aria-live="polite">
                     {{ session('status') }}
                 </div>
             @endif
@@ -67,8 +68,8 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                                 </flux:badge>
                             </flux:table.cell>
                             <flux:table.cell align="end">
-                                <a href="{{ route('admin.responses.show', $response) }}" class="btn-primary" wire:navigate>{{ __('Open inzending') }}</a>
-                            </flux:table.cell>
+                                    <a href="{{ route('admin.responses.show', $response) }}" class="btn-primary" wire:navigate aria-label="{{ __('Open inzending #:id', ['id' => $response->id]) }}">{{ __('Open inzending') }}</a>
+                                </flux:table.cell>
                         </flux:table.row>
                     @endforeach
                 </flux:table.rows>

@@ -19,7 +19,6 @@ it('knows whether a participant is blocked', function () {
 it('blocks a participant once and persists the timestamp', function () {
     $participant = Participant::create([
         'email' => 'jamie@example.com',
-        'name' => 'Jamie Jansen',
     ]);
 
     $participant->block();
@@ -38,10 +37,9 @@ it('shows real details only to admins', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $participant = Participant::create([
         'email' => 'jamie@example.com',
-        'name' => 'Jamie Jansen',
     ]);
 
-    expect($participant->displayNameFor($admin))->toBe('Jamie Jansen')
+    expect($participant->displayNameFor($admin))->toBe('—')
         ->and($participant->displayEmailFor($admin))->toBe('jamie@example.com')
         ->and($participant->displayNameFor($employee))->toBe("#{$participant->id}")
         ->and($participant->displayEmailFor($employee))->toBe('Afgeschermd');

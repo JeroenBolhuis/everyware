@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\ContactInformationSubmission;
 use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
 use App\Models\SurveyResponse;
@@ -10,42 +9,25 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 it('detects whether contact details were shared', function () {
-    $response = new SurveyResponse();
-
-    $response->setRelation('contactInformationSubmission', new ContactInformationSubmission([
-        'name' => 'Jamie Jansen',
-        'email' => null,
-        'phone' => null,
-    ]));
+    $response = new SurveyResponse(['is_anonymous' => false]);
 
     expect($response->hasSharedContactDetails())->toBeTrue();
 
-    $response->setRelation('contactInformationSubmission', new ContactInformationSubmission([
-        'name' => null,
-        'email' => null,
-        'phone' => null,
-    ]));
+    $response->forceFill(['is_anonymous' => true]);
 
     expect($response->hasSharedContactDetails())->toBeFalse();
 });
 
 it('returns readable labels for the shared contact fields', function () {
-    $response = new SurveyResponse();
-
-    $response->setRelation('contactInformationSubmission', new ContactInformationSubmission([
-        'name' => 'Jamie Jansen',
-        'email' => 'jamie@example.com',
-        'phone' => null,
-    ]));
+    $response = new SurveyResponse(['is_anonymous' => false]);
 
     expect($response->sharedContactFieldLabels())->toBe([
-        'Naam opgeslagen',
-        'E-mailadres opgeslagen',
+        'E-mailadres zichtbaar voor LIC',
     ]);
 });
 
 it('calculates awarded and total points from related models', function () {
-    $response = new SurveyResponse();
+    $response = new SurveyResponse;
 
     $response->setRelation('participantPointsHistories', collect([
         new ParticipantPointsHistory(['amount' => 10]),
@@ -53,7 +35,7 @@ it('calculates awarded and total points from related models', function () {
         new ParticipantPointsHistory(['amount' => 5]),
     ]));
 
-    $participant = new Participant();
+    $participant = new Participant;
     $participant->forceFill([
         'current_points' => 27,
     ]);
@@ -65,7 +47,7 @@ it('calculates awarded and total points from related models', function () {
 });
 
 it('falls back to zero points when no participant is linked', function () {
-    $response = new SurveyResponse();
+    $response = new SurveyResponse;
     $response->setRelation('participant', null);
 
     expect($response->totalPoints())->toBe(0);

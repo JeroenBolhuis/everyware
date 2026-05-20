@@ -35,7 +35,7 @@ new #[Title('Deelnemers')] class extends Component {
                     ->where('id', ltrim(str_replace(['#', ' '], '', $search), '0') ?: 0)
                 )
             )
-            ->orderBy('name')
+            ->orderBy('email')
             ->paginate(15);
     }
 }; ?>
@@ -44,10 +44,10 @@ new #[Title('Deelnemers')] class extends Component {
     $canViewParticipantDetails = auth()->user()?->isAdmin() === true;
 @endphp
 
-<section class="w-full">
+<section class="w-full" aria-labelledby="admin-participants-page-title">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Deelnemers') }}</flux:heading>
+    <flux:heading class="sr-only" id="admin-participants-page-title">{{ __('Deelnemers') }}</flux:heading>
 
     <x-pages::admin.layout
         :heading="__('Deelnemers')"
@@ -61,6 +61,7 @@ new #[Title('Deelnemers')] class extends Component {
                     icon="magnifying-glass"
                     clearable
                     class="w-full text-xs sm:text-sm"
+                    aria-label="{{ $canViewParticipantDetails ? __('Zoek deelnemers op naam of e-mail') : __('Zoek deelnemers op pseudoniem') }}"
                 />
             </div>
 
@@ -98,7 +99,7 @@ new #[Title('Deelnemers')] class extends Component {
                                     @endif
                                 </flux:table.cell>
                                 <flux:table.cell align="end">
-                                    <a href="{{ route('admin.participants.show', $participant) }}" class="btn-secondary text-xs sm:text-sm whitespace-nowrap" wire:navigate>
+                                    <a href="{{ route('admin.participants.show', $participant) }}" class="btn-secondary text-xs sm:text-sm whitespace-nowrap" wire:navigate aria-label="{{ __('Bekijk deelnemer :name', ['name' => $participant->displayNameFor(auth()->user())]) }}">
                                         {{ __('Bekijken') }}
                                     </a>
                                 </flux:table.cell>

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const questionTemplate = document.getElementById('question-template');
     const optionTemplate = document.getElementById('option-template');
     const surveyForm = document.querySelector('form[enctype="multipart/form-data"]');
+    const accessibilityStatus = document.getElementById('survey-manager-a11y-status');
     const blobUploadUrl = surveyForm?.dataset.blobUploadUrl ?? '';
     const pendingUploads = new Set();
 
@@ -16,6 +17,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createOptionRow() {
         return optionTemplate.content.firstElementChild.cloneNode(true);
+    }
+
+    function announce(message) {
+        if (!accessibilityStatus) {
+            return;
+        }
+
+        accessibilityStatus.textContent = '';
+
+        window.requestAnimationFrame(() => {
+            accessibilityStatus.textContent = message;
+        });
     }
 
     function getSelectedFileSize(input) {
@@ -388,6 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 row.remove();
                 renameQuestionFields();
+                announce('Antwoordoptie verwijderd.');
+                card.querySelector('.add-option')?.focus();
             });
         });
     }
@@ -421,6 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 bindImageValidation(card);
                 bindPreviewFields(card);
                 updateOptionLayout(card);
+                announce('Antwoordoptie toegevoegd.');
                 newRow.querySelector('[data-option-label]')?.focus();
             });
         }
@@ -443,8 +459,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                const nextCard = card.nextElementSibling ?? card.previousElementSibling;
                 card.remove();
                 renameQuestionFields();
+                announce('Vraag verwijderd.');
+                nextCard?.querySelector('[data-field="question"]')?.focus();
             });
         }
 
@@ -469,6 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
         attachCardEvents(clone);
         bindImageValidation(clone);
         bindPreviewFields(clone);
+        announce('Nieuwe vraag toegevoegd.');
         clone.querySelector('[data-field="question"]')?.focus();
     });
 

@@ -2,14 +2,22 @@
 
 namespace App\Models;
 
+use Database\Factories\ParticipantFactory;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Participant extends Model
+class Participant extends Model implements AuthenticatableContract
 {
+    /** @use HasFactory<ParticipantFactory> */
+    use Authenticatable;
+
+    use HasFactory;
+
     protected $fillable = [
         'email',
-        'name',
         'blocked_at',
     ];
 
@@ -17,6 +25,14 @@ class Participant extends Model
         'current_points' => 'integer',
         'blocked_at' => 'datetime',
     ];
+
+    /**
+     * Participants never use a password; access is only via signed magic links.
+     */
+    public function getAuthPassword(): ?string
+    {
+        return null;
+    }
 
     public function surveyResponses(): HasMany
     {
