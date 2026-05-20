@@ -3,7 +3,6 @@
 use App\Actions\Surveys\DeleteSurveySubmission;
 use App\Models\Participant;
 use App\Models\SurveyResponse;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Title;
@@ -18,7 +17,7 @@ new #[Title('Enquete-inzending')] class extends Component {
     public function mount(): void
     {
         $this->authorize('view', $this->response);
-        $this->canViewPersonalData = auth()->user()->isAdmin();
+        $this->canViewPersonalData = auth()->user()->canReviewSurveyResponses();
         $this->refreshResponse();
     }
 
@@ -50,18 +49,12 @@ new #[Title('Enquete-inzending')] class extends Component {
         }
 
         $survey = $this->response->survey;
-        $contactName = $this->response->contactInformationSubmission?->name;
         $deleteSurveySubmission = app(DeleteSurveySubmission::class);
 
-        DB::transaction(function () use ($contactName, $deleteSurveySubmission): void {
+        DB::transaction(function () use ($deleteSurveySubmission): void {
             $participant = Participant::firstOrCreate(
                 ['email' => $this->respondentEmail],
-                ['name' => $contactName],
             );
-
-            if ($contactName !== null && blank($participant->name)) {
-                $participant->forceFill(['name' => $contactName])->save();
-            }
 
             $participant->block();
             $deleteSurveySubmission->handle($this->response);
@@ -75,32 +68,21 @@ new #[Title('Enquete-inzending')] class extends Component {
    protected function refreshResponse(): void
     {
         $this->response->refresh();
-        $this->response->load('survey', 'answers.question');
+        $this->response->load('survey', 'answers.question', 'participant');
 
-        if (! $this->canViewPersonalData) {
+        if (! $this->canViewPersonalData || $this->response->is_anonymous) {
             $this->respondentEmail = null;
             $this->respondentIsBlocked = false;
 
             return;
         }
 
-        $this->response->load('contactInformationSubmission');
-
-        $this->respondentEmail = $this->normalizeEmail($this->response->contactInformationSubmission?->email);
+        $this->respondentEmail = $this->response->participant?->email;
         $this->respondentIsBlocked = $this->respondentEmail !== null
             && Participant::query()
                 ->where('email', $this->respondentEmail)
                 ->whereNotNull('blocked_at')
                 ->exists();
-    }
-
-    protected function normalizeEmail(?string $email): ?string
-    {
-        if (! filled($email)) {
-            return null;
-        }
-
-        return Str::lower(trim($email));
     }
 }; ?>
 
@@ -237,29 +219,21 @@ new #[Title('Enquete-inzending')] class extends Component {
                 </div>
 
                 <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
-                    <flux:heading size="lg">{{ __('Contactgegevens') }}</flux:heading>
+                    <flux:heading size="lg">{{ __('Deelnemer') }}</flux:heading>
 
                 @if (! $canViewPersonalData)
                     <flux:text class="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
                         {{ __('Je hebt geen rechten om deze persoonsgegevens te bekijken.') }}
                     </flux:text>
-                @elseif ($response->hasSharedContactDetails())
+                @elseif (! $response->is_anonymous)
                     <dl class="mt-4 space-y-3 text-sm">
                         <div>
-                            <dt class="font-medium text-zinc-500">{{ __('Naam') }}</dt>
-                            <dd>{{ $response->contactInformationSubmission?->name ?: '—' }}</dd>
-                        </div>
-                        <div>
                             <dt class="font-medium text-zinc-500">{{ __('E-mail') }}</dt>
-                            <dd>{{ $response->contactInformationSubmission?->email ?: '—' }}</dd>
-                        </div>
-                        <div>
-                            <dt class="font-medium text-zinc-500">{{ __('Telefoon') }}</dt>
-                            <dd>{{ $response->contactInformationSubmission?->phone ?: '—' }}</dd>
+                            <dd>{{ $response->participant?->email ?: '—' }}</dd>
                         </div>
                     </dl>
                 @else
-                    <flux:text class="mt-4">{{ __('Er zijn geen contactgegevens gedeeld voor deze inzending.') }}</flux:text>
+                    <flux:text class="mt-4">{{ __('Deze inzending is anoniem. De deelnemer en het e-mailadres worden niet getoond.') }}</flux:text>
                 @endif
                 </div>
             </div>

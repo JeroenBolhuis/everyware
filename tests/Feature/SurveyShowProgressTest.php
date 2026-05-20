@@ -1,7 +1,12 @@
 <?php
 
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
+
+beforeEach(function () {
+    loginParticipantAs(Participant::factory()->create());
+});
 
 it('renders the survey progress bar with question counts and percentages', function () {
     $survey = Survey::factory()->active()->create([

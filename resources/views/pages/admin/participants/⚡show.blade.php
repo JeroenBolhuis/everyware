@@ -60,7 +60,7 @@ new #[Title('Deelnemer')] class extends Component {
     <flux:heading class="sr-only" id="admin-participant-show-page-title">{{ __('Deelnemer') }}</flux:heading>
 
     <x-pages::admin.layout
-        :heading="$participant->name ?: $participant->email"
+        :heading="$participant->email"
         :subheading="__('Puntenhistorie en correcties voor deze deelnemer.')"
     >
         @if (session('status'))
@@ -71,11 +71,7 @@ new #[Title('Deelnemer')] class extends Component {
 
         <div class="my-6 space-y-6">
 
-            <div class="grid gap-4 sm:grid-cols-3">
-                <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
-                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Naam') }}</flux:text>
-                    <flux:heading class="mt-1">{{ $participant->name ?: '—' }}</flux:heading>
-                </div>
+            <div class="grid gap-4 sm:grid-cols-2">
                 <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
                     <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('E-mail') }}</flux:text>
                     <flux:heading class="mt-1">{{ $participant->email }}</flux:heading>

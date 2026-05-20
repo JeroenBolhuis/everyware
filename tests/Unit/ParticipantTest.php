@@ -12,13 +12,12 @@ it('knows whether a participant is blocked', function () {
     ]);
 
     expect($participant->isBlocked())->toBeTrue();
-    expect((new Participant())->isBlocked())->toBeFalse();
+    expect((new Participant)->isBlocked())->toBeFalse();
 });
 
 it('blocks a participant once and persists the timestamp', function () {
     $participant = Participant::create([
         'email' => 'jamie@example.com',
-        'name' => 'Jamie Jansen',
     ]);
 
     $participant->block();

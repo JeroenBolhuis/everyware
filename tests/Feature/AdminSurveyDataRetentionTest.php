@@ -59,6 +59,7 @@ it('prunes expired responses and deletes related feedback and personal data', fu
 
     $expiredResponse = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now()->subYears(6),
     ]);
@@ -77,6 +78,7 @@ it('prunes expired responses and deletes related feedback and personal data', fu
 
     $activeResponse = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now()->subYears(4),
     ]);

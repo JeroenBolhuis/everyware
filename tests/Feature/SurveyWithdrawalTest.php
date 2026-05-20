@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ContactInformationSubmission;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
@@ -20,7 +21,11 @@ function createWithdrawableSurvey(): Survey
     return $survey;
 }
 
-it('deletes related contact information when withdrawing', function () {
+beforeEach(function () {
+    loginParticipantAs(Participant::factory()->create());
+});
+
+it('keeps the response withdrawable after contact is allowed', function () {
     $survey = createWithdrawableSurvey();
     $question = $survey->questions()->firstOrFail();
 
@@ -32,19 +37,14 @@ it('deletes related contact information when withdrawing', function () {
 
     $response = SurveyResponse::firstOrFail();
 
-    $this->post(route('survey.contact-details.store', $response), [
-        'contact_name' => 'Jamie Jansen',
-        'contact_email' => 'jamie@example.com',
-        'contact_phone' => '+31 6 12345678',
-    ])->assertRedirect(route('survey.thankyou', $response));
+    $this->post(route('survey.contact-details.store', $response))
+        ->assertRedirect(route('survey.thankyou', $response));
 
-    $contactSubmission = ContactInformationSubmission::firstOrFail();
+    expect($response->fresh()->is_anonymous)->toBeFalse();
 
     $this->post(route('survey.withdraw.destroy', $response->withdrawal_token))
         ->assertOk()
         ->assertSee('ingetrokken');
-
-    expect(ContactInformationSubmission::find($contactSubmission->id))->toBeNull();
 
     $response->refresh();
 

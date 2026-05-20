@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,7 @@ class SurveyResponse extends Model
     protected $fillable = [
         'survey_id',
         'participant_id',
+        'is_anonymous',
         'withdrawal_token',
         'submitted_at',
         'withdrawn_at',
@@ -22,6 +24,7 @@ class SurveyResponse extends Model
     protected $casts = [
         'submitted_at' => 'datetime',
         'withdrawn_at' => 'datetime',
+        'is_anonymous' => 'boolean',
     ];
 
     public function deleteOnDate(): ?Carbon
@@ -60,22 +63,23 @@ class SurveyResponse extends Model
         return $this->morphMany(ParticipantPointsHistory::class, 'source');
     }
 
+    public function scopeVisibleInResults(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->whereDoesntHave('participant')
+                ->orWhereHas('participant', fn (Builder $participantQuery) => $participantQuery->whereNull('blocked_at'));
+        });
+    }
+
     public function hasSharedContactDetails(): bool
     {
-        $contactInformation = $this->contactInformationSubmission;
-
-        return (bool) ($contactInformation?->name || $contactInformation?->email || $contactInformation?->phone);
+        return ! $this->is_anonymous;
     }
 
     public function sharedContactFieldLabels(): array
     {
-        $contactInformation = $this->contactInformationSubmission;
-
-        return array_values(array_filter([
-            $contactInformation?->name ? 'Naam opgeslagen' : null,
-            $contactInformation?->email ? 'E-mailadres opgeslagen' : null,
-            $contactInformation?->phone ? 'Telefoonnummer opgeslagen' : null,
-        ]));
+        return $this->is_anonymous ? [] : ['E-mailadres zichtbaar voor LIC'];
     }
 
     public function awardedPoints(): int
