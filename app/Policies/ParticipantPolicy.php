@@ -10,16 +10,25 @@ class ParticipantPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasRole(Role::Admin->value);
+        return $user->hasAnyRole([
+            Role::Admin->value,
+            Role::LicEmployee->value,
+        ]);
     }
 
     public function view(User $user, Participant $participant): bool
     {
-        return $user->hasRole(Role::Admin->value);
+        return $user->hasAnyRole([
+            Role::Admin->value,
+            Role::LicEmployee->value,
+        ]);
     }
 
     public function correctPoints(User $user, Participant $participant): bool
     {
-        return $user->hasRole(Role::Admin->value);
+        return $user->hasAnyRole([
+            Role::Admin->value,
+            Role::LicEmployee->value,
+        ]);
     }
 }

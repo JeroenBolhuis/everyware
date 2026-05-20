@@ -12,18 +12,6 @@
                            class="w-full rounded-full px-4 py-3 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
 
-                <div class="w-full sm:flex-1">
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" id="status"
-                            class="w-full rounded-full px-4 py-3 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="">Alles</option>
-                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Actief
-                        </option>
-                        <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactief
-                        </option>
-                    </select>
-                </div>
-
                 <button id="clear-btn" type="button" class="btn-secondary w-full sm:w-auto">
                     Wissen
                 </button>
@@ -43,25 +31,21 @@
                                         class="text-sm sm:text-base text-gray-600 mt-1"
                                     />
                                     <div class="mt-2 flex flex-wrap gap-2 items-center">
-                                    <span
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $survey->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                        {{ $survey->is_active ? 'Actief' : 'Inactief' }}
-                                    </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800">
+                                            Actief
+                                        </span>
                                         <span class="text-xs sm:text-sm text-gray-500">
-                                        {{ $survey->questions->count() }} vragen
-                                    </span>
+                                            Einddatum: {{ $survey->ends_at?->format('d-m-Y') ?? 'Geen einddatum' }}
+                                        </span>
+                                        <span class="text-xs sm:text-sm text-gray-500">
+                                            {{ $survey->questions_count }} vragen
+                                        </span>
                                     </div>
                                 </div>
                                 <div class="w-full sm:w-auto ml-0 sm:ml-4">
-                                    @if ($survey->is_active)
-                                        <a href="{{ route('survey.show', $survey) }}" class="btn-primary w-full sm:w-auto block text-center">
-                                            Enquete invullen
-                                        </a>
-                                    @else
-                                        <span class="btn-disabled w-full sm:w-auto block text-center">
-                                            Inactief
-                                        </span>
-                                    @endif
+                                    <a href="{{ route('survey.show', $survey) }}" class="btn-primary w-full sm:w-auto block text-center">
+                                        Enquete invullen
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -84,7 +68,6 @@
 
     <script>
         const searchInput = document.getElementById('search');
-        const statusSelect = document.getElementById('status');
         const clearBtn = document.getElementById('clear-btn');
         const container = document.getElementById('surveys-container');
         let debounceTimer;
@@ -123,8 +106,7 @@
 
         function fetchSurveys(page) {
             const search = searchInput.value;
-            const status = statusSelect.value;
-            const params = new URLSearchParams({search, status, page: page || 1});
+            const params = new URLSearchParams({search, page: page || 1});
 
             fetch(`{{ route('surveys.index') }}?${params}`, {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -145,7 +127,6 @@
                     // Update browser URL without reload
                     const url = new URL(window.location.href);
                     url.searchParams.set('search', search);
-                    url.searchParams.set('status', status);
                     url.searchParams.set('page', page || 1);
                     window.history.replaceState({}, '', url);
                 });
@@ -166,11 +147,8 @@
             debounceTimer = setTimeout(() => fetchSurveys(1), 300);
         });
 
-        statusSelect.addEventListener('change', () => fetchSurveys(1));
-
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
-            statusSelect.value = '';
             fetchSurveys(1);
         });
 

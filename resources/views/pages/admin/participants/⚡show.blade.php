@@ -1,8 +1,7 @@
 <?php
 
+use App\Actions\Participants\DeductParticipantPoints;
 use App\Models\Participant;
-use App\Models\ParticipantPointsHistory;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
@@ -11,12 +10,12 @@ use Livewire\Component;
 new #[Title('Deelnemer')] class extends Component {
     public Participant $participant;
 
-    #[Validate('required|integer|not_in:0', message: [
-        'required' => 'Vul een bedrag in.',
-        'integer'  => 'Het bedrag moet een heel getal zijn.',
-        'not_in'   => 'Het bedrag mag niet nul zijn.',
+    #[Validate('required|integer|min:1', message: [
+        'required' => 'Vul het aantal punten in.',
+        'integer'  => 'Het aantal punten moet een heel getal zijn.',
+        'min'      => 'Het aantal punten moet minimaal 1 zijn.',
     ])]
-    public ?int $amount = null;
+    public ?int $pointsToDeduct = null;
 
     #[Validate('required|string|max:255', message: [
         'required' => 'Geef een reden op voor de correctie.',
@@ -29,30 +28,30 @@ new #[Title('Deelnemer')] class extends Component {
         $this->authorize('view', $this->participant);
     }
 
-    public function addCorrection(): void
+    public function deductPoints(DeductParticipantPoints $deductParticipantPoints): void
     {
         $this->authorize('correctPoints', $this->participant);
 
         $this->validate();
 
-        DB::transaction(function (): void {
-            ParticipantPointsHistory::create([
-                'participant_id' => $this->participant->id,
-                'amount'         => $this->amount,
-                'reason'         => $this->reason,
-                'source_type'    => null,
-                'source_id'      => null,
-            ]);
+        if ($this->pointsToDeduct > $this->participant->current_points) {
+            $this->addError('pointsToDeduct', __('Je kunt niet meer punten afboeken dan de deelnemer heeft.'));
 
-            $this->participant->increment('current_points', $this->amount);
-        });
+            return;
+        }
 
-        $this->reset('amount', 'reason');
+        $deductParticipantPoints($this->participant, $this->pointsToDeduct, $this->reason);
+
+        $this->reset('pointsToDeduct', 'reason');
         $this->participant->refresh();
 
-        Session::flash('status', __('Correctie succesvol opgeslagen.'));
+        Session::flash('status', __('Punten succesvol afgeboekt.'));
     }
 }; ?>
+
+@php
+    $canViewParticipantDetails = auth()->user()?->isAdmin() === true;
+@endphp
 
 <section class="w-full">
     @include('partials.admin-heading')
@@ -60,8 +59,8 @@ new #[Title('Deelnemer')] class extends Component {
     <flux:heading class="sr-only">{{ __('Deelnemer') }}</flux:heading>
 
     <x-pages::admin.layout
-        :heading="$participant->name ?: $participant->email"
-        :subheading="__('Puntenhistorie en correcties voor deze deelnemer.')"
+        :heading="$participant->displayNameFor(auth()->user())"
+        :subheading="__('Puntenhistorie en puntenaftrek voor deze deelnemer.')"
     >
         @if (session('status'))
             <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200">
@@ -73,13 +72,15 @@ new #[Title('Deelnemer')] class extends Component {
 
             <div class="grid gap-4 sm:grid-cols-3">
                 <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
-                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Naam') }}</flux:text>
-                    <flux:heading class="mt-1">{{ $participant->name ?: '—' }}</flux:heading>
+                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ $canViewParticipantDetails ? __('Naam') : __('Pseudoniem') }}</flux:text>
+                    <flux:heading class="mt-1">{{ $participant->displayNameFor(auth()->user()) }}</flux:heading>
                 </div>
-                <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
-                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('E-mail') }}</flux:text>
-                    <flux:heading class="mt-1">{{ $participant->email }}</flux:heading>
-                </div>
+                @if ($canViewParticipantDetails)
+                    <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                        <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('E-mail') }}</flux:text>
+                        <flux:heading class="mt-1">{{ $participant->displayEmailFor(auth()->user()) }}</flux:heading>
+                    </div>
+                @endif
                 <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
                     <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Huidige punten') }}</flux:text>
                     <flux:heading class="mt-1">{{ $participant->current_points }}</flux:heading>
@@ -87,39 +88,40 @@ new #[Title('Deelnemer')] class extends Component {
             </div>
 
             <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                <flux:heading size="lg">{{ __('Correctie toevoegen') }}</flux:heading>
+                <flux:heading size="lg">{{ __('Punten afboeken') }}</flux:heading>
                 <flux:subheading class="mt-1">
-                    {{ __('Voeg een positieve of negatieve correctie toe aan het puntensaldo van deze deelnemer.') }}
+                    {{ __('Trek punten af wanneer een deelnemer deze extern inlevert voor een beloning.') }}
                 </flux:subheading>
 
-                <form wire:submit="addCorrection" class="mt-6 space-y-4 max-w-lg">
+                <form wire:submit="deductPoints" class="mt-6 space-y-4 max-w-lg">
                     <flux:field>
-                        <flux:label>{{ __('Bedrag') }}</flux:label>
-                        <flux:description>{{ __('Gebruik een positief getal om punten toe te voegen, negatief om te verwijderen. Bijv. 10 of -5.') }}</flux:description>
+                        <flux:label>{{ __('Aantal punten') }}</flux:label>
+                        <flux:description>{{ __('Vul het positieve aantal punten in dat van het saldo wordt afgehaald.') }}</flux:description>
                         <flux:input
-                            wire:model="amount"
+                            wire:model="pointsToDeduct"
                             type="number"
-                            placeholder="{{ __('Bijv. 10 of -5') }}"
+                            min="1"
+                            placeholder="{{ __('Bijv. 10') }}"
                         />
-                        <flux:error name="amount" />
+                        <flux:error name="pointsToDeduct" />
                     </flux:field>
 
                     <flux:field>
                         <flux:label>{{ __('Reden') }}</flux:label>
-                        <flux:description>{{ __('Omschrijf waarom deze correctie wordt gemaakt.') }}</flux:description>
+                        <flux:description>{{ __('Omschrijf welke externe beloning of afspraak hierbij hoort.') }}</flux:description>
                         <flux:textarea
                             wire:model="reason"
-                            placeholder="{{ __('Bijv. foutieve toekenning gecorrigeerd...') }}"
+                            placeholder="{{ __('Bijv. Bol.com cadeaubon ingeleverd') }}"
                             rows="3"
                         />
                         <flux:error name="reason" />
                     </flux:field>
 
                     <div class="flex items-center gap-3">
-                        <flux:button type="submit" variant="primary" wire:loading.attr="disabled" wire:target="addCorrection">
-                            {{ __('Correctie opslaan') }}
+                        <flux:button type="submit" variant="primary" wire:loading.attr="disabled" wire:target="deductPoints">
+                            {{ __('Punten afboeken') }}
                         </flux:button>
-                        <flux:text class="text-xs text-zinc-500" wire:loading wire:target="addCorrection">
+                        <flux:text class="text-xs text-zinc-500" wire:loading wire:target="deductPoints">
                             {{ __('Bezig...') }}
                         </flux:text>
                     </div>
@@ -154,7 +156,7 @@ new #[Title('Deelnemer')] class extends Component {
                                     </flux:table.cell>
                                     <flux:table.cell>
                                         @if ($history->source_type === null)
-                                            <flux:badge color="amber" size="sm">{{ __('Admin correctie') }}</flux:badge>
+                                            <flux:badge color="amber" size="sm">{{ __('Handmatige mutatie') }}</flux:badge>
                                         @else
                                             <flux:badge color="zinc" size="sm">{{ __('Enquete-inzending #:id', ['id' => $history->source_id]) }}</flux:badge>
                                         @endif

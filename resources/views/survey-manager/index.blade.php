@@ -118,8 +118,13 @@
                                 <h3 class="text-lg font-semibold text-zinc-900 dark:text-white">{{ $survey->title }}</h3>
 
                                 @if ($survey->is_active)
-                                    <span
-                                        class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950/50 dark:text-green-200">Actief</span>
+                                    @if ($survey->hasEnded())
+                                        <span
+                                            class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">Verlopen</span>
+                                    @else
+                                        <span
+                                            class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-950/50 dark:text-green-200">Actief</span>
+                                    @endif
                                 @else
                                     <span
                                         class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800 dark:bg-red-950/50 dark:text-red-200">Gesloten</span>
@@ -132,6 +137,7 @@
                                 <span>{{ $survey->questions_count }} vragen</span>
                                 <span>{{ $survey->responses_count }} Reactie(s)</span>
                                 <span>Aangemaakt op {{ $survey->created_at->format('d-m-Y') }}</span>
+                                <span>Einddatum: {{ $survey->ends_at?->format('d-m-Y') ?? 'Geen einddatum' }}</span>
 
                                 @if (auth()->user()?->isAdmin() || auth()->user()?->isLicEmployee())
                                     <span>Maker: {{ $survey->creator?->name ?? 'Onbekend' }}</span>
@@ -156,7 +162,7 @@
                                 </flux:dropdown>
                             </div>
 
-                            @if ($survey->is_active)
+                            @if ($survey->isAcceptingResponses())
                                 <div class="flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-neutral-700 dark:bg-zinc-800 lg:max-w-xl">
                                     <input
                                         type="text"
@@ -181,7 +187,7 @@
                                     Bewerken
                                 </a>
 
-                                @if ($survey->is_active)
+                                @if ($survey->isAcceptingResponses())
                                     <a href="{{ route('survey.share.show', $survey->share_token) }}" target="_blank" class="btn-secondary">
                                         Open enquête
                                     </a>

@@ -10,7 +10,7 @@ class UpsertSurveyRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool)$this->user()?->canManageSurveys();
+        return (bool) $this->user()?->canManageSurveys();
     }
 
     public function rules(): array
@@ -19,6 +19,7 @@ class UpsertSurveyRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'is_active' => ['required', 'boolean'],
+            'ends_at' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
             'reward_points' => ['nullable', 'integer', 'min:0'],
 
             'questions' => ['required', 'array', 'min:1'],
@@ -46,10 +47,10 @@ class UpsertSurveyRequest extends FormRequest
                 $filledOptions = collect($rawOptions)
                     ->map(function ($option) {
                         if (is_array($option)) {
-                            return trim((string)($option['label'] ?? ''));
+                            return trim((string) ($option['label'] ?? ''));
                         }
 
-                        return trim((string)$option);
+                        return trim((string) $option);
                     })
                     ->filter()
                     ->values();
@@ -74,7 +75,7 @@ class UpsertSurveyRequest extends FormRequest
 
             foreach ($this->allFiles()['questions'] ?? [] as $questionFiles) {
                 foreach (($questionFiles['options'] ?? []) as $optionFiles) {
-                    if (!empty($optionFiles['image'])) {
+                    if (! empty($optionFiles['image'])) {
                         $totalUploadSize += $optionFiles['image']->getSize();
                     }
                 }
@@ -95,6 +96,8 @@ class UpsertSurveyRequest extends FormRequest
     {
         return [
             'title.required' => 'Geef de enquête een titel.',
+            'ends_at.date_format' => 'Gebruik een geldige einddatum.',
+            'ends_at.after_or_equal' => 'De einddatum mag niet in het verleden liggen.',
             'questions.required' => 'Voeg minimaal 1 vraag toe aan de enquête.',
             'questions.min' => 'Voeg minimaal 1 vraag toe aan de enquête.',
             'questions.*.question.required' => 'Vul de vraagtekst in.',
