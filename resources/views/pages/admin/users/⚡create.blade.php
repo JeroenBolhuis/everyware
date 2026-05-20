@@ -51,10 +51,10 @@ new #[Title('Gebruiker aanmaken')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
+<section class="w-full" aria-labelledby="admin-users-create-page-title">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Gebruiker aanmaken') }}</flux:heading>
+    <flux:heading class="sr-only" id="admin-users-create-page-title">{{ __('Gebruiker aanmaken') }}</flux:heading>
 
     <x-pages::admin.layout
         :heading="__('Gebruiker aanmaken')"
@@ -68,7 +68,7 @@ new #[Title('Gebruiker aanmaken')] class extends Component {
                 </a>
             </div>
 
-            <form wire:submit="save" class="space-y-6">
+            <form wire:submit="save" class="space-y-6" aria-label="{{ __('Nieuw gebruikersaccount aanmaken') }}">
                 <flux:input wire:model="name" :label="__('Name')" type="text" required autocomplete="name"/>
 
                 <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email"/>

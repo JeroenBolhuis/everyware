@@ -104,10 +104,10 @@ new #[Title('Enquete-inzending')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
+<section class="w-full" aria-labelledby="admin-response-show-page-title">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Enquete-inzending') }}</flux:heading>
+    <flux:heading class="sr-only" id="admin-response-show-page-title">{{ __('Enquete-inzending') }}</flux:heading>
 
     <x-pages::admin.layout
         :heading="__('Inzending #:id', ['id' => $response->id])"

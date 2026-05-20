@@ -54,17 +54,17 @@ new #[Title('Deelnemer')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
+<section class="w-full" aria-labelledby="admin-participant-show-page-title">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Deelnemer') }}</flux:heading>
+    <flux:heading class="sr-only" id="admin-participant-show-page-title">{{ __('Deelnemer') }}</flux:heading>
 
     <x-pages::admin.layout
         :heading="$participant->name ?: $participant->email"
         :subheading="__('Puntenhistorie en correcties voor deze deelnemer.')"
     >
         @if (session('status'))
-            <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200" role="status" aria-live="polite">
                 {{ session('status') }}
             </div>
         @endif
@@ -92,7 +92,7 @@ new #[Title('Deelnemer')] class extends Component {
                     {{ __('Voeg een positieve of negatieve correctie toe aan het puntensaldo van deze deelnemer.') }}
                 </flux:subheading>
 
-                <form wire:submit="addCorrection" class="mt-6 space-y-4 max-w-lg">
+                <form wire:submit="addCorrection" class="mt-6 space-y-4 max-w-lg" aria-label="{{ __('Correctie toevoegen voor :name', ['name' => $participant->name ?: $participant->email]) }}">
                     <flux:field>
                         <flux:label>{{ __('Bedrag') }}</flux:label>
                         <flux:description>{{ __('Gebruik een positief getal om punten toe te voegen, negatief om te verwijderen. Bijv. 10 of -5.') }}</flux:description>

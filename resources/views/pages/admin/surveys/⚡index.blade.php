@@ -111,10 +111,10 @@ new #[Title('Enquete-inzendingen')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
+<section class="w-full" aria-labelledby="admin-surveys-page-title">
     @include('partials.admin-heading')
 
-    <flux:heading class="sr-only">{{ __('Enquete-inzendingen') }}</flux:heading>
+    <flux:heading class="sr-only" id="admin-surveys-page-title">{{ __('Enquete-inzendingen') }}</flux:heading>
 
     <x-pages::admin.layout
         :heading="__('Enquete-inzendingen')"
@@ -227,7 +227,8 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                                 <flux:table.cell align="end">
                                     <a href="{{ route('admin.surveys.show', $survey) }}"
                                        class="btn-secondary text-xs sm:text-sm whitespace-nowrap"
-                                       wire:navigate>{{ __('Bekijk inzendingen') }}</a>
+                                       wire:navigate
+                                       aria-label="{{ __('Bekijk inzendingen van enquête :title', ['title' => $survey->title]) }}">{{ __('Bekijk inzendingen') }}</a>
                                 </flux:table.cell>
                             </flux:table.row>
                         @endforeach
