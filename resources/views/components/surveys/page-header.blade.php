@@ -3,6 +3,9 @@
     <div class="font-semibold text-red-600 text-center text-sm sm:text-base flex-1 min-w-0">LIC Feedback Demo</div>
     <div class="text-sm text-gray-500 shrink-0 flex items-center gap-3">
         @auth('participant')
+            <a href="{{ route('student.points') }}" class="hidden sm:inline text-red-700 hover:text-red-900 font-medium whitespace-nowrap">
+                Mijn punten
+            </a>
             <span class="hidden sm:inline max-w-[12rem] truncate text-gray-600" title="{{ auth('participant')->user()->email }}">
                 {{ auth('participant')->user()->email }}
             </span>

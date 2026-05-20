@@ -24,7 +24,7 @@
                 </div>
             @endif
 
-            @if ($response->participant && $response->awardedPoints() > 0)
+            @if ($response?->participant && $response->awardedPoints() > 0)
                 <div class="mb-4 sm:mb-6 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:p-4 text-sm sm:text-base text-amber-900">
                     <p class="font-semibold">Je hebt {{ $response->awardedPoints() }} punten gekregen.</p>
                     <p class="mt-1">Je totaal staat nu op {{ $response->totalPoints() }} punten.</p>
@@ -34,7 +34,7 @@
             <div class="mb-4 sm:mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:p-4 md:p-6">
                 <p class="font-semibold text-sm sm:text-base text-gray-900">Contactgegevens</p>
 
-                @if ($response->hasSharedContactDetails())
+                @if ($response?->hasSharedContactDetails())
                     <p class="mt-2 text-sm sm:text-base text-gray-700">Je hebt contactgegevens gedeeld. Deze gegevens zijn versleuteld opgeslagen.</p>
 
                     <ul class="mt-3 flex flex-wrap gap-2 text-xs sm:text-sm text-gray-700">
@@ -52,6 +52,7 @@
                         Je enquête is al anoniem opgeslagen. Alleen als je hieronder zelf je naam deelt,
                         kunnen we je feedback aan jou koppelen.
                     </div>
+                    @if ($response)
                     <form method="POST" action="{{ route('survey.contact-details.store', $response) }}"
                           class="mt-4 space-y-4">
                         @csrf
@@ -63,9 +64,11 @@
                             </button>
                         </div>
                     </form>
+                    @endif
                 @endif
             </div>
 
+            @if ($response)
             <div class="bg-gray-100 rounded-lg p-4 sm:p-4 md:p-6">
                 <p class="font-semibold mb-2 text-sm sm:text-base">Rechten intrekken</p>
                 <p class="mb-3 text-sm sm:text-base">Via deze link kun je jouw toestemming of antwoorden laten intrekken:</p>
@@ -74,6 +77,7 @@
                     {{ route('survey.withdraw.show', $response->withdrawal_token) }}
                 </a>
             </div>
+            @endif
         </div>
     </div>
 </x-layout>

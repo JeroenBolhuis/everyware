@@ -31,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request): string {
-            if ($request->is('survey/*') || $request->is('s/*')) {
+            if ($request->is('survey/*') || $request->is('s/*') || $request->is('student/punten')) {
                 return route('survey.participant.login', [
                     'redirect' => '/'.$request->path(),
                 ]);
