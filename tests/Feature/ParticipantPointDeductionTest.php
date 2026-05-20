@@ -121,7 +121,6 @@ it('validates the deduction form', function () {
 
     expect($participant->fresh()->current_points)->toBe(12);
 });
-
 it('does not let admins deduct more points than the participant has', function () {
     $admin = User::factory()->admin()->createOne();
     $participant = Participant::create([
