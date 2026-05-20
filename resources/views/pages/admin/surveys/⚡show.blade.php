@@ -18,6 +18,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
     public function getResponsesProperty()
     {
         return $this->survey->responses()
+            ->visibleInResults()
             ->with('contactInformationSubmission')
             ->latest('submitted_at')
             ->paginate(15);

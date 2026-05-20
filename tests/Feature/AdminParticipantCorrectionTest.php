@@ -3,13 +3,13 @@
 use App\Models\Participant;
 use App\Models\User;
 use Livewire\Livewire;
+
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 
 it('lets admins apply negative point corrections', function () {
     $admin = User::factory()->admin()->createOne();
     $participant = Participant::create([
-        'name' => 'Jamie Jansen',
         'email' => 'jamie@example.com',
     ]);
 

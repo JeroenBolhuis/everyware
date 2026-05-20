@@ -17,10 +17,8 @@
         }
     @endphp
 
-    <div class="min-h-screen flex flex-col overflow-x-hidden">
-        <x-surveys.page-header/>
-
-        <main class="flex-1 overflow-visible max-w-3xl mx-auto w-full px-4 pb-10 pt-0">
+    <div class="overflow-x-hidden">
+        <main class="mx-auto w-full max-w-3xl px-4 pb-10 pt-6">
             <x-surveys.validation-notices/>
 
             <section

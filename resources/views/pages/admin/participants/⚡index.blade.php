@@ -24,10 +24,9 @@ new #[Title('Deelnemers')] class extends Component {
     {
         return Participant::query()
             ->when($this->search, fn ($query) => $query
-                ->where('name', 'like', '%' . $this->search . '%')
-                ->orWhere('email', 'like', '%' . $this->search . '%')
+                ->where('email', 'like', '%' . $this->search . '%')
             )
-            ->orderBy('name')
+            ->orderBy('email')
             ->paginate(15);
     }
 }; ?>
@@ -45,7 +44,7 @@ new #[Title('Deelnemers')] class extends Component {
             <div class="mb-4">
                 <flux:input
                     wire:model.live.debounce.300ms="search"
-                    placeholder="{{ __('Zoek op naam of e-mail...') }}"
+                    placeholder="{{ __('Zoek op e-mail...') }}"
                     icon="magnifying-glass"
                     clearable
                     class="w-full text-xs sm:text-sm"
@@ -55,7 +54,6 @@ new #[Title('Deelnemers')] class extends Component {
             <div class="overflow-x-auto">
                 <flux:table :paginate="$this->participants">
                     <flux:table.columns>
-                        <flux:table.column class="text-xs sm:text-sm">{{ __('Naam') }}</flux:table.column>
                         <flux:table.column class="text-xs sm:text-sm">{{ __('E-mail') }}</flux:table.column>
                         <flux:table.column class="text-xs sm:text-sm">{{ __('Punten') }}</flux:table.column>
                         <flux:table.column class="text-xs sm:text-sm">{{ __('Status') }}</flux:table.column>
@@ -65,10 +63,7 @@ new #[Title('Deelnemers')] class extends Component {
                     <flux:table.rows>
                         @forelse ($this->participants as $participant)
                             <flux:table.row :key="$participant->id">
-                                <flux:table.cell variant="strong" class="text-xs sm:text-sm">
-                                    {{ $participant->name ?: '—' }}
-                                </flux:table.cell>
-                                <flux:table.cell class="text-xs sm:text-sm truncate">{{ $participant->email }}</flux:table.cell>
+                                <flux:table.cell variant="strong" class="text-xs sm:text-sm truncate">{{ $participant->email }}</flux:table.cell>
                                 <flux:table.cell class="text-xs sm:text-sm">
                                     <flux:badge color="{{ $participant->current_points > 0 ? 'emerald' : 'zinc' }}" size="sm">
                                         {{ $participant->current_points }}
@@ -89,7 +84,7 @@ new #[Title('Deelnemers')] class extends Component {
                             </flux:table.row>
                         @empty
                             <flux:table.row>
-                                <flux:table.cell colspan="5">
+                                <flux:table.cell colspan="4">
                                     <flux:text class="text-center text-xs sm:text-sm text-zinc-500">
                                         {{ $search ? __('Geen deelnemers gevonden voor ":search".', ['search' => $search]) : __('Er zijn nog geen deelnemers.') }}
                                     </flux:text>

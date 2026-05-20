@@ -1,15 +1,15 @@
 <?php
 
-use App\Models\ContactInformationSubmission;
 use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\User;
 use Livewire\Livewire;
+
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
-use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
 function createReviewableSurvey(): Survey
@@ -31,8 +31,11 @@ function createReviewableSurvey(): Survey
 
 function createReviewableResponse(Survey $survey): SurveyResponse
 {
+    $participant = Participant::factory()->create(['email' => 'jamie@example.com']);
+
     $response = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => $participant->id,
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => now(),
     ]);
@@ -80,26 +83,18 @@ it('lets lic employees open the survey response overview', function () {
         ->assertSee($survey->title);
 });
 
-it('shows decrypted contact details to admins', function () {
+it('shows participant email to admins for non anonymous responses', function () {
     $admin = User::factory()->admin()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
-    ContactInformationSubmission::create([
-        'survey_id' => $survey->id,
-        'survey_response_id' => $response->id,
-        'name' => 'Jamie Jansen',
-        'email' => 'jamie@example.com',
-        'phone' => '+31612345678',
-    ]);
+    $response->forceFill(['is_anonymous' => false])->save();
 
     actingAs($admin);
 
     get(route('admin.responses.show', $response))
         ->assertOk()
-        ->assertSee('Jamie Jansen')
         ->assertSee('jamie@example.com')
-        ->assertSee('+31612345678')
         ->assertSee('Very helpful and practical.');
 });
 
@@ -112,29 +107,22 @@ it('shows when no contact information was provided', function () {
 
     get(route('admin.responses.show', $response))
         ->assertOk()
-        ->assertSee('Er zijn geen contactgegevens gedeeld voor deze inzending.');
+        ->assertSee('Deze inzending is anoniem. De deelnemer en het e-mailadres worden niet getoond.');
 });
-it('hides contact details from lic employees', function () {
+it('shows participant email to lic employees for non anonymous responses', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
-    ContactInformationSubmission::create([
-        'survey_id' => $survey->id,
-        'survey_response_id' => $response->id,
-        'name' => 'Jamie Jansen',
-        'email' => 'jamie@example.com',
-        'phone' => '+31612345678',
-    ]);
+    $response->forceFill(['is_anonymous' => false])->save();
 
     actingAs($employee);
 
     get(route('admin.responses.show', $response))
         ->assertOk()
         ->assertDontSee('Jamie Jansen')
-        ->assertDontSee('jamie@example.com')
         ->assertDontSee('+31612345678')
-        ->assertSee('Je hebt geen rechten om deze persoonsgegevens te bekijken.')
+        ->assertSee('jamie@example.com')
         ->assertSee('Very helpful and practical.');
 });
 it('lets lic employees delete a full submission and shows a success message', function () {
@@ -142,26 +130,18 @@ it('lets lic employees delete a full submission and shows a success message', fu
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
-    $participant = Participant::create([
-        'name' => 'Jamie Jansen',
+    $participant = Participant::firstOrCreate([
         'email' => 'jamie@example.com',
     ]);
 
     $response->update([
         'participant_id' => $participant->id,
+        'is_anonymous' => false,
     ]);
 
     $secondAnswer = $response->answers()->create([
         'survey_question_id' => $survey->questions()->firstOrFail()->id,
         'answer' => 'Dit antwoord hoort ook verwijderd te worden.',
-    ]);
-
-    $contactSubmission = ContactInformationSubmission::create([
-        'survey_id' => $survey->id,
-        'survey_response_id' => $response->id,
-        'name' => 'Jamie Jansen',
-        'email' => 'jamie@example.com',
-        'phone' => '+31612345678',
     ]);
 
     $pointsHistory = $response->participantPointsHistories()->create([
@@ -192,10 +172,6 @@ it('lets lic employees delete a full submission and shows a success message', fu
         'id' => $secondAnswer->id,
     ]);
 
-    assertDatabaseMissing('contact_information_submissions', [
-        'id' => $contactSubmission->id,
-    ]);
-
     assertDatabaseMissing('participant_points_history', [
         'id' => $pointsHistory->id,
     ]);
@@ -210,13 +186,7 @@ it('lets admins block an email address and delete the current submission', funct
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
-    ContactInformationSubmission::create([
-        'survey_id' => $survey->id,
-        'survey_response_id' => $response->id,
-        'name' => 'Jamie Jansen',
-        'email' => 'jamie@example.com',
-        'phone' => '+31612345678',
-    ]);
+    $response->forceFill(['is_anonymous' => false])->save();
 
     actingAs($admin);
 
@@ -241,23 +211,17 @@ it('lets admins block an email address and delete the current submission', funct
 
     expect(Participant::where('email', 'jamie@example.com')->firstOrFail()->blocked_at)->not->toBeNull();
 });
-it('does not show the email block action to lic employees', function () {
+it('shows the email block action to lic employees for non anonymous responses', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
 
-    ContactInformationSubmission::create([
-        'survey_id' => $survey->id,
-        'survey_response_id' => $response->id,
-        'name' => 'Jamie Jansen',
-        'email' => 'jamie@example.com',
-        'phone' => '+31612345678',
-    ]);
+    $response->forceFill(['is_anonymous' => false])->save();
 
     actingAs($employee);
 
     get(route('admin.responses.show', $response))
         ->assertOk()
-        ->assertDontSee('E-mailadres blokkeren')
-        ->assertDontSee('Blokkeren en verwijderen');
+        ->assertSee('E-mailadres blokkeren')
+        ->assertSee('Blokkeren en verwijderen');
 });
