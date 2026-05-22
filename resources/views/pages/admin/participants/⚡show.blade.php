@@ -72,7 +72,7 @@ new #[Title('Deelnemer')] class extends Component {
 
             <div class="grid gap-4 sm:grid-cols-3">
                 <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
-                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ $canViewParticipantDetails ? __('Naam') : __('Pseudoniem') }}</flux:text>
+                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Pseudoniem') }}</flux:text>
                     <flux:heading class="mt-1">{{ $participant->displayNameFor(auth()->user()) }}</flux:heading>
                 </div>
                 @if ($canViewParticipantDetails)

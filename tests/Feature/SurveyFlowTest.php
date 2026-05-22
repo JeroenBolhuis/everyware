@@ -76,8 +76,30 @@ it('opens the survey page', function () {
     $response = get('/survey/'.$survey->id);
 
     $response->assertOk();
+    $response->assertSee('/images/Avans_Hogeschool_Logo.png', false);
     $response->assertSee('Are you satisfied?');
     $response->assertSee('Volgende');
+});
+
+it('shows submit text on a survey with a single question', function () {
+    $survey = Survey::factory()->create([
+        'title' => 'Korte survey',
+        'is_active' => true,
+    ]);
+
+    SurveyQuestion::factory()->create([
+        'survey_id' => $survey->id,
+        'question' => 'Is dit duidelijk?',
+        'type' => 'radio',
+        'required' => true,
+        'options' => ['Ja', 'Nee'],
+        'sort_order' => 1,
+    ]);
+
+    get(route('survey.show', $survey))
+        ->assertOk()
+        ->assertSee('Verzenden')
+        ->assertDontSee('Volgende');
 });
 
 it('renders stored alt text for swipe images', function () {

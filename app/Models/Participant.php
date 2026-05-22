@@ -51,10 +51,6 @@ class Participant extends Model implements AuthenticatableContract
 
     public function displayNameFor(?User $user): string
     {
-        if ($user?->isAdmin()) {
-            return $this->name ?: '—';
-        }
-
         return $this->pseudonym();
     }
 

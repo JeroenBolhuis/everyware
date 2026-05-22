@@ -28,8 +28,8 @@ new #[Title('Deelnemers')] class extends Component {
         return Participant::query()
             ->when($search !== '', fn ($query) => $query
                 ->when($user?->isAdmin(), fn ($query) => $query
-                    ->where('name', 'like', '%'.$search.'%')
-                    ->orWhere('email', 'like', '%'.$search.'%')
+                    ->where('email', 'like', '%'.$search.'%')
+                    ->orWhere('id', ltrim(str_replace(['#', ' '], '', $search), '0') ?: 0)
                 )
                 ->when(! $user?->isAdmin(), fn ($query) => $query
                     ->where('id', ltrim(str_replace(['#', ' '], '', $search), '0') ?: 0)
@@ -57,18 +57,18 @@ new #[Title('Deelnemers')] class extends Component {
             <div class="mb-4">
                 <flux:input
                     wire:model.live.debounce.300ms="search"
-                    placeholder="{{ $canViewParticipantDetails ? __('Zoek op naam of e-mail...') : __('Zoek op #...') }}"
+                    placeholder="{{ $canViewParticipantDetails ? __('Zoek op e-mail of #...') : __('Zoek op #...') }}"
                     icon="magnifying-glass"
                     clearable
                     class="w-full text-xs sm:text-sm"
-                    aria-label="{{ $canViewParticipantDetails ? __('Zoek deelnemers op naam of e-mail') : __('Zoek deelnemers op pseudoniem') }}"
+                    aria-label="{{ $canViewParticipantDetails ? __('Zoek deelnemers op e-mail of pseudoniem') : __('Zoek deelnemers op pseudoniem') }}"
                 />
             </div>
 
             <div class="overflow-x-auto">
                 <flux:table :paginate="$this->participants">
                     <flux:table.columns>
-                        <flux:table.column class="text-xs sm:text-sm">{{ $canViewParticipantDetails ? __('Naam') : __('Pseudoniem') }}</flux:table.column>
+                        <flux:table.column class="text-xs sm:text-sm">{{ __('Pseudoniem') }}</flux:table.column>
                         @if ($canViewParticipantDetails)
                             <flux:table.column class="text-xs sm:text-sm">{{ __('E-mail') }}</flux:table.column>
                         @endif

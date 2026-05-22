@@ -32,14 +32,14 @@ it('blocks a participant once and persists the timestamp', function () {
         ->toBe($firstBlockedAt?->toDateTimeString());
 });
 
-it('shows real details only to admins', function () {
+it('uses a pseudonym as participant display name', function () {
     $admin = User::factory()->admin()->createOne();
     $employee = User::factory()->licEmployee()->createOne();
     $participant = Participant::create([
         'email' => 'jamie@example.com',
     ]);
 
-    expect($participant->displayNameFor($admin))->toBe('—')
+    expect($participant->displayNameFor($admin))->toBe("#{$participant->id}")
         ->and($participant->displayEmailFor($admin))->toBe('jamie@example.com')
         ->and($participant->displayNameFor($employee))->toBe("#{$participant->id}")
         ->and($participant->displayEmailFor($employee))->toBe('Afgeschermd');

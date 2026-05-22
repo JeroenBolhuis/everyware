@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Actions\Surveys\DeleteSurveySubmission;
+use App\Actions\Surveys\SurveyRetentionSettings;
 use App\Models\SurveyResponse;
 use Illuminate\Console\Command;
 
@@ -28,7 +29,7 @@ class PruneSurveyAnswers extends Command
     public function handle(): int
     {
         $deleteSurveySubmission = app(DeleteSurveySubmission::class);
-        $cutoff = now()->subYears((int) config('surveys.retention_years'));
+        $cutoff = now()->subYears(app(SurveyRetentionSettings::class)->retentionYears());
 
         $deletedCount = 0;
 

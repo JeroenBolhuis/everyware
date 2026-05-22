@@ -9,7 +9,6 @@ uses(TestCase::class, RefreshDatabase::class);
 
 it('deducts points and records the history entry', function () {
     $participant = Participant::create([
-        'name' => 'Jamie Jansen',
         'email' => 'jamie@example.com',
     ]);
 
@@ -30,7 +29,6 @@ it('deducts points and records the history entry', function () {
 
 it('does not allow a participant balance to become negative', function () {
     $participant = Participant::create([
-        'name' => 'Jamie Jansen',
         'email' => 'jamie@example.com',
     ]);
 

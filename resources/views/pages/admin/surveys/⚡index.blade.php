@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Surveys\SurveyRetentionSettings;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
 use Livewire\Attributes\Title;
@@ -17,8 +18,10 @@ new #[Title('Enquete-inzendingen')] class extends Component {
     {
         $this->authorize('viewAny', Survey::class);
 
-        $this->retentionYears = (int) config('surveys.retention_years');
-        $this->upcomingDeletionWarningDays = (int) config('surveys.upcoming_warning_days');
+        $settings = app(SurveyRetentionSettings::class);
+
+        $this->retentionYears = $settings->retentionYears();
+        $this->upcomingDeletionWarningDays = $settings->upcomingWarningDays();
     }
 
     public function dismissUpcomingDeletionWarning(): void
@@ -36,35 +39,10 @@ new #[Title('Enquete-inzendingen')] class extends Component {
 
         $retentionYears = (int) $validated['retentionYears'];
 
-        if (! app()->runningUnitTests()) {
-            $this->updateEnvValue('SURVEYS_RETENTION_YEARS', (string) $retentionYears);
-        }
-
-        config(['surveys.retention_years' => $retentionYears]);
+        app(SurveyRetentionSettings::class)->updateRetentionYears($retentionYears);
         $this->retentionYears = $retentionYears;
 
         $this->dispatch('retention-setting-saved');
-    }
-
-    private function updateEnvValue(string $key, string $value): void
-    {
-        $envPath = base_path('.env');
-        $envContent = file_exists($envPath) ? file_get_contents($envPath) : false;
-
-        if ($envContent === false) {
-            return;
-        }
-
-        $pattern = '/^'.preg_quote($key, '/').'=.*$/m';
-        $replacement = $key.'='.$value;
-
-        if (preg_match($pattern, $envContent) === 1) {
-            $updatedEnvContent = (string) preg_replace($pattern, $replacement, $envContent);
-        } else {
-            $updatedEnvContent = rtrim($envContent).PHP_EOL.$replacement.PHP_EOL;
-        }
-
-        file_put_contents($envPath, $updatedEnvContent);
     }
 
     public function getSurveysProperty()
