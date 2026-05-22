@@ -51,6 +51,17 @@
                                 {{ __('Gebruikers') }}
                             </flux:sidebar.item>
                         @endif
+
+                        @if (auth()->user()->canReviewSurveyResponses())
+                            <flux:sidebar.item
+                                icon="academic-cap"
+                                :href="route('admin.participants.index')"
+                                :current="request()->routeIs('admin.participants.*')"
+                                wire:navigate
+                            >
+                                {{ __('Deelnemers') }}
+                            </flux:sidebar.item>
+                        @endif
                     </flux:sidebar.group>
                 @endif
             </flux:sidebar.nav>

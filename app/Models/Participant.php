@@ -44,6 +44,25 @@ class Participant extends Model implements AuthenticatableContract
         return $this->hasMany(ParticipantPointsHistory::class);
     }
 
+    public function pseudonym(): string
+    {
+        return __('#:id', ['id' => $this->id]);
+    }
+
+    public function displayNameFor(?User $user): string
+    {
+        return $this->pseudonym();
+    }
+
+    public function displayEmailFor(?User $user): string
+    {
+        if ($user?->isAdmin()) {
+            return $this->email;
+        }
+
+        return __('Afgeschermd');
+    }
+
     public function isBlocked(): bool
     {
         return $this->blocked_at !== null;

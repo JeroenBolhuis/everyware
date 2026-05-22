@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Participant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -29,4 +30,17 @@ it('blocks a participant once and persists the timestamp', function () {
 
     expect($participant->fresh()->blocked_at?->toDateTimeString())
         ->toBe($firstBlockedAt?->toDateTimeString());
+});
+
+it('uses a pseudonym as participant display name', function () {
+    $admin = User::factory()->admin()->createOne();
+    $employee = User::factory()->licEmployee()->createOne();
+    $participant = Participant::create([
+        'email' => 'jamie@example.com',
+    ]);
+
+    expect($participant->displayNameFor($admin))->toBe("#{$participant->id}")
+        ->and($participant->displayEmailFor($admin))->toBe('jamie@example.com')
+        ->and($participant->displayNameFor($employee))->toBe("#{$participant->id}")
+        ->and($participant->displayEmailFor($employee))->toBe('Afgeschermd');
 });

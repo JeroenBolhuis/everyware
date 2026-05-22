@@ -1,7 +1,7 @@
 <header class="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
         <a href="{{ route('surveys.index') }}" class="shrink-0 flex items-center h-10" aria-label="Avans Hogeschool">
-            <img src="/images/Avans_Hogeschool_Logo.svg" alt="Avans Hogeschool Logo" class="h-7 w-auto" />
+            <img src="/images/Avans_Hogeschool_Logo.png" alt="Avans Hogeschool Logo" class="h-7 w-auto" />
         </a>
    
 

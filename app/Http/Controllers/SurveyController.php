@@ -8,10 +8,9 @@ use App\Mail\SurveySubmissionConfirmationMail;
 use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
 use App\Models\Survey;
-use App\Models\SurveyAnswerRetentionSetting;
 use App\Models\SurveyResponse;
-use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -22,18 +21,19 @@ class SurveyController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Survey::query();
-
-        $status = $request->input('status');
-        if (in_array($status, ['active', 'inactive'], true)) {
-            $query->where('is_active', $status === 'active');
-        }
+        $query = Survey::query()
+            ->withCount('questions')
+            ->where('is_active', true)
+            ->where(function ($query): void {
+                $query->whereNull('ends_at')
+                    ->orWhereDate('ends_at', '>=', today());
+            });
 
         if ($request->filled('search')) {
             $query->where('title', 'like', '%'.$request->search.'%');
         }
 
-        $surveys = $query->paginate(10);
+        $surveys = $query->latest()->paginate(10);
         $completedSurveyIds = $this->completedSurveyIdsForCurrentParticipant();
 
         return view('surveys.index', compact('completedSurveyIds', 'surveys'));
@@ -44,6 +44,10 @@ class SurveyController extends Controller
         $survey->load('questions');
 
         abort_unless($survey->is_active, 404);
+
+        if ($survey->hasEnded()) {
+            return $this->expiredSurveyResponse($survey);
+        }
 
         $existingResponse = $this->existingResponseForCurrentParticipant($survey);
 
@@ -64,6 +68,10 @@ class SurveyController extends Controller
 
         abort_unless($survey->is_active, 404);
 
+        if ($survey->hasEnded()) {
+            return $this->expiredSurveyResponse($survey);
+        }
+
         $existingResponse = $this->existingResponseForCurrentParticipant($survey);
 
         if ($existingResponse !== null) {
@@ -82,6 +90,10 @@ class SurveyController extends Controller
 
         abort_unless($survey->is_active, 404);
 
+        if ($survey->hasEnded()) {
+            return $this->expiredSurveyResponse($survey);
+        }
+
         return $this->store($request, $survey);
     }
 
@@ -91,7 +103,11 @@ class SurveyController extends Controller
         /** @var Participant $participant */
         $participant = $request->user('participant');
 
-        if ($participant->isBlocked()) {
+        if ($survey->hasEnded()) {
+            return $this->expiredSurveyResponse($survey);
+        }
+
+        if ($participant->isBlocked() || $this->isBlockedEmail($participant->email)) {
             return to_route('survey.thankyou.generic');
         }
 
@@ -107,14 +123,11 @@ class SurveyController extends Controller
                 return $existingResponse;
             }
 
-            $submittedAt = now();
-
             $response = $survey->responses()->create([
                 'participant_id' => $participant->id,
                 'is_anonymous' => true,
                 'withdrawal_token' => Str::uuid(),
-                'submitted_at' => $submittedAt,
-                'delete_on_date' => $this->resolveResponseDeleteOnDate($submittedAt),
+                'submitted_at' => now(),
             ]);
 
             $answers = collect($validated['answers'])
@@ -298,15 +311,8 @@ class SurveyController extends Controller
             ->all();
     }
 
-    private function resolveResponseDeleteOnDate(?CarbonInterface $submittedAt): ?string
+    private function expiredSurveyResponse(Survey $survey): Response
     {
-        $autoDeleteAfterDays = SurveyAnswerRetentionSetting::query()->value('auto_delete_after_days');
-
-        if ($autoDeleteAfterDays === null) {
-            return null;
-        }
-
-        return $submittedAt?->copy()->addDays($autoDeleteAfterDays)->toDateString()
-            ?? now()->addDays($autoDeleteAfterDays)->toDateString();
+        return response()->view('surveys.expired', compact('survey'), 410);
     }
 }

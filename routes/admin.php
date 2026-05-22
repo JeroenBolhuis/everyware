@@ -12,14 +12,13 @@ Route::middleware(['auth', 'verified'])
             Route::get('surveys/{survey}/export', SurveyFeedbackExportController::class)->name('surveys.export');
             Route::livewire('surveys/{survey}', 'pages::admin.surveys.show')->name('surveys.show');
             Route::livewire('responses/{response}', 'pages::admin.responses.show')->name('responses.show');
+            Route::livewire('participants', 'pages::admin.participants.index')->name('participants.index');
+            Route::livewire('participants/{participant}', 'pages::admin.participants.show')->name('participants.show');
         });
 
         Route::middleware('role:admin')->group(function () {
             Route::livewire('users', 'pages::admin.users.index')->name('users.index');
             Route::livewire('users/create', 'pages::admin.users.create')->name('users.create');
             Route::livewire('users/{user}/edit', 'pages::admin.users.edit')->name('users.edit');
-
-            Route::livewire('participants', 'pages::admin.participants.index')->name('participants.index');
-            Route::livewire('participants/{participant}', 'pages::admin.participants.show')->name('participants.show');
         });
     });

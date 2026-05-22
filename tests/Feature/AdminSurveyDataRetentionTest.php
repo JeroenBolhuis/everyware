@@ -1,10 +1,12 @@
 <?php
 
 use App\Models\ContactInformationSubmission;
+use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
+use App\Models\SurveySetting;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -13,6 +15,11 @@ use function Pest\Laravel\artisan;
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\get;
+
+function participantIdForRetainedResponse(): int
+{
+    return Participant::factory()->createOne()->id;
+}
 
 it('lets admins update retention years from admin surveys page', function () {
     $admin = User::factory()->admin()->createOne();
@@ -25,6 +32,11 @@ it('lets admins update retention years from admin surveys page', function () {
         ->set('retentionYears', 6)
         ->call('saveRetentionYears')
         ->assertHasNoErrors();
+
+    assertDatabaseHas('survey_settings', [
+        'id' => 1,
+        'retention_years' => 6,
+    ]);
 
     get(route('admin.surveys.index'))
         ->assertOk()
@@ -115,6 +127,56 @@ it('prunes expired responses and deletes related feedback and personal data', fu
     ]);
 });
 
+it('uses stored retention years instead of only the env fallback when pruning responses', function () {
+    config()->set('surveys.retention_years', 5);
+
+    SurveySetting::query()->create([
+        'id' => 1,
+        'retention_years' => 2,
+        'upcoming_warning_days' => 7,
+    ]);
+
+    $survey = Survey::factory()->createOne();
+    $question = SurveyQuestion::factory()->for($survey)->createOne();
+
+    $expiredResponse = SurveyResponse::create([
+        'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
+        'withdrawal_token' => (string) str()->uuid(),
+        'submitted_at' => now()->subYears(3),
+    ]);
+
+    $recentResponse = SurveyResponse::create([
+        'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
+        'withdrawal_token' => (string) str()->uuid(),
+        'submitted_at' => now()->subYear(),
+    ]);
+
+    SurveyAnswer::create([
+        'survey_response_id' => $expiredResponse->id,
+        'survey_question_id' => $question->id,
+        'answer' => 'Old answer',
+    ]);
+
+    SurveyAnswer::create([
+        'survey_response_id' => $recentResponse->id,
+        'survey_question_id' => $question->id,
+        'answer' => 'Recent answer',
+    ]);
+
+    artisan('app:prune-survey-answers')
+        ->assertSuccessful();
+
+    assertDatabaseMissing('survey_responses', [
+        'id' => $expiredResponse->id,
+    ]);
+
+    assertDatabaseHas('survey_responses', [
+        'id' => $recentResponse->id,
+    ]);
+});
+
 it('prunes using created_at fallback when submitted_at is missing', function () {
     config()->set('surveys.retention_years', 5);
 
@@ -123,6 +185,7 @@ it('prunes using created_at fallback when submitted_at is missing', function () 
 
     $response = SurveyResponse::create([
         'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
         'withdrawal_token' => (string) str()->uuid(),
         'submitted_at' => null,
     ]);

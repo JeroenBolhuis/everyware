@@ -76,8 +76,30 @@ it('opens the survey page', function () {
     $response = get('/survey/'.$survey->id);
 
     $response->assertOk();
+    $response->assertSee('/images/Avans_Hogeschool_Logo.png', false);
     $response->assertSee('Are you satisfied?');
     $response->assertSee('Volgende');
+});
+
+it('shows submit text on a survey with a single question', function () {
+    $survey = Survey::factory()->create([
+        'title' => 'Korte survey',
+        'is_active' => true,
+    ]);
+
+    SurveyQuestion::factory()->create([
+        'survey_id' => $survey->id,
+        'question' => 'Is dit duidelijk?',
+        'type' => 'radio',
+        'required' => true,
+        'options' => ['Ja', 'Nee'],
+        'sort_order' => 1,
+    ]);
+
+    get(route('survey.show', $survey))
+        ->assertOk()
+        ->assertSee('Verzenden')
+        ->assertDontSee('Volgende');
 });
 
 it('renders stored alt text for swipe images', function () {
@@ -121,6 +143,113 @@ it('returns 404 for inactive survey', function () {
     $response = get('/survey/'.$survey->id);
 
     $response->assertNotFound();
+});
+
+it('shows a clear message when the survey end date has passed', function () {
+    $survey = createSurvey([
+        'is_active' => true,
+        'ends_at' => today()->subDay(),
+    ]);
+
+    get(route('survey.show', $survey))
+        ->assertStatus(410)
+        ->assertSee('Deze enquête kan niet meer worden ingevuld.');
+});
+
+it('does not accept submissions after the survey end date has passed', function () {
+    $survey = createSurvey([
+        'is_active' => true,
+        'ends_at' => today()->subDay(),
+    ]);
+    $question = $survey->questions[0];
+
+    post(route('survey.store', $survey), [
+        'answers' => [
+            $question->id => 'yes',
+        ],
+    ])
+        ->assertStatus(410)
+        ->assertSee('Deze enquête kan niet meer worden ingevuld.');
+
+    assertDatabaseMissing('survey_responses', [
+        'survey_id' => $survey->id,
+    ]);
+});
+
+it('shows the expired message before answer validation on expired surveys', function () {
+    $survey = createSurvey([
+        'is_active' => true,
+        'ends_at' => today()->subDay(),
+    ]);
+
+    post(route('survey.store', $survey), [])
+        ->assertStatus(410)
+        ->assertSee('Deze enquête kan niet meer worden ingevuld.');
+
+    assertDatabaseMissing('survey_responses', [
+        'survey_id' => $survey->id,
+    ]);
+});
+
+it('shows the expired message before answer validation on expired shared survey links', function () {
+    $survey = createSurvey([
+        'is_active' => true,
+        'ends_at' => today()->subDay(),
+    ]);
+
+    post(route('survey.share.store', $survey->share_token), [])
+        ->assertStatus(410)
+        ->assertSee('Deze enquête kan niet meer worden ingevuld.');
+
+    assertDatabaseMissing('survey_responses', [
+        'survey_id' => $survey->id,
+    ]);
+});
+
+it('keeps surveys without an end date fillable while active', function () {
+    $survey = createSurvey([
+        'is_active' => true,
+        'ends_at' => null,
+    ]);
+
+    get(route('survey.show', $survey))
+        ->assertOk()
+        ->assertSee('Are you satisfied?');
+});
+
+it('keeps surveys fillable on their end date', function () {
+    $survey = createSurvey([
+        'is_active' => true,
+        'ends_at' => today(),
+    ]);
+
+    get(route('survey.show', $survey))
+        ->assertOk()
+        ->assertSee('Are you satisfied?');
+});
+
+it('only shows fillable surveys on the public survey overview', function () {
+    $active = createSurvey([
+        'title' => 'Actieve survey',
+        'is_active' => true,
+        'ends_at' => today()->addDays(3),
+    ]);
+    createSurvey([
+        'title' => 'Gesloten survey',
+        'is_active' => false,
+    ]);
+    createSurvey([
+        'title' => 'Verlopen survey',
+        'is_active' => true,
+        'ends_at' => today()->subDay(),
+    ]);
+
+    get(route('surveys.index'))
+        ->assertOk()
+        ->assertSee($active->title)
+        ->assertSee('Einddatum: '.today()->addDays(3)->format('d-m-Y'))
+        ->assertDontSee('Gesloten survey')
+        ->assertDontSee('Verlopen survey');
 });
 
 it('submits a survey anonymously without awarding points', function () {
@@ -199,7 +328,7 @@ it('marks completed surveys as disabled on the survey overview', function () {
         ->assertSee('Al ingevulde enquête')
         ->assertSee('Nieuwe enquête')
         ->assertSee('Enquête al ingevuld')
-        ->assertSee('Enquete invullen');
+        ->assertSee('Enquête invullen');
 });
 
 it('enforces one response per participant and survey in the database', function () {

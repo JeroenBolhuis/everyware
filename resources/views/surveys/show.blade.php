@@ -43,7 +43,7 @@
                 @foreach ($survey->questions as $index => $question)
                     @php
                         $isFirst = $index === 0;
-                        $isLast = false;
+                        $isLast = $index === $totalQuestions - 1;
                         $oldAnswer = old("answers.$question->id");
 
                         $leftRawOption = $question->options[0] ?? ['label' => 'Nee', 'image' => null];

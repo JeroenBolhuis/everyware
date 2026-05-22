@@ -12,18 +12,6 @@
                            class="w-full rounded-lg border-zinc-300 px-4 py-3 shadow-sm focus:border-red-500 focus:ring-red-500">
                 </div>
 
-                <div class="w-full sm:flex-1">
-                    <label for="status" class="mb-1 block text-sm font-medium text-zinc-700">Status</label>
-                    <select name="status" id="status"
-                            class="w-full rounded-lg border-zinc-300 px-4 py-3 shadow-sm focus:border-red-500 focus:ring-red-500">
-                        <option value="">Alles</option>
-                        <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Actief
-                        </option>
-                        <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactief
-                        </option>
-                    </select>
-                </div>
-
                 <button id="clear-btn" type="button" class="btn-secondary w-full sm:w-auto">
                     Wissen
                 </button>
@@ -46,13 +34,15 @@
                                         class="mt-1 text-sm text-zinc-600 sm:text-base"
                                     />
                                     <div class="mt-3 flex flex-wrap gap-2 items-center">
-                                    <span
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $survey->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                        {{ $survey->is_active ? 'Actief' : 'Inactief' }}
-                                    </span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800">
+                                            Actief
+                                        </span>
                                         <span class="text-xs text-zinc-500 sm:text-sm">
-                                        {{ $survey->questions->count() }} vragen
-                                    </span>
+                                            Einddatum: {{ $survey->ends_at?->format('d-m-Y') ?? 'Geen einddatum' }}
+                                        </span>
+                                        <span class="text-xs text-zinc-500 sm:text-sm">
+                                            {{ $survey->questions_count }} vragen
+                                        </span>
                                     </div>
                                 </div>
                                 <div class="w-full sm:w-auto ml-0 sm:ml-4">
@@ -60,21 +50,17 @@
                                         <span class="btn-disabled block w-full text-center sm:w-auto">
                                             Enquête al ingevuld
                                         </span>
-                                    @elseif ($survey->is_active)
-                                        <a href="{{ route('survey.show', $survey) }}" class="btn-primary block w-full text-center sm:w-auto">
-                                            Enquete invullen
-                                        </a>
                                     @else
-                                        <span class="btn-disabled w-full sm:w-auto block text-center">
-                                            Inactief
-                                        </span>
+                                        <a href="{{ route('survey.show', $survey) }}" class="btn-primary block w-full text-center sm:w-auto">
+                                            Enquête invullen
+                                        </a>
                                     @endif
                                 </div>
                             </div>
                         </div>
                     @empty
                         <div class="py-12 text-center">
-                            <p class="text-zinc-500">Geen enquetes gevonden die overeenkomen met je criteria.</p>
+                            <p class="text-zinc-500">Geen enquêtes gevonden die overeenkomen met je criteria.</p>
                         </div>
                     @endforelse
                 </div>
@@ -84,13 +70,12 @@
                         {{ $surveys->appends(request()->query())->links() }}
                     </div>
                 @endif
-            </div>{{-- end #surveys-container --}}
+            </div>
         </div>
     </div>
 
     <script>
         const searchInput = document.getElementById('search');
-        const statusSelect = document.getElementById('status');
         const clearBtn = document.getElementById('clear-btn');
         const container = document.getElementById('surveys-container');
         let debounceTimer;
@@ -99,28 +84,24 @@
             const buttons = document.querySelectorAll('.toggle-more-info');
 
             buttons.forEach(button => {
-                // Remove old listener if exists
                 button.removeEventListener('click', handleTruncateClick);
-                // Add new listener
                 button.addEventListener('click', handleTruncateClick);
             });
         }
 
         function handleTruncateClick(e) {
             e.preventDefault();
-            const textSpan = this.previousElementSibling; // Get the span before the button
+            const textSpan = this.previousElementSibling;
             const isExpanded = this.getAttribute('aria-expanded') === 'true';
 
             const fullText = JSON.parse(textSpan.getAttribute('data-full-text'));
             const truncatedText = JSON.parse(textSpan.getAttribute('data-truncated-text'));
 
             if (isExpanded) {
-                // Collapse
                 textSpan.textContent = truncatedText + '...';
                 this.textContent = 'Meer info';
                 this.setAttribute('aria-expanded', 'false');
             } else {
-                // Expand
                 textSpan.textContent = fullText;
                 this.textContent = 'Minder info';
                 this.setAttribute('aria-expanded', 'true');
@@ -129,8 +110,7 @@
 
         function fetchSurveys(page) {
             const search = searchInput.value;
-            const status = statusSelect.value;
-            const params = new URLSearchParams({search, status, page: page || 1});
+            const params = new URLSearchParams({search, page: page || 1});
 
             fetch(`{{ route('surveys.index') }}?${params}`, {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -142,16 +122,11 @@
                     const newContainer = doc.getElementById('surveys-container');
                     if (newContainer) container.innerHTML = newContainer.innerHTML;
 
-                    // Re-initialize truncated text handlers
                     initializeTruncatedText();
-
-                    // Re-attach pagination link listeners
                     attachPaginationListeners();
 
-                    // Update browser URL without reload
                     const url = new URL(window.location.href);
                     url.searchParams.set('search', search);
-                    url.searchParams.set('status', status);
                     url.searchParams.set('page', page || 1);
                     window.history.replaceState({}, '', url);
                 });
@@ -172,15 +147,11 @@
             debounceTimer = setTimeout(() => fetchSurveys(1), 300);
         });
 
-        statusSelect.addEventListener('change', () => fetchSurveys(1));
-
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
-            statusSelect.value = '';
             fetchSurveys(1);
         });
 
-        // Initialize on page load
         initializeTruncatedText();
         attachPaginationListeners();
     </script>

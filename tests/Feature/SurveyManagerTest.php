@@ -401,4 +401,172 @@ class SurveyManagerTest extends TestCase
             'Rechts',
         ]);
     }
+
+    public function test_survey_can_be_created_with_end_date(): void
+    {
+        $this->actingAsSurveyManager();
+        $endsAt = today()->addWeek()->toDateString();
+
+        $response = $this->post(route('survey-manager.store'), [
+            'title' => 'Survey met einddatum',
+            'description' => 'Beschrijving',
+            'is_active' => '1',
+            'ends_at' => $endsAt,
+            'reward_points' => 10,
+            'questions' => [
+                [
+                    'question' => 'Wat vind je ervan?',
+                    'type' => 'radio',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Ja'],
+                        ['label' => 'Nee'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+
+        $survey = Survey::where('title', 'Survey met einddatum')->firstOrFail();
+
+        expect($survey->ends_at?->toDateString())->toBe($endsAt);
+    }
+
+    public function test_survey_can_be_created_without_end_date(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $response = $this->post(route('survey-manager.store'), [
+            'title' => 'Doorlopende survey',
+            'description' => 'Beschrijving',
+            'is_active' => '1',
+            'ends_at' => '',
+            'reward_points' => 10,
+            'questions' => [
+                [
+                    'question' => 'Wat vind je ervan?',
+                    'type' => 'radio',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Ja'],
+                        ['label' => 'Nee'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+
+        $this->assertDatabaseHas('surveys', [
+            'title' => 'Doorlopende survey',
+            'ends_at' => null,
+        ]);
+    }
+
+    public function test_survey_cannot_be_created_with_past_end_date(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $response = $this->from(route('survey-manager.create'))->post(route('survey-manager.store'), [
+            'title' => 'Survey met oude einddatum',
+            'description' => 'Beschrijving',
+            'is_active' => '1',
+            'ends_at' => today()->subDay()->toDateString(),
+            'reward_points' => 10,
+            'questions' => [
+                [
+                    'question' => 'Wat vind je ervan?',
+                    'type' => 'radio',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Ja'],
+                        ['label' => 'Nee'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response
+            ->assertRedirect(route('survey-manager.create'))
+            ->assertSessionHasErrors('ends_at');
+    }
+
+    public function test_survey_end_date_can_be_updated(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $survey = Survey::factory()->create([
+            'is_active' => true,
+            'ends_at' => null,
+        ]);
+        $question = $survey->questions()->create([
+            'question' => 'Bestaande vraag',
+            'type' => 'radio',
+            'required' => true,
+            'sort_order' => 1,
+            'options' => ['Ja', 'Nee'],
+        ]);
+        $endsAt = today()->addDays(10)->toDateString();
+
+        $response = $this->put(route('survey-manager.update', $survey), [
+            'title' => $survey->title,
+            'description' => $survey->description,
+            'is_active' => '1',
+            'ends_at' => $endsAt,
+            'reward_points' => 10,
+            'questions' => [
+                [
+                    'id' => $question->id,
+                    'question' => 'Bestaande vraag',
+                    'type' => 'radio',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Ja'],
+                        ['label' => 'Nee'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+
+        expect($survey->fresh()->ends_at?->toDateString())->toBe($endsAt);
+    }
+
+    public function test_survey_overview_shows_end_date(): void
+    {
+        $this->actingAsSurveyManager();
+
+        Survey::factory()->create([
+            'title' => 'Survey overzicht einddatum',
+            'is_active' => true,
+            'ends_at' => today()->addDays(5),
+        ]);
+
+        $response = $this->get(route('survey-manager.index'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Einddatum: '.today()->addDays(5)->format('d-m-Y'));
+    }
+
+    public function test_expired_surveys_are_visible_but_not_openable_from_overview(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $survey = Survey::factory()->create([
+            'title' => 'Verlopen survey',
+            'is_active' => true,
+            'ends_at' => today()->subDay(),
+        ]);
+
+        $response = $this->get(route('survey-manager.index'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Verlopen')
+            ->assertSee('Niet meer invulbaar')
+            ->assertDontSee(route('survey.share.show', $survey->share_token), false);
+    }
 }
