@@ -1,17 +1,16 @@
 <?php
 
-use App\Enums\Role as RoleEnum;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use Tests\TestCase;
 
 it('redirects guests to the login page', function () {
-    /** @var \Tests\TestCase $this */
+    /** @var TestCase $this */
     $response = $this->get(route('dashboard'));
     $response->assertRedirect(route('login'));
 });
 
 it('redirects authenticated users to the public surveys overview from the dashboard route', function () {
-    /** @var \Tests\TestCase $this */
+    /** @var TestCase $this */
     /** @var User $user */
     $user = User::factory()->create();
     $this->actingAs($user);
@@ -22,12 +21,8 @@ it('redirects authenticated users to the public surveys overview from the dashbo
 });
 
 it('redirects survey managers to the survey manager from the dashboard route', function () {
-    /** @var \Tests\TestCase $this */
-    Role::findOrCreate(RoleEnum::Admin->value, 'web');
-
-    /** @var User $user */
-    $user = User::factory()->create();
-    $user->assignRole(RoleEnum::Admin->value);
+    /** @var TestCase $this */
+    $user = User::factory()->admin()->create();
 
     $this->actingAs($user);
 

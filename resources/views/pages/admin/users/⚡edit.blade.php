@@ -22,18 +22,19 @@ new #[Title('Gebruiker bewerken')] class extends Component {
 
     public string $password_confirmation = '';
 
-    public array $roles = [];
+    public string $role = RoleEnum::User->value;
 
     public function mount(): void
     {
         $this->authorize('update', $this->user);
         $this->name = $this->user->name;
         $this->email = $this->user->email;
-        $this->roles = $this->user->getRoleNames()->values()->all();
+        $this->role = $this->selectedRoleForUser();
+    }
 
-        if ($this->roles === []) {
-            $this->roles = [RoleEnum::User->value];
-        }
+    private function selectedRoleForUser(): string
+    {
+        return $this->user->role->value;
     }
 
     public function save(): void
@@ -43,23 +44,23 @@ new #[Title('Gebruiker bewerken')] class extends Component {
         $validated = $this->validate([
             ...$this->profileRules($this->user->id),
             'password' => $this->optionalPasswordRules(),
-            'roles' => ['required', 'array', 'min:1'],
-            'roles.*' => ['required', Rule::enum(RoleEnum::class)],
+            'role' => ['required', Rule::enum(RoleEnum::class)],
         ]);
 
         if (
             $this->user->hasRole(RoleEnum::Admin->value)
-            && !in_array(RoleEnum::Admin->value, $validated['roles'], true)
+            && $validated['role'] !== RoleEnum::Admin->value
             && User::role(RoleEnum::Admin->value)->count() <= 1
         ) {
             throw ValidationException::withMessages([
-                'roles' => __('Er moet minimaal een beheerder zijn.'),
+                'role' => __('Er moet minimaal een beheerder zijn.'),
             ]);
         }
 
         $this->user->fill([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'role' => $validated['role'],
         ]);
 
         if ($this->user->isDirty('email')) {
@@ -71,8 +72,6 @@ new #[Title('Gebruiker bewerken')] class extends Component {
         }
 
         $this->user->save();
-
-        $this->user->syncRoles($validated['roles']);
 
         $this->dispatch('user-saved');
     }
@@ -97,7 +96,7 @@ new #[Title('Gebruiker bewerken')] class extends Component {
         :subheading="__('Werk accountgegevens, rollen of wachtwoord bij.')"
     >
         <div
-            class="my-6 w-full max-w-lg space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+            class="my-6 w-full max-w-5xl space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
             <div>
                 <a href="{{ route('admin.users.index') }}" class="btn-secondary" wire:navigate>
                     {{ __('Terug naar gebruikers') }}
@@ -122,31 +121,11 @@ new #[Title('Gebruiker bewerken')] class extends Component {
                             viewable autocomplete="new-password"/>
 
                 <flux:field>
-                    <flux:label>{{ __('Rollen') }}</flux:label>
+                    <flux:label>{{ __('Rol') }}</flux:label>
 
-                    <div class="mt-3 space-y-3">
-                        @foreach (RoleEnum::cases() as $roleOption)
-                            <label
-                                class="flex items-center gap-3 rounded-lg border border-zinc-200 px-4 py-3 dark:border-zinc-700">
-                                <input type="checkbox" wire:model="roles" value="{{ $roleOption->value }}"
-                                       class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500"/>
-                                    <span>{{ $roleOption->label() }}</span>
+                    @include('pages.admin.users._role-cards', ['role' => $role])
 
-                                <details class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                                    <summary class="cursor-pointer select-none">
-                                        {{ __('Wat kan deze rol?') }}
-                                    </summary>
-
-                                    <p class="mt-2">
-                                        {{ $roleOption->description() }}
-                                    </p>
-                                </details>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <flux:error name="roles"/>
-                    <flux:error name="roles.*"/>
+                    <flux:error name="role"/>
                 </flux:field>
 
                 <div class="flex flex-wrap items-center gap-4">

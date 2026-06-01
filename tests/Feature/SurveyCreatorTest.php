@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class SurveyCreatorTest extends TestCase
@@ -49,16 +48,14 @@ class SurveyCreatorTest extends TestCase
 
     public function test_lic_employee_has_access_to_survey_manager_route(): void
     {
-        Role::firstOrCreate(['name' => 'LICEmployee']);
-
-        $viewer = User::factory()->create();
-        $viewer->assignRole('LICEmployee');
+        $viewer = User::factory()->licEmployee()->create();
 
         $this->actingAs($viewer);
 
         $this->assertTrue($viewer->hasRole('LICEmployee'));
     }
-        public function test_surveys_can_be_filtered_by_creator_name(): void
+
+    public function test_surveys_can_be_filtered_by_creator_name(): void
     {
         $admin = User::factory()->create([
             'name' => 'Admin',
@@ -82,9 +79,9 @@ class SurveyCreatorTest extends TestCase
 
         $surveys = Survey::query()
             ->where(function ($query) use ($search) {
-                $query->where('title', 'like', '%' . $search . '%')
+                $query->where('title', 'like', '%'.$search.'%')
                     ->orWhereHas('creator', function ($query) use ($search) {
-                        $query->where('name', 'like', '%' . $search . '%');
+                        $query->where('name', 'like', '%'.$search.'%');
                     });
             })
             ->get();
@@ -115,9 +112,9 @@ class SurveyCreatorTest extends TestCase
 
         $surveys = Survey::query()
             ->where(function ($query) use ($search) {
-                $query->where('title', 'like', '%' . $search . '%')
+                $query->where('title', 'like', '%'.$search.'%')
                     ->orWhereHas('creator', function ($query) use ($search) {
-                        $query->where('name', 'like', '%' . $search . '%');
+                        $query->where('name', 'like', '%'.$search.'%');
                     });
             })
             ->where('is_active', true)

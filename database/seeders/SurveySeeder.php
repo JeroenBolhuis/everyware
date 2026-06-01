@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Role;
 use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -12,18 +13,17 @@ class SurveySeeder extends Seeder
     public function run(): void
     {
         $creator = User::firstOrCreate(
-    ['email' => 'lic@example.com'],
-    [
-        'name' => 'LIC Medewerker',
-        'password' => Hash::make('password'),
-        'email_verified_at' => now(),
-    ]
-    );
+            ['email' => 'lic@example.com'],
+            [
+                'name' => 'LIC Medewerker',
+                'role' => Role::LicEmployee,
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]
+        );
 
-    if (method_exists($creator, 'assignRole') && ! $creator->hasRole('LICEmployee')) {
-        $creator->assignRole('LICEmployee');
-    }
-            $surveys = [
+        $creator->forceFill(['role' => Role::LicEmployee])->save();
+        $surveys = [
             [
                 'title' => 'Studenttevredenheid',
                 'description' => 'Geef snel je mening over jouw ervaring.',

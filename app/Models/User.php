@@ -3,21 +3,22 @@
 namespace App\Models;
 
 use App\Enums\Role as RoleEnum;
-use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     protected $fillable = [
         'name',
         'email',
+        'role',
         'password',
     ];
 
@@ -32,8 +33,83 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'role' => RoleEnum::class,
             'password' => 'hashed',
         ];
+    }
+
+    public function hasRole(RoleEnum|string $role): bool
+    {
+        $role = $role instanceof RoleEnum ? $role : RoleEnum::tryFrom($role);
+
+        return $role !== null && $this->role === $role;
+    }
+
+    /**
+     * @param  array<int, RoleEnum|string>  $roles
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        foreach ($roles as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeRole(Builder $query, RoleEnum|string $role): Builder
+    {
+        $role = $role instanceof RoleEnum ? $role : RoleEnum::tryFrom($role);
+
+        return $query->where('role', $role?->value);
+    }
+
+    public function assignRole(RoleEnum|string $role): static
+    {
+        $role = $role instanceof RoleEnum ? $role : RoleEnum::from($role);
+
+        $this->forceFill(['role' => $role])->save();
+
+        return $this;
+    }
+
+    /**
+     * @param  array<int, RoleEnum|string>  $roles
+     */
+    public function syncRoles(array $roles): static
+    {
+        $this->assignRole($this->highestRole($roles));
+
+        return $this;
+    }
+
+    public function getRoleNames(): Collection
+    {
+        return collect([$this->role->value]);
+    }
+
+    /**
+     * @param  array<int, RoleEnum|string>  $roles
+     */
+    private function highestRole(array $roles): RoleEnum
+    {
+        $roleEnums = collect($roles)
+            ->map(fn (RoleEnum|string $role): ?RoleEnum => $role instanceof RoleEnum ? $role : RoleEnum::tryFrom($role))
+            ->filter();
+
+        foreach ([RoleEnum::Admin, RoleEnum::LicEmployee, RoleEnum::User] as $role) {
+            if ($roleEnums->contains($role)) {
+                return $role;
+            }
+        }
+
+        return RoleEnum::User;
     }
 
     public function initials(): string
@@ -47,12 +123,12 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->hasRole(RoleEnum::Admin->value);
+        return $this->hasRole(RoleEnum::Admin);
     }
 
     public function isLicEmployee(): bool
     {
-        return $this->hasRole(RoleEnum::LicEmployee->value);
+        return $this->hasRole(RoleEnum::LicEmployee);
     }
 
     public function isLicMedewerker(): bool

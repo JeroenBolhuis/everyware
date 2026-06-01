@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Enums\Role as RoleEnum;
 use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class SurveyManagerTest extends TestCase
@@ -27,10 +25,7 @@ class SurveyManagerTest extends TestCase
 
     private function actingAsSurveyManager(): self
     {
-        Role::findOrCreate(RoleEnum::Admin->value, 'web');
-
-        $user = User::factory()->create();
-        $user->assignRole(RoleEnum::Admin->value);
+        $user = User::factory()->admin()->create();
 
         $this->actingAs($user);
 

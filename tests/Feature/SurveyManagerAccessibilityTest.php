@@ -1,10 +1,8 @@
 <?php
 
-use App\Enums\Role as RoleEnum;
 use App\Models\Survey;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -13,10 +11,7 @@ uses(RefreshDatabase::class);
 
 function actingAsLicManager(): User
 {
-    Role::findOrCreate(RoleEnum::LicEmployee->value, 'web');
-
-    $user = User::factory()->createOne();
-    $user->assignRole(RoleEnum::LicEmployee->value);
+    $user = User::factory()->licEmployee()->createOne();
 
     actingAs($user);
 

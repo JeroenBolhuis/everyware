@@ -17,7 +17,6 @@ new #[Title('Gebruikers')] class extends Component {
     public function getUsersProperty()
     {
         return User::query()
-            ->with('roles')
             ->orderBy('name')
             ->paginate(15);
     }
@@ -55,7 +54,7 @@ new #[Title('Gebruikers')] class extends Component {
                     <flux:table.columns>
                         <flux:table.column class="text-xs sm:text-sm">{{ __('Name') }}</flux:table.column>
                         <flux:table.column class="text-xs sm:text-sm">{{ __('Email') }}</flux:table.column>
-                        <flux:table.column class="text-xs sm:text-sm">{{ __('Rollen') }}</flux:table.column>
+                        <flux:table.column class="text-xs sm:text-sm">{{ __('Rol') }}</flux:table.column>
                         <flux:table.column align="end" class="text-xs sm:text-sm">{{ __('Acties') }}</flux:table.column>
                     </flux:table.columns>
                     <flux:table.rows>
@@ -64,14 +63,7 @@ new #[Title('Gebruikers')] class extends Component {
                                 <flux:table.cell variant="strong" class="text-xs sm:text-sm">{{ $user->name }}</flux:table.cell>
                                 <flux:table.cell class="text-xs sm:text-sm truncate">{{ $user->email }}</flux:table.cell>
                                 <flux:table.cell class="text-xs sm:text-sm">
-                                    <div class="flex flex-wrap gap-1 sm:gap-2">
-                                        @forelse ($user->getRoleNames() as $roleName)
-                                            <flux:badge color="zinc"
-                                                        size="sm">{{ RoleEnum::tryFrom($roleName)?->label() ?? $roleName }}</flux:badge>
-                                        @empty
-                                            <span class="text-xs">&mdash;</span>
-                                        @endforelse
-                                    </div>
+                                    <flux:badge color="zinc" size="sm">{{ $user->role->label() }}</flux:badge>
                                 </flux:table.cell>
                                 <flux:table.cell align="end">
                                     <a href="{{ route('admin.users.edit', $user) }}" class="btn-secondary text-xs sm:text-sm whitespace-nowrap" wire:navigate aria-label="{{ __('Bewerk gebruiker :name', ['name' => $user->name]) }}">

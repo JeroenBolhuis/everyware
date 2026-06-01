@@ -28,6 +28,7 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'role' => Role::User,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
@@ -64,7 +65,9 @@ class UserFactory extends Factory
      */
     public function admin(): static
     {
-        return $this->afterCreating(fn (User $user) => $user->syncRoles([Role::Admin->value]));
+        return $this->state(fn (array $attributes) => [
+            'role' => Role::Admin,
+        ]);
     }
 
     /**
@@ -72,15 +75,8 @@ class UserFactory extends Factory
      */
     public function licEmployee(): static
     {
-        return $this->afterCreating(fn (User $user) => $user->syncRoles([Role::LicEmployee->value]));
-    }
-
-    public function configure(): static
-    {
-        return $this->afterCreating(function (User $user) {
-            if ($user->roles->isEmpty()) {
-                $user->assignRole(Role::User->value);
-            }
-        });
+        return $this->state(fn (array $attributes) => [
+            'role' => Role::LicEmployee,
+        ]);
     }
 }
