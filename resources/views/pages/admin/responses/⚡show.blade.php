@@ -17,7 +17,7 @@ new #[Title('Enquete-inzending')] class extends Component {
     public function mount(): void
     {
         $this->authorize('view', $this->response);
-        $this->canViewPersonalData = auth()->user()->canReviewSurveyResponses();
+        $this->canViewPersonalData = auth()->user()?->isAdmin() === true;
         $this->refreshResponse();
     }
 
@@ -65,7 +65,7 @@ new #[Title('Enquete-inzending')] class extends Component {
         $this->redirect(route('admin.surveys.show', $survey));
     }
 
-   protected function refreshResponse(): void
+    protected function refreshResponse(): void
     {
         $this->response->refresh();
         $this->response->load('survey', 'answers.question', 'participant');

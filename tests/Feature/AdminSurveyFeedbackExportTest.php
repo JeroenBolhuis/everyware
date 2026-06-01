@@ -210,8 +210,30 @@ it('does not expose participant email for anonymous responses in exports', funct
     $response->assertOk();
 
     expect($response->getContent())
-        ->toContain('E-mail')
+        ->toContain('Contactgegevens')
         ->toContain('Sterke uitleg')
+        ->not->toContain('alex@example.com');
+});
+
+it('does not expose participant email to lic employees in exports', function () {
+    $employee = User::factory()->licEmployee()->createOne();
+    $survey = createExportableSurvey();
+
+    addSurveyResponseWithAnswers(
+        $survey,
+        ['Sterke uitleg', 'Meer voorbeelden'],
+        ['email' => 'alex@example.com'],
+    );
+
+    $response = exportSurveyFeedback($employee, $survey, 'csv');
+
+    $response->assertOk();
+
+    expect($response->getContent())
+        ->toContain('Contactgegevens')
+        ->toContain('Niet anoniem')
+        ->toContain('Sterke uitleg')
+        ->not->toContain('E-mail')
         ->not->toContain('alex@example.com');
 });
 

@@ -109,7 +109,7 @@ it('shows when no contact information was provided', function () {
         ->assertOk()
         ->assertSee('Deze inzending is anoniem. De deelnemer en het e-mailadres worden niet getoond.');
 });
-it('shows participant email to lic employees for non anonymous responses', function () {
+it('hides participant email from lic employees for non anonymous responses', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
@@ -122,7 +122,8 @@ it('shows participant email to lic employees for non anonymous responses', funct
         ->assertOk()
         ->assertDontSee('Jamie Jansen')
         ->assertDontSee('+31612345678')
-        ->assertSee('jamie@example.com')
+        ->assertDontSee('jamie@example.com')
+        ->assertSee('Je hebt geen rechten om deze persoonsgegevens te bekijken.')
         ->assertSee('Very helpful and practical.');
 });
 it('lets lic employees delete a full submission and shows a success message', function () {
@@ -211,7 +212,7 @@ it('lets admins block an email address and delete the current submission', funct
 
     expect(Participant::where('email', 'jamie@example.com')->firstOrFail()->blocked_at)->not->toBeNull();
 });
-it('shows the email block action to lic employees for non anonymous responses', function () {
+it('hides the email block action from lic employees for non anonymous responses', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
@@ -222,6 +223,10 @@ it('shows the email block action to lic employees for non anonymous responses', 
 
     get(route('admin.responses.show', $response))
         ->assertOk()
-        ->assertSee('E-mailadres blokkeren')
-        ->assertSee('Blokkeren en verwijderen');
+        ->assertDontSee('E-mailadres blokkeren')
+        ->assertDontSee('Blokkeren en verwijderen');
+
+    Livewire::test('pages::admin.responses.show', ['response' => $response])
+        ->call('blockRespondent')
+        ->assertForbidden();
 });
