@@ -24,6 +24,7 @@ class SurveyFactory extends Factory
             'description' => fake()->paragraph(),
             'is_active' => false,
             'ends_at' => null,
+            'target_academy' => null,
         ];
     }
 
@@ -38,6 +39,13 @@ class SurveyFactory extends Factory
     {
         return $this->state(fn (): array => [
             'is_active' => false,
+        ]);
+    }
+
+    public function forAvans(): static
+    {
+        return $this->state(fn (): array => [
+            'target_academy' => 'avans',
         ]);
     }
 }

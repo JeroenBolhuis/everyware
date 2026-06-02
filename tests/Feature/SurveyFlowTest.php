@@ -22,7 +22,10 @@ use function Pest\Laravel\post;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    loginParticipantAs(Participant::factory()->create(['email' => 'student@example.com']));
+    loginParticipantAs(Participant::factory()->create([
+        'email' => 'student@example.com',
+        'onboarded_at' => now(),
+    ]));
 });
 
 /* Create a test survey with 2 questions */
@@ -250,6 +253,127 @@ it('only shows fillable surveys on the public survey overview', function () {
         ->assertSee('Einddatum: '.today()->addDays(3)->format('d-m-Y'))
         ->assertDontSee('Gesloten survey')
         ->assertDontSee('Verlopen survey');
+});
+
+it('only shows academy targeted surveys to matching participants', function () {
+    $generalSurvey = createSurvey([
+        'title' => 'Algemene survey',
+        'is_active' => true,
+        'target_academy' => null,
+    ]);
+    $avansSurvey = createSurvey([
+        'title' => 'Avans survey',
+        'is_active' => true,
+        'target_academy' => 'avans',
+    ]);
+    $fontysSurvey = createSurvey([
+        'title' => 'Fontys survey',
+        'is_active' => true,
+        'target_academy' => 'fontys',
+    ]);
+    $huSurvey = createSurvey([
+        'title' => 'HU survey',
+        'is_active' => true,
+        'target_academy' => 'hogeschool-utrecht',
+    ]);
+
+    get(route('surveys.index'))
+        ->assertOk()
+        ->assertSee($generalSurvey->title)
+        ->assertDontSee($avansSurvey->title)
+        ->assertDontSee($fontysSurvey->title)
+        ->assertDontSee($huSurvey->title);
+
+    loginParticipantAs(Participant::factory()->create([
+        'email' => 'student@student.avans.nl',
+        'onboarded_at' => now(),
+    ]));
+
+    get(route('surveys.index'))
+        ->assertOk()
+        ->assertSee($generalSurvey->title)
+        ->assertSee($avansSurvey->title)
+        ->assertDontSee($fontysSurvey->title)
+        ->assertDontSee($huSurvey->title);
+
+    loginParticipantAs(Participant::factory()->create([
+        'email' => 'student@student.fontys.nl',
+        'onboarded_at' => now(),
+    ]));
+
+    get(route('surveys.index'))
+        ->assertOk()
+        ->assertSee($generalSurvey->title)
+        ->assertDontSee($avansSurvey->title)
+        ->assertSee($fontysSurvey->title)
+        ->assertDontSee($huSurvey->title);
+
+    loginParticipantAs(Participant::factory()->create([
+        'email' => 'student@student.hu.nl',
+        'onboarded_at' => now(),
+    ]));
+
+    get(route('surveys.index'))
+        ->assertOk()
+        ->assertSee($generalSurvey->title)
+        ->assertDontSee($avansSurvey->title)
+        ->assertDontSee($fontysSurvey->title)
+        ->assertSee($huSurvey->title);
+});
+
+it('shows a clear ineligible page to non matching participants for academy targeted surveys', function () {
+    $survey = createSurvey([
+        'title' => 'Alleen Avans',
+        'is_active' => true,
+        'target_academy' => 'avans',
+    ]);
+    $question = $survey->questions[0];
+
+    get(route('survey.show', $survey))
+        ->assertForbidden()
+        ->assertSee('Je bent niet geschikt om deze enquete in te vullen.')
+        ->assertSee('Alleen Avans');
+
+    post(route('survey.store', $survey), [
+        'answers' => [
+            $question->id => 'yes',
+        ],
+    ])
+        ->assertForbidden()
+        ->assertSee('Je bent niet geschikt om deze enquete in te vullen.');
+
+    assertDatabaseMissing('survey_responses', [
+        'survey_id' => $survey->id,
+    ]);
+});
+
+it('allows matching academy participants to fill targeted surveys', function () {
+    loginParticipantAs(Participant::factory()->create([
+        'email' => 'student@avans.nl',
+        'onboarded_at' => now(),
+    ]));
+
+    $survey = createSurvey([
+        'title' => 'Avans invullen',
+        'is_active' => true,
+        'target_academy' => 'avans',
+    ]);
+    $question = $survey->questions[0];
+
+    get(route('survey.show', $survey))
+        ->assertOk()
+        ->assertSee('Are you satisfied?');
+
+    post(route('survey.store', $survey), [
+        'answers' => [
+            $question->id => 'yes',
+        ],
+    ])->assertRedirect();
+
+    assertDatabaseHas('survey_responses', [
+        'survey_id' => $survey->id,
+        'participant_id' => auth('participant')->id(),
+    ]);
 });
 
 it('submits a survey anonymously without awarding points', function () {

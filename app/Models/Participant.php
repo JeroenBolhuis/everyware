@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Academies;
 use Database\Factories\ParticipantFactory;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
@@ -67,6 +68,11 @@ class Participant extends Model implements AuthenticatableContract
     public function isBlocked(): bool
     {
         return $this->blocked_at !== null;
+    }
+
+    public function academy(): ?string
+    {
+        return Academies::fromEmail($this->email);
     }
 
     public function block(): void
