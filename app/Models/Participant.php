@@ -24,6 +24,7 @@ class Participant extends Model implements AuthenticatableContract
     protected $casts = [
         'current_points' => 'integer',
         'blocked_at' => 'datetime',
+        'onboarded_at' => 'datetime',
     ];
 
     /**

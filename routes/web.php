@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ParticipantOnboardingController;
 use App\Http\Controllers\ParticipantSurveyAuthController;
 use App\Http\Controllers\StudentPointsController;
 use App\Http\Controllers\SurveyController;
@@ -50,6 +51,7 @@ Route::prefix('survey')->name('survey.')->group(function () {
 });
 
 Route::middleware(['auth:participant', 'cache.headers:no_store'])->group(function () {
+    Route::post('/student/onboarding', ParticipantOnboardingController::class)->name('student.onboarding.complete');
     Route::get('/student/punten', StudentPointsController::class)->name('student.points');
 
     Route::prefix('s')->name('survey.share.')->group(function () {

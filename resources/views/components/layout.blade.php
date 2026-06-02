@@ -17,5 +17,11 @@
         </main>
     </div>
 
+    @auth('participant')
+        @if (auth('participant')->user()->onboarded_at === null)
+            <x-participant-onboarding-modal/>
+        @endif
+    @endauth
+
 </body>
 </html>
