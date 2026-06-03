@@ -22,7 +22,10 @@ use function Pest\Laravel\post;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    loginParticipantAs(Participant::factory()->create(['email' => 'student@example.com']));
+    loginParticipantAs(Participant::factory()->create([
+        'email' => 'student@example.com',
+        'onboarded_at' => now(),
+    ]));
 });
 
 /* Create a test survey with 2 questions */
