@@ -12,7 +12,9 @@ class StoreSurveyResponseRequest extends FormRequest
     {
         $survey = $this->surveyFromRoute();
 
-        return ! $survey?->hasEnded();
+        return $survey !== null
+            && ! $survey->hasEnded()
+            && $survey->isVisibleToParticipant($this->user('participant'));
     }
 
     public function rules(): array
@@ -41,6 +43,12 @@ class StoreSurveyResponseRequest extends FormRequest
         if ($survey?->hasEnded()) {
             throw new HttpResponseException(
                 response()->view('surveys.expired', compact('survey'), 410)
+            );
+        }
+
+        if ($survey !== null && ! $survey->isVisibleToParticipant($this->user('participant'))) {
+            throw new HttpResponseException(
+                response()->view('surveys.ineligible', compact('survey'), 403)
             );
         }
 

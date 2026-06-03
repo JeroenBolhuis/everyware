@@ -45,6 +45,7 @@ it('returns the survey validation rules and custom messages', function () {
         'is_active',
         'ends_at',
         'reward_points',
+        'target_academy',
         'questions',
         'questions.*.type',
         'questions.*.options.*.image',

@@ -27,7 +27,8 @@ class SurveyController extends Controller
             ->where(function ($query): void {
                 $query->whereNull('ends_at')
                     ->orWhereDate('ends_at', '>=', today());
-            });
+            })
+            ->visibleToParticipant($request->user('participant'));
 
         if ($request->filled('search')) {
             $query->where('title', 'like', '%'.$request->search.'%');
@@ -44,6 +45,10 @@ class SurveyController extends Controller
         $survey->load('questions');
 
         abort_unless($survey->is_active, 404);
+
+        if (! $survey->isVisibleToParticipant(request()->user('participant'))) {
+            return $this->ineligibleSurveyResponse($survey);
+        }
 
         if ($survey->hasEnded()) {
             return $this->expiredSurveyResponse($survey);
@@ -68,6 +73,10 @@ class SurveyController extends Controller
 
         abort_unless($survey->is_active, 404);
 
+        if (! $survey->isVisibleToParticipant(request()->user('participant'))) {
+            return $this->ineligibleSurveyResponse($survey);
+        }
+
         if ($survey->hasEnded()) {
             return $this->expiredSurveyResponse($survey);
         }
@@ -90,6 +99,10 @@ class SurveyController extends Controller
 
         abort_unless($survey->is_active, 404);
 
+        if (! $survey->isVisibleToParticipant($request->user('participant'))) {
+            return $this->ineligibleSurveyResponse($survey);
+        }
+
         if ($survey->hasEnded()) {
             return $this->expiredSurveyResponse($survey);
         }
@@ -105,6 +118,10 @@ class SurveyController extends Controller
 
         if ($survey->hasEnded()) {
             return $this->expiredSurveyResponse($survey);
+        }
+
+        if (! $survey->isVisibleToParticipant($participant)) {
+            return $this->ineligibleSurveyResponse($survey);
         }
 
         if ($participant->isBlocked() || $this->isBlockedEmail($participant->email)) {
@@ -314,5 +331,10 @@ class SurveyController extends Controller
     private function expiredSurveyResponse(Survey $survey): Response
     {
         return response()->view('surveys.expired', compact('survey'), 410);
+    }
+
+    private function ineligibleSurveyResponse(Survey $survey): Response
+    {
+        return response()->view('surveys.ineligible', compact('survey'), 403);
     }
 }

@@ -1,8 +1,6 @@
 <x-layout>
-    <div class="min-h-screen flex flex-col overflow-x-hidden">
-        <x-surveys.page-header/>
-
-        <main class="flex-1 max-w-3xl mx-auto w-full px-4 pb-10 pt-0">
+    <div class="flex min-h-screen flex-col overflow-x-hidden">
+        <main class="mx-auto w-full max-w-3xl flex-1 px-4 pb-10 pt-6">
             <section
                 class="rounded-[1.25rem] border border-amber-200 bg-amber-50 p-6 text-amber-950 shadow-[0_10px_30px_rgba(180,83,9,0.08)]"
                 aria-label="Enquête verlopen"

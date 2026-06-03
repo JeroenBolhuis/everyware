@@ -146,6 +146,7 @@
                                 <span>{{ $survey->responses_count }} Reactie(s)</span>
                                 <span>Aangemaakt op {{ $survey->created_at->format('d-m-Y') }}</span>
                                 <span>Einddatum: {{ $survey->ends_at?->format('d-m-Y') ?? 'Geen einddatum' }}</span>
+                                <span>Doelgroep: {{ \App\Support\Academies::label($survey->target_academy) }}</span>
 
                                 @if (auth()->user()?->isAdmin() || auth()->user()?->isLicEmployee())
                                     <span>Maker: {{ $survey->creator?->name ?? 'Onbekend' }}</span>
