@@ -181,10 +181,15 @@
                                     >
                                     <button
                                         type="button"
-                                        onclick="navigator.clipboard.writeText('{{ route('survey.share.show', $survey->share_token) }}').then(() => { this.textContent = 'Gekopieerd!'; setTimeout(() => this.textContent = 'Kopieer', 2000); })"
+                                        onclick="const input = document.getElementById('share-link-{{ $survey->id }}'); const button = this; const markCopied = () => { button.textContent = 'Gekopieerd!'; setTimeout(() => button.textContent = 'Kopieer', 2000); }; const fallbackCopy = () => { input.select(); input.setSelectionRange(0, input.value.length); document.execCommand('copy'); markCopied(); }; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(input.value).then(markCopied).catch(fallbackCopy); } else { fallbackCopy(); }"
                                         class="shrink-0 text-xs text-indigo-600 hover:underline dark:text-indigo-400"
                                         aria-label="{{ __('Kopieer openbare enquête-link voor :title', ['title' => $survey->title]) }}"
                                     >Kopieer</button>
+                                    <a
+                                        href="{{ route('survey-manager.qr-code', $survey) }}"
+                                        class="shrink-0 text-xs text-indigo-600 hover:underline dark:text-indigo-400"
+                                        aria-label="{{ __('Download QR-code voor openbare enquête-link van :title', ['title' => $survey->title]) }}"
+                                    >QR-code</a>
                                 </div>
                             @endif
 

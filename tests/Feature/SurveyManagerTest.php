@@ -287,6 +287,41 @@ class SurveyManagerTest extends TestCase
             ->assertSee(route('admin.surveys.export', ['survey' => $survey, 'format' => 'csv']), false);
     }
 
+    public function test_survey_overview_shows_qr_code_download_link_for_active_survey(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $survey = Survey::factory()->active()->create([
+            'title' => 'QR code enquete',
+        ]);
+
+        $response = $this->get(route('survey-manager.index'));
+
+        $response
+            ->assertOk()
+            ->assertSee("document.execCommand('copy')", false)
+            ->assertSee('QR-code')
+            ->assertSee(route('survey-manager.qr-code', $survey), false);
+    }
+
+    public function test_survey_qr_code_can_be_downloaded(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $survey = Survey::factory()->active()->create([
+            'title' => 'QR code enquete',
+        ]);
+
+        $response = $this->get(route('survey-manager.qr-code', $survey));
+
+        $response
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/svg+xml')
+            ->assertHeader('Content-Disposition', 'attachment; filename="qr-code-qr-code-enquete.svg"');
+
+        expect($response->getContent())->toContain('<svg');
+    }
+
     public function test_existing_swipe_images_are_kept_when_question_type_does_not_change(): void
     {
         config(['filesystems.survey_images_disk' => 'survey_images']);

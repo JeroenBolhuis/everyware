@@ -5,10 +5,16 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Surveys\UpsertSurveyRequest;
 use App\Models\Survey;
 use App\Models\User;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class SurveyManagerController extends Controller
@@ -206,6 +212,23 @@ class SurveyManagerController extends Controller
         $survey->update(['is_active' => false]);
 
         return to_route('survey-manager.index')->with('status', 'De enquête is gesloten en kan niet meer worden ingevuld.');
+    }
+
+    public function downloadQrCode(Survey $survey): Response
+    {
+        abort_unless($survey->isAcceptingResponses(), 404);
+
+        $writer = new Writer(new ImageRenderer(
+            new RendererStyle(512),
+            new SvgImageBackEnd
+        ));
+
+        $fileName = Str::of($survey->title)->slug()->prepend('qr-code-')->append('.svg')->toString();
+
+        return response($writer->writeString(route('survey.share.show', $survey->share_token)), 200, [
+            'Content-Disposition' => 'attachment; filename="'.($fileName === 'qr-code-.svg' ? 'qr-code-enquete.svg' : $fileName).'"',
+            'Content-Type' => 'image/svg+xml',
+        ]);
     }
 
     private function buildQuestionsPayload(UpsertSurveyRequest $request, array $questions): array
