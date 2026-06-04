@@ -50,15 +50,15 @@ return [
          */
         'personal' => [
             'driver' => env('DB_PERSONAL_CONNECTION', env('DB_CONNECTION', 'mysql')),
-            'url' => env('DB_PERSONAL_URL', env('DB_URL')),
+            'url' => env('DB_PERSONAL_URL'),
             'host' => env('DB_PERSONAL_HOST', env('DB_HOST', '127.0.0.1')),
             'port' => env('DB_PERSONAL_PORT', env('DB_PORT', '3306')),
             'database' => env('DB_PERSONAL_DATABASE', env('DB_DATABASE', 'laravel_personal')),
             'username' => env('DB_PERSONAL_USERNAME', env('DB_USERNAME', 'root')),
             'password' => env('DB_PERSONAL_PASSWORD', env('DB_PASSWORD', '')),
             'unix_socket' => env('DB_PERSONAL_SOCKET', env('DB_SOCKET', '')),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'charset' => env('DB_PERSONAL_CHARSET', env('DB_CHARSET', 'utf8mb4')),
+            'collation' => env('DB_PERSONAL_COLLATION', env('DB_COLLATION', 'utf8mb4_unicode_ci')),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,
@@ -67,6 +67,14 @@ return [
             'busy_timeout' => null,
             'journal_mode' => null,
             'synchronous' => null,
+            'search_path' => env('DB_PERSONAL_SCHEMA', env('DB_SCHEMA', 'public')),
+            'sslmode' => env('DB_PERSONAL_SSLMODE', env('DB_SSLMODE', 'prefer')),
+            'options' => env('DB_PERSONAL_CONNECTION', env('DB_CONNECTION', 'mysql')) === 'pgsql'
+                && defined('PDO::PGSQL_ATTR_DISABLE_PREPARES')
+                ? [
+                    PDO::PGSQL_ATTR_DISABLE_PREPARES => true,
+                ]
+                : [],
         ],
 
         'sqlite' => [

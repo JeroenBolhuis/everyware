@@ -89,7 +89,7 @@ class Participant extends Model implements AuthenticatableContract
             /** @var ParticipantService $service */
             $service = app(ParticipantService::class);
 
-            return $service->emailForParticipant($this->id) ?? __('Onbekend');
+            return $service->emailForAdmin($user, $this->id) ?? __('Onbekend');
         }
 
         return __('Afgeschermd');

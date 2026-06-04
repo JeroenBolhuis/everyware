@@ -78,8 +78,11 @@ new #[Title('Enquete-inzending')] class extends Component {
         // Email is retrieved from the personal DB via the service — never from the feedback DB.
         /** @var ParticipantService $service */
         $service = app(ParticipantService::class);
+        $user = auth()->user();
+        abort_unless($user instanceof \App\Models\User, 403);
+
         $this->respondentEmail = $this->response->participant_id !== null
-            ? $service->emailForParticipant($this->response->participant_id)
+            ? $service->emailForAdmin($user, $this->response->participant_id)
             : null;
 
         $this->respondentIsBlocked = $this->respondentEmail !== null

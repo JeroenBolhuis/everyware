@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Participant;
 use App\Models\ParticipantIdentity;
+use App\Models\User;
 use App\Support\Academies;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -26,7 +28,7 @@ class ParticipantService
      */
     public function findOrCreateByEmail(string $email): Participant
     {
-        $email = Str::lower(trim($email));
+        $email = $this->normalizeEmail($email);
 
         $identity = ParticipantIdentity::where('email', $email)->first();
 
@@ -49,8 +51,10 @@ class ParticipantService
     }
 
     /**
-     * Return the email address for a participant, or null when not found.
-     * Only admins should call this; LIC-employees should never receive the result.
+     * Return the email address for trusted internal flows, or null when not found.
+     *
+     * UI and export code that displays personal data to employees must call
+     * emailForAdmin() instead so authorization stays explicit at the call site.
      */
     public function emailForParticipant(int $participantId): ?string
     {
@@ -58,11 +62,25 @@ class ParticipantService
     }
 
     /**
+     * Return the email address only when the requesting employee may view PII.
+     *
+     * @throws AuthorizationException
+     */
+    public function emailForAdmin(User $user, int $participantId): ?string
+    {
+        if (! $user->isAdmin()) {
+            throw new AuthorizationException('Only admins may view participant personal data.');
+        }
+
+        return $this->emailForParticipant($participantId);
+    }
+
+    /**
      * Look up a participant purely by email address (used for auth and block checks).
      */
     public function findParticipantByEmail(string $email): ?Participant
     {
-        $email = Str::lower(trim($email));
+        $email = $this->normalizeEmail($email);
 
         $participantId = ParticipantIdentity::where('email', $email)->value('participant_id');
 
@@ -88,5 +106,10 @@ class ParticipantService
         $participant->block();
 
         return $participant;
+    }
+
+    private function normalizeEmail(string $email): string
+    {
+        return Str::lower(trim($email));
     }
 }

@@ -21,6 +21,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasColumn('participants', 'academy')) {
+            Schema::table('participants', function (Blueprint $table) {
+                $table->string('academy')->nullable()->after('blocked_at')
+                    ->comment('Non-PII academy derived from email domain. Set once at registration.');
+            });
+        }
+
         // 1. Derive and store academy (non-PII) for each participant, then copy email to personal DB.
         $now = now();
 
@@ -59,15 +66,7 @@ return new class extends Migration
                 }
             });
 
-        // 2. Add academy column to feedback DB participants table.
-        if (! Schema::hasColumn('participants', 'academy')) {
-            Schema::table('participants', function (Blueprint $table) {
-                $table->string('academy')->nullable()->after('blocked_at')
-                    ->comment('Non-PII academy derived from email domain. Set once at registration.');
-            });
-        }
-
-        // 3. Drop email from feedback DB — this is the privacy boundary.
+        // 2. Drop email from feedback DB — this is the privacy boundary.
         if (Schema::hasColumn('participants', 'email')) {
             Schema::table('participants', function (Blueprint $table) {
                 $table->dropUnique(['email']);
