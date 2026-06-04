@@ -81,7 +81,7 @@ it('submits survey without contact details', function () {
 });
 
 it('marks a response not anonymous using the logged-in participant email', function () {
-    $participant = Participant::factory()->create(['email' => 'jamie@example.com']);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->create();
     loginParticipantAs($participant);
 
     $survey = createSurveyWithQuestion();
@@ -99,8 +99,9 @@ it('marks a response not anonymous using the logged-in participant email', funct
         ->post(route('survey.contact-details.store', $response))
         ->assertRedirect(route('survey.thankyou', $response));
 
+    // Email lives in the personal DB — the feedback response only stores participant_id.
     expect($response->fresh()->is_anonymous)->toBeFalse()
-        ->and($response->fresh()->participant->email)->toBe('jamie@example.com');
+        ->and(participantByEmail('jamie@example.com')?->id)->toBe($response->fresh()->participant_id);
 
     get(route('survey.thankyou', $response))
         ->assertOk()
@@ -111,7 +112,7 @@ it('marks a response not anonymous using the logged-in participant email', funct
 it('sends a confirmation email after contact details are saved on the thank you page', function () {
     Mail::fake();
 
-    $participant = Participant::factory()->create(['email' => 'jamie@example.com']);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->create();
     loginParticipantAs($participant);
 
     $survey = createSurveyWithQuestion();

@@ -32,9 +32,7 @@ class SurveyAnswerSeeder extends Seeder
 
                     $response = SurveyResponse::create([
                         'survey_id' => $survey->id,
-                        'participant_id' => Participant::firstOrCreate([
-                            'email' => fake()->unique()->safeEmail(),
-                        ])->id,
+                        'participant_id' => Participant::factory()->create()->id,
                         'withdrawal_token' => (string) Str::uuid(),
                         'submitted_at' => $submittedAt,
                     ]);

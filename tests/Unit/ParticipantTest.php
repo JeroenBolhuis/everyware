@@ -17,9 +17,7 @@ it('knows whether a participant is blocked', function () {
 });
 
 it('blocks a participant once and persists the timestamp', function () {
-    $participant = Participant::create([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
     $participant->block();
     $firstBlockedAt = $participant->fresh()->blocked_at;
@@ -35,9 +33,7 @@ it('blocks a participant once and persists the timestamp', function () {
 it('uses a pseudonym as participant display name', function () {
     $admin = User::factory()->admin()->createOne();
     $employee = User::factory()->licEmployee()->createOne();
-    $participant = Participant::create([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
     expect($participant->displayNameFor($admin))->toBe("#{$participant->id}")
         ->and($participant->displayEmailFor($admin))->toBe('jamie@example.com')

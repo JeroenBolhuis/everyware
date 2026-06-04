@@ -116,7 +116,7 @@ it('prunes expired responses and deletes related feedback and personal data', fu
 
     assertDatabaseMissing('contact_information_submissions', [
         'survey_response_id' => $expiredResponse->id,
-    ]);
+    ], 'personal');
 
     assertDatabaseHas('survey_responses', [
         'id' => $activeResponse->id,

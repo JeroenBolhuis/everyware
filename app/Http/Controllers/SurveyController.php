@@ -9,6 +9,7 @@ use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
+use App\Services\ParticipantService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,8 @@ use Throwable;
 
 class SurveyController extends Controller
 {
+    public function __construct(private readonly ParticipantService $participantService) {}
+
     public function index(Request $request)
     {
         $completedSurveyIds = $this->completedSurveyIdsForCurrentParticipant();
@@ -132,11 +135,9 @@ class SurveyController extends Controller
             return $this->expiredSurveyResponse($survey);
         }
 
-        if (! $survey->isVisibleToParticipant($participant)) {
-            return $this->ineligibleSurveyResponse($survey);
-        }
+        $participantEmail = $this->participantService->emailForParticipant($participant->id);
 
-        if ($participant->isBlocked() || $this->isBlockedEmail($participant->email)) {
+        if ($participant->isBlocked() || ($participantEmail !== null && $this->participantService->isEmailBlocked($participantEmail))) {
             return to_route('survey.thankyou.generic');
         }
 
@@ -213,7 +214,9 @@ class SurveyController extends Controller
 
         abort_unless($response->participant_id === $participant->id, 403);
 
-        if ($participant->isBlocked() || $this->isBlockedEmail($participant->email)) {
+        $participantEmail = $this->participantService->emailForParticipant($participant->id);
+
+        if ($participant->isBlocked() || ($participantEmail !== null && $this->participantService->isEmailBlocked($participantEmail))) {
             DB::transaction(function () use ($deleteSurveySubmission, $response): void {
                 $deleteSurveySubmission->handle($response);
             });
@@ -226,7 +229,7 @@ class SurveyController extends Controller
             $this->awardPointsForResponse($response, $participant);
         });
 
-        $confirmationMailStatus = $this->sendConfirmationMail($response, $participant->email);
+        $confirmationMailStatus = $this->sendConfirmationMail($response, $participantEmail);
 
         return to_route('survey.thankyou', $response)
             ->with([
@@ -286,18 +289,6 @@ class SurveyController extends Controller
 
             return 'failed';
         }
-    }
-
-    private function isBlockedEmail(?string $contactEmail): bool
-    {
-        if ($contactEmail === null) {
-            return false;
-        }
-
-        return Participant::query()
-            ->where('email', $contactEmail)
-            ->whereNotNull('blocked_at')
-            ->exists();
     }
 
     private function existingResponseForCurrentParticipant(Survey $survey): ?SurveyResponse

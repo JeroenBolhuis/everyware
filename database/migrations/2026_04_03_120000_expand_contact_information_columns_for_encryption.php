@@ -8,19 +8,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('contact_information_submissions', function (Blueprint $table) {
-            $table->text('name')->nullable()->change();
-            $table->text('email')->nullable()->change();
-            $table->text('phone')->nullable()->change();
-        });
+        // Intentionally left blank: contact information schema is defined in the canonical
+        // create migration so the table shape is managed in one place.
     }
 
     public function down(): void
     {
-        Schema::table('contact_information_submissions', function (Blueprint $table) {
-            $table->string('name')->nullable()->change();
-            $table->string('email')->nullable()->change();
-            $table->string('phone')->nullable()->change();
-        });
+        // Intentionally left blank.
     }
 };

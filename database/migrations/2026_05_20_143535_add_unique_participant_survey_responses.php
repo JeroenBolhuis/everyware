@@ -30,7 +30,7 @@ return new class extends Migration
             ->pluck('id');
 
         if ($duplicateResponseIds->isNotEmpty()) {
-            DB::table('contact_information_submissions')
+            DB::connection('personal')->table('contact_information_submissions')
                 ->whereIn('survey_response_id', $duplicateResponseIds)
                 ->delete();
 

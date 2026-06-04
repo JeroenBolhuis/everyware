@@ -8,9 +8,7 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 it('deducts points and records the history entry', function () {
-    $participant = Participant::create([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
     $participant->forceFill(['current_points' => 15])->save();
 
@@ -28,9 +26,7 @@ it('deducts points and records the history entry', function () {
 });
 
 it('does not allow a participant balance to become negative', function () {
-    $participant = Participant::create([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
     $participant->forceFill(['current_points' => 3])->save();
 
@@ -42,17 +38,13 @@ it('does not allow a participant balance to become negative', function () {
 })->throws(InvalidArgumentException::class, 'De deelnemer heeft niet genoeg punten.');
 
 it('requires a positive amount of points', function () {
-    $participant = new Participant([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = new Participant;
 
     (new DeductParticipantPoints)($participant, 0, 'Ongeldig');
 })->throws(InvalidArgumentException::class, 'Het aantal punten moet minimaal 1 zijn.');
 
 it('requires a reason', function () {
-    $participant = new Participant([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = new Participant;
 
     (new DeductParticipantPoints)($participant, 5, '   ');
 })->throws(InvalidArgumentException::class, 'Geef een reden op voor de puntenaftrek.');

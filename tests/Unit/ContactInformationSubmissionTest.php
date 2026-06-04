@@ -22,6 +22,12 @@ it('encrypts and decrypts contact fields transparently', function () {
     expect($submission->phone)->toBe('+31612345678');
 });
 
+it('stores contact submissions on the personal database connection', function () {
+    $submission = new ContactInformationSubmission();
+
+    expect($submission->getConnectionName())->toBe('personal');
+});
+
 it('stores empty contact values as null', function () {
     $submission = new ContactInformationSubmission([
         'name' => '',

@@ -10,9 +10,7 @@ use function Pest\Laravel\get;
 
 it('lets admins deduct points from a participant', function () {
     $admin = User::factory()->admin()->createOne();
-    $participant = Participant::create([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
     $participant->forceFill(['current_points' => 12])->save();
 
@@ -45,9 +43,7 @@ it('lets admins deduct points from a participant', function () {
 
 it('lets lic employees view participants and deduct points', function () {
     $employee = User::factory()->licEmployee()->createOne();
-    $participant = Participant::create([
-        'email' => 'sam@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('sam@example.com')->createOne();
 
     $participant->forceFill(['current_points' => 10])->save();
 
@@ -80,9 +76,7 @@ it('lets lic employees view participants and deduct points', function () {
 
 it('keeps regular users from deducting participant points', function () {
     $user = User::factory()->createOne();
-    $participant = Participant::create([
-        'email' => 'sam@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('sam@example.com')->createOne();
 
     actingAs($user);
 
@@ -94,9 +88,7 @@ it('keeps regular users from deducting participant points', function () {
 
 it('validates the deduction form', function () {
     $admin = User::factory()->admin()->createOne();
-    $participant = Participant::create([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
     $participant->forceFill(['current_points' => 12])->save();
 
@@ -115,9 +107,7 @@ it('validates the deduction form', function () {
 });
 it('does not let admins deduct more points than the participant has', function () {
     $admin = User::factory()->admin()->createOne();
-    $participant = Participant::create([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
     $participant->forceFill(['current_points' => 3])->save();
 

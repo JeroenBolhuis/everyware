@@ -3,6 +3,7 @@
 namespace App\Actions\Surveys;
 
 use App\Models\Survey;
+use App\Services\ParticipantService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -36,6 +37,7 @@ class BuildSurveyFeedbackExport
 
     public function __construct(
         private readonly BuildSurveyFeedbackWorkbook $buildSurveyFeedbackWorkbook,
+        private readonly ParticipantService $participantService,
     ) {}
 
     public function build(Survey $survey, string $format = 'xlsx', bool $includePersonalData = true): string
@@ -92,7 +94,12 @@ class BuildSurveyFeedbackExport
                     (string) $response->id,
                     $response->submitted_at?->format('d-m-Y H:i') ?? self::EMPTY_VALUE,
                     $response->withdrawn_at ? 'Ingetrokken' : 'Actief',
-                    $response->is_anonymous ? self::EMPTY_VALUE : $this->cellValue($response->participant?->email),
+                    // Email is retrieved from the personal DB via the service — never stored in feedback DB.
+                    $response->is_anonymous
+                        ? self::EMPTY_VALUE
+                        : $this->cellValue($response->participant_id !== null
+                            ? $this->participantService->emailForParticipant($response->participant_id)
+                            : null),
                 ] : [
                     (string) $response->id,
                     $response->submitted_at?->format('d-m-Y H:i') ?? self::EMPTY_VALUE,

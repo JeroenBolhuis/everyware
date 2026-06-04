@@ -22,20 +22,13 @@ new #[Title('Deelnemers')] class extends Component {
 
     public function getParticipantsProperty()
     {
-        $user = auth()->user();
         $search = trim($this->search);
 
         return Participant::query()
             ->when($search !== '', fn ($query) => $query
-                ->when($user?->isAdmin(), fn ($query) => $query
-                    ->where('email', 'like', '%'.$search.'%')
-                    ->orWhere('id', ltrim(str_replace(['#', ' '], '', $search), '0') ?: 0)
-                )
-                ->when(! $user?->isAdmin(), fn ($query) => $query
-                    ->where('id', ltrim(str_replace(['#', ' '], '', $search), '0') ?: 0)
-                )
+                ->where('id', ltrim(str_replace(['#', ' '], '', $search), '0') ?: 0)
             )
-            ->orderBy('email')
+            ->orderBy('id')
             ->paginate(15);
     }
 }; ?>
@@ -57,11 +50,11 @@ new #[Title('Deelnemers')] class extends Component {
             <div class="mb-4">
                 <flux:input
                     wire:model.live.debounce.300ms="search"
-                    placeholder="{{ $canViewParticipantDetails ? __('Zoek op e-mail of #...') : __('Zoek op #...') }}"
+                    placeholder="{{ __('Zoek op #...') }}"
                     icon="magnifying-glass"
                     clearable
                     class="w-full text-xs sm:text-sm"
-                    aria-label="{{ $canViewParticipantDetails ? __('Zoek deelnemers op e-mail of pseudoniem') : __('Zoek deelnemers op pseudoniem') }}"
+                    aria-label="{{ __('Zoek deelnemers op pseudoniem') }}"
                 />
             </div>
 

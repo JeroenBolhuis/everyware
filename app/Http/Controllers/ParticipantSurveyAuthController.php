@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Surveys\RequestParticipantMagicLinkRequest;
 use App\Mail\ParticipantSurveyMagicLinkMail;
 use App\Models\Participant;
+use App\Services\ParticipantService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,8 @@ use Illuminate\View\View;
 
 class ParticipantSurveyAuthController extends Controller
 {
+    public function __construct(private readonly ParticipantService $participantService) {}
+
     public function create(Request $request): View
     {
         return view('surveys.participant-login', [
@@ -26,10 +29,7 @@ class ParticipantSurveyAuthController extends Controller
         $email = $request->validated('email');
         $redirect = $this->redirectPath($request->input('redirect'));
 
-        $participant = Participant::query()->firstOrCreate(
-            ['email' => $email],
-            ['name' => null],
-        );
+        $participant = $this->participantService->findOrCreateByEmail($email);
 
         if (! $participant->isBlocked()) {
             $signedUrl = URL::temporarySignedRoute(
