@@ -78,20 +78,6 @@ class User extends Authenticatable
 
         return $this;
     }
-    public function removeRole(RoleEnum|string $role): static
-    {
-        if ($this->hasRole($role)) {
-            $this->forceFill(['role' => RoleEnum::User])->save();
-        }
-
-    public function removeRole(RoleEnum|string $role): static
-    {
-        if ($this->hasRole($role)) {
-            $this->forceFill(['role' => RoleEnum::User])->save();
-        }
-
-        return $this;
-    }
 
     /**
      * @param  array<int, RoleEnum|string>  $roles

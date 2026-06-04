@@ -216,7 +216,7 @@ class SurveyManagerController extends Controller
         return to_route('survey-manager.index')->with('status', 'De enquête is gesloten en kan niet meer worden ingevuld.');
     }
 
-    public function downloadQrCode(Survey $survey): Response
+    public function showQrCode(Request $request, Survey $survey): Response
     {
         abort_unless($survey->isAcceptingResponses(), 404);
 
@@ -225,12 +225,16 @@ class SurveyManagerController extends Controller
             new SvgImageBackEnd
         ));
 
-        $fileName = Str::of($survey->title)->slug()->prepend('qr-code-')->append('.svg')->toString();
-
-        return response($writer->writeString(route('survey.share.show', $survey->share_token)), 200, [
-            'Content-Disposition' => 'attachment; filename="'.($fileName === 'qr-code-.svg' ? 'qr-code-enquete.svg' : $fileName).'"',
+        $headers = [
             'Content-Type' => 'image/svg+xml',
-        ]);
+        ];
+
+        if ($request->boolean('download')) {
+            $fileName = Str::of($survey->title)->slug()->prepend('qr-code-')->append('.svg')->toString();
+            $headers['Content-Disposition'] = 'attachment; filename="'.($fileName === 'qr-code-.svg' ? 'qr-code-enquete.svg' : $fileName).'"';
+        }
+
+        return response($writer->writeString(route('survey.share.show', $survey->share_token)), 200, $headers);
     }
 
     private function buildQuestionsPayload(UpsertSurveyRequest $request, array $questions): array

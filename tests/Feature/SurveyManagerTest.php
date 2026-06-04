@@ -349,7 +349,7 @@ class SurveyManagerTest extends TestCase
             ->assertSee(route('admin.surveys.export', ['survey' => $survey, 'format' => 'csv']), false);
     }
 
-    public function test_survey_overview_shows_qr_code_download_link_for_active_survey(): void
+    public function test_survey_overview_shows_qr_code_modal_for_active_survey(): void
     {
         $this->actingAsSurveyManager();
 
@@ -363,10 +363,17 @@ class SurveyManagerTest extends TestCase
             ->assertOk()
             ->assertSee("document.execCommand('copy')", false)
             ->assertSee('QR-code')
-            ->assertSee(route('survey-manager.qr-code', $survey), false);
+            ->assertSee('Download')
+            ->assertSee('Je kunt de QR-code kopiëren door met de rechtermuisknop op de afbeelding te klikken en Afbeelding kopiëren te kiezen.')
+            ->assertDontSee('Kopieer QR-code')
+            ->assertDontSee('data-qr-code-src=', false)
+            ->assertDontSee('window.copySurveyQrCode(this)', false)
+            ->assertSee(route('survey-manager.qr-code', ['survey' => $survey, 'download' => 1]), false)
+            ->assertSee('<img', false)
+            ->assertSee('src="'.route('survey-manager.qr-code', $survey).'"', false);
     }
 
-    public function test_survey_qr_code_can_be_downloaded(): void
+    public function test_survey_qr_code_can_be_viewed_inline(): void
     {
         $this->actingAsSurveyManager();
 
@@ -375,6 +382,24 @@ class SurveyManagerTest extends TestCase
         ]);
 
         $response = $this->get(route('survey-manager.qr-code', $survey));
+
+        $response
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/svg+xml')
+            ->assertHeaderMissing('Content-Disposition');
+
+        expect($response->getContent())->toContain('<svg');
+    }
+
+    public function test_survey_qr_code_can_still_be_downloaded(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $survey = Survey::factory()->active()->create([
+            'title' => 'QR code enquete',
+        ]);
+
+        $response = $this->get(route('survey-manager.qr-code', ['survey' => $survey, 'download' => 1]));
 
         $response
             ->assertOk()
