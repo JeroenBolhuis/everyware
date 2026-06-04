@@ -42,9 +42,7 @@ function addSurveyResponseWithAnswers(
     array $contact = [],
     ?string $submittedAt = null,
 ): SurveyResponse {
-    $participant = Participant::factory()->create([
-        'email' => $contact['email'] ?? fake()->unique()->safeEmail(),
-    ]);
+    $participant = Participant::factory()->withEmail($contact['email'] ?? fake()->unique()->safeEmail())->create();
 
     $response = SurveyResponse::create([
         'survey_id' => $survey->id,

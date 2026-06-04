@@ -15,8 +15,7 @@ it('requires participant authentication', function () {
 });
 
 it('shows the participant point balance and completed surveys', function () {
-    $participant = Participant::factory()->create([
-        'email' => 'student@example.com',
+    $participant = Participant::factory()->withEmail('student@example.com')->create([
         'current_points' => 10,
     ]);
 
@@ -34,7 +33,7 @@ it('shows the participant point balance and completed surveys', function () {
         'survey_id' => $surveyWithPoints->id,
         'survey_response_id' => $responseWithPoints->id,
         'name' => 'Student Naam',
-        'email' => $participant->email,
+        'email' => 'student@example.com',
     ]);
 
     ParticipantPointsHistory::create([

@@ -51,7 +51,7 @@ it('shows participant login with a sanitized redirect path', function () {
         'redirect' => 'https://evil.example/steal',
     ]);
 
-    $response = (new ParticipantSurveyAuthController)->create($request);
+    $response = app(ParticipantSurveyAuthController::class)->create($request);
 
     expect($response->name())->toBe('surveys.participant-login')
         ->and($response->getData()['redirect'])->toBe('/surveys');
@@ -66,15 +66,15 @@ it('sends participant magic links to unblocked participants', function () {
     ]);
 
     $response->assertSessionHas('magicLinkStatus', 'sent');
-    expect(Participant::query()->where('email', 'jamie@example.com')->exists())->toBeTrue();
+    // Email is now in the personal DB — look it up via the service.
+    expect(participantByEmail('jamie@example.com'))->not->toBeNull();
     Mail::assertSent(ParticipantSurveyMagicLinkMail::class);
 });
 
 it('does not send magic links to blocked participants', function () {
     Mail::fake();
 
-    Participant::factory()->createOne([
-        'email' => 'blocked@example.com',
+    Participant::factory()->withEmail('blocked@example.com')->create([
         'blocked_at' => now(),
     ]);
 
@@ -168,9 +168,7 @@ it('stores survey responses and redirects duplicate submissions to already compl
 it('allows participants to share contact details and receive points once', function () {
     Mail::fake();
 
-    $participant = Participant::factory()->createOne([
-        'email' => 'student@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('student@example.com')->createOne();
     $survey = Survey::factory()->active()->createOne([
         'reward_points' => 12,
     ]);
@@ -190,8 +188,7 @@ it('allows participants to share contact details and receive points once', funct
 });
 
 it('deletes responses instead of allowing contact details for blocked participants', function () {
-    $participant = Participant::factory()->createOne([
-        'email' => 'blocked-again@example.com',
+    $participant = Participant::factory()->withEmail('blocked-again@example.com')->createOne([
         'blocked_at' => now(),
     ]);
     $survey = Survey::factory()->active()->createOne();

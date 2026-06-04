@@ -9,9 +9,7 @@ use function Pest\Laravel\assertDatabaseHas;
 
 it('lets admins deduct participant points', function () {
     $admin = User::factory()->admin()->createOne();
-    $participant = Participant::create([
-        'email' => 'jamie@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
     $participant->forceFill([
         'current_points' => 8,

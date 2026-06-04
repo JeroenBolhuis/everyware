@@ -7,13 +7,15 @@ use App\Models\Survey;
 use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
+use App\Services\ParticipantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
 it('reports supported formats and generated file names', function () {
-    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook);
+    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook, app(ParticipantService::class));
     $survey = new Survey(['title' => 'LIC feedback ronde']);
 
     expect($export->supports('xlsx'))->toBeTrue()
@@ -27,7 +29,7 @@ it('reports supported formats and generated file names', function () {
 });
 
 it('builds csv exports with personal data and visible responses only', function () {
-    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook);
+    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook, app(ParticipantService::class));
     $survey = Survey::factory()->createOne(['title' => 'Tevredenheid']);
     $firstQuestion = SurveyQuestion::factory()->createOne([
         'survey_id' => $survey->id,
@@ -39,9 +41,8 @@ it('builds csv exports with personal data and visible responses only', function 
         'question' => 'Nog opmerkingen?',
         'sort_order' => 1,
     ]);
-    $participant = Participant::factory()->createOne(['email' => 'student@example.com']);
-    $blockedParticipant = Participant::factory()->createOne([
-        'email' => 'blocked@example.com',
+    $participant = Participant::factory()->withEmail('student@example.com')->createOne();
+    $blockedParticipant = Participant::factory()->withEmail('blocked@example.com')->createOne([
         'blocked_at' => now(),
     ]);
     $visibleResponse = SurveyResponse::create([
@@ -87,7 +88,7 @@ it('builds csv exports with personal data and visible responses only', function 
 });
 
 it('builds anonymized csv exports', function () {
-    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook);
+    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook, app(ParticipantService::class));
     $survey = Survey::factory()->createOne();
     SurveyQuestion::factory()->createOne([
         'survey_id' => $survey->id,
@@ -95,7 +96,7 @@ it('builds anonymized csv exports', function () {
     ]);
     $response = SurveyResponse::create([
         'survey_id' => $survey->id,
-        'participant_id' => Participant::factory()->createOne(['email' => 'student@example.com'])->id,
+        'participant_id' => Participant::factory()->withEmail('student@example.com')->createOne()->id,
         'is_anonymous' => true,
         'withdrawal_token' => (string) Str::uuid(),
         'submitted_at' => null,

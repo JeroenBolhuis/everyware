@@ -22,8 +22,7 @@ use function Pest\Laravel\post;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    loginParticipantAs(Participant::factory()->create([
-        'email' => 'student@example.com',
+    loginParticipantAs(Participant::factory()->withEmail('student@example.com')->create([
         'onboarded_at' => now(),
     ]));
 });
@@ -284,8 +283,7 @@ it('only shows academy targeted surveys to matching participants', function () {
         ->assertDontSee($fontysSurvey->title)
         ->assertDontSee($huSurvey->title);
 
-    loginParticipantAs(Participant::factory()->create([
-        'email' => 'student@student.avans.nl',
+    loginParticipantAs(Participant::factory()->withEmail('student@student.avans.nl')->create([
         'onboarded_at' => now(),
     ]));
 
@@ -296,8 +294,7 @@ it('only shows academy targeted surveys to matching participants', function () {
         ->assertDontSee($fontysSurvey->title)
         ->assertDontSee($huSurvey->title);
 
-    loginParticipantAs(Participant::factory()->create([
-        'email' => 'student@student.fontys.nl',
+    loginParticipantAs(Participant::factory()->withEmail('student@student.fontys.nl')->create([
         'onboarded_at' => now(),
     ]));
 
@@ -308,8 +305,7 @@ it('only shows academy targeted surveys to matching participants', function () {
         ->assertSee($fontysSurvey->title)
         ->assertDontSee($huSurvey->title);
 
-    loginParticipantAs(Participant::factory()->create([
-        'email' => 'student@student.hu.nl',
+    loginParticipantAs(Participant::factory()->withEmail('student@student.hu.nl')->create([
         'onboarded_at' => now(),
     ]));
 
@@ -348,8 +344,7 @@ it('shows a clear ineligible page to non matching participants for academy targe
 });
 
 it('allows matching academy participants to fill targeted surveys', function () {
-    loginParticipantAs(Participant::factory()->create([
-        'email' => 'student@avans.nl',
+    loginParticipantAs(Participant::factory()->withEmail('student@avans.nl')->create([
         'onboarded_at' => now(),
     ]));
 
@@ -398,7 +393,7 @@ it('submits a survey anonymously without awarding points', function () {
         'survey_id' => $survey->id,
     ]);
 
-    $participant = Participant::where('email', 'student@example.com')->first();
+    $participant = participantByEmail('student@example.com');
 
     expect($participant)->not->toBeNull()
         ->and($participant->current_points)->toBe(0)
@@ -471,7 +466,7 @@ it('enforces one response per participant and survey in the database', function 
 it('awards points and sends confirmation when contact is allowed', function () {
     Mail::fake();
 
-    $participant = Participant::factory()->create(['email' => 'ali@example.com']);
+    $participant = Participant::factory()->withEmail('ali@example.com')->create();
     loginParticipantAs($participant);
 
     $surveyResponse = createSurveyResponse(null, [
@@ -527,10 +522,10 @@ it('submits a survey without sending a confirmation email when no email address 
 
     assertDatabaseMissing('contact_information_submissions', [
         'survey_response_id' => $surveyResponse->id,
-    ]);
+    ], 'personal');
 
     expect($surveyResponse->participant_id)->toBe(auth('participant')->id())
-        ->and(Participant::firstWhere('email', 'student@example.com')->current_points)->toBe(0);
+        ->and(participantByEmail('student@example.com')?->current_points)->toBe(0);
 
     Mail::assertNothingSent();
 });
@@ -538,8 +533,7 @@ it('submits a survey without sending a confirmation email when no email address 
 it('silently discards a survey submission when the participant is blocked', function () {
     Mail::fake();
 
-    $participant = Participant::factory()->create([
-        'email' => 'ali@example.com',
+    $participant = Participant::factory()->withEmail('ali@example.com')->create([
         'blocked_at' => now(),
     ]);
     loginParticipantAs($participant);
@@ -579,7 +573,7 @@ it('requires answers for required questions', function () {
 });
 
 it('marks the response not anonymous after contact is allowed', function () {
-    $participant = Participant::factory()->create(['email' => 'ali@example.com']);
+    $participant = Participant::factory()->withEmail('ali@example.com')->create();
     loginParticipantAs($participant);
 
     $survey = createSurvey();
@@ -612,9 +606,7 @@ it('deletes an existing submission when blocked contact details are added afterw
     $survey = createSurvey();
     $question1 = $survey->questions[0];
 
-    $participant = Participant::create([
-        'email' => 'ali@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('ali@example.com')->create();
     loginParticipantAs($participant);
 
     post(route('survey.store', $survey), [
@@ -670,9 +662,7 @@ it('shows the mail confirmation state on the thank you page', function () {
 });
 
 it('shows the awarded and total points on the thank you page', function () {
-    $participant = Participant::create([
-        'email' => 'ali@example.com',
-    ]);
+    $participant = Participant::factory()->withEmail('ali@example.com')->create();
 
     loginParticipantAs($participant);
 
@@ -744,5 +734,5 @@ it('removes contact details and marks the response as withdrawn', function () {
     // Contact data must be removed
     assertDatabaseMissing('contact_information_submissions', [
         'survey_response_id' => $surveyResponse->id,
-    ]);
+    ], 'personal');
 });

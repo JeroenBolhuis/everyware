@@ -29,7 +29,8 @@ it('creates a participant when requesting a magic link for a new email', functio
         'redirect' => '/surveys',
     ])->assertRedirect();
 
-    expect(Participant::where('email', 'nieuw@example.com')->exists())->toBeTrue();
+    // Email lives in the personal DB — use the helper to verify it was created.
+    expect(participantByEmail('nieuw@example.com'))->not->toBeNull();
 
     Mail::assertSent(ParticipantSurveyMagicLinkMail::class, function (ParticipantSurveyMagicLinkMail $mail) {
         return $mail->hasTo('nieuw@example.com')
@@ -38,7 +39,7 @@ it('creates a participant when requesting a magic link for a new email', functio
 });
 
 it('logs a participant in via the signed verify link', function () {
-    $participant = Participant::factory()->create(['email' => 'inlog@example.com']);
+    $participant = Participant::factory()->withEmail('inlog@example.com')->create();
 
     $signed = URL::temporarySignedRoute(
         'survey.participant.verify',
@@ -57,8 +58,7 @@ it('logs a participant in via the signed verify link', function () {
 });
 
 it('rejects a blocked participant signed verify link', function () {
-    $participant = Participant::factory()->create([
-        'email' => 'geblokkeerd@example.com',
+    $participant = Participant::factory()->withEmail('geblokkeerd@example.com')->create([
         'blocked_at' => now(),
     ]);
 
