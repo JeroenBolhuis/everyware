@@ -12,6 +12,14 @@
                            class="w-full rounded-lg border-zinc-300 px-4 py-3 shadow-sm focus:border-red-500 focus:ring-red-500">
                 </div>
 
+                <div class="w-full sm:w-64">
+                    <label for="sort" class="mb-1 block text-sm font-medium text-zinc-700">Sorteren op</label>
+                    <select id="sort" name="sort" class="w-full rounded-lg border-zinc-300 px-4 py-3 shadow-sm focus:border-red-500 focus:ring-red-500">
+                        <option value="latest" @selected(request('sort', 'latest') === 'latest')>Nieuwste eerst</option>
+                        <option value="reward_points_desc" @selected(request('sort') === 'reward_points_desc')>Meeste punten eerst</option>
+                    </select>
+                </div>
+
                 <button id="clear-btn" type="button" class="btn-secondary w-full sm:w-auto">
                     Wissen
                 </button>
@@ -36,6 +44,9 @@
                                     <div class="mt-3 flex flex-wrap gap-2 items-center">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800">
                                             Actief
+                                        </span>
+                                        <span class="text-xs text-zinc-500 sm:text-sm">
+                                            Beloning: {{ $survey->reward_points }} {{ $survey->reward_points === 1 ? 'punt' : 'punten' }}
                                         </span>
                                         <span class="text-xs text-zinc-500 sm:text-sm">
                                             Einddatum: {{ $survey->ends_at?->format('d-m-Y') ?? 'Geen einddatum' }}
@@ -76,6 +87,7 @@
 
     <script>
         const searchInput = document.getElementById('search');
+        const sortInput = document.getElementById('sort');
         const clearBtn = document.getElementById('clear-btn');
         const container = document.getElementById('surveys-container');
         let debounceTimer;
@@ -110,7 +122,8 @@
 
         function fetchSurveys(page) {
             const search = searchInput.value;
-            const params = new URLSearchParams({search, page: page || 1});
+            const sort = sortInput.value;
+            const params = new URLSearchParams({search, sort, page: page || 1});
 
             fetch(`{{ route('surveys.index') }}?${params}`, {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -127,6 +140,7 @@
 
                     const url = new URL(window.location.href);
                     url.searchParams.set('search', search);
+                    url.searchParams.set('sort', sort);
                     url.searchParams.set('page', page || 1);
                     window.history.replaceState({}, '', url);
                 });
@@ -149,8 +163,11 @@
 
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
+            sortInput.value = 'latest';
             fetchSurveys(1);
         });
+
+        sortInput.addEventListener('change', () => fetchSurveys(1));
 
         initializeTruncatedText();
         attachPaginationListeners();
