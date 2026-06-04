@@ -440,8 +440,14 @@ it('prevents duplicate survey submissions on the backend', function () {
 });
 
 it('marks completed surveys as disabled on the survey overview', function () {
-    $completedSurvey = createSurvey(['title' => 'Al ingevulde enquête']);
-    $openSurvey = createSurvey(['title' => 'Nieuwe enquête']);
+    $completedSurvey = createSurvey([
+        'title' => 'Al ingevulde enquête',
+        'reward_points' => 15,
+    ]);
+    $openSurvey = createSurvey([
+        'title' => 'Nieuwe enquête',
+        'reward_points' => 1,
+    ]);
 
     createSurveyResponse($completedSurvey, [
         'participant_id' => auth('participant')->id(),
@@ -451,8 +457,40 @@ it('marks completed surveys as disabled on the survey overview', function () {
         ->assertOk()
         ->assertSee('Al ingevulde enquête')
         ->assertSee('Nieuwe enquête')
+        ->assertSee('Beloning: 15 punten')
+        ->assertSee('Beloning: 1 punt')
         ->assertSee('Enquête al ingevuld')
         ->assertSee('Enquête invullen');
+});
+
+it('sorts surveys by reward points and keeps completed surveys at the bottom', function () {
+    $highestOpenSurvey = createSurvey([
+        'title' => 'Hoge beloning',
+        'reward_points' => 30,
+    ]);
+    $lowerOpenSurvey = createSurvey([
+        'title' => 'Lagere beloning',
+        'reward_points' => 10,
+    ]);
+    $completedSurvey = createSurvey([
+        'title' => 'Al ingevuld met meeste punten',
+        'reward_points' => 50,
+    ]);
+
+    createSurveyResponse($completedSurvey, [
+        'participant_id' => auth('participant')->id(),
+    ]);
+
+    get(route('surveys.index', ['sort' => 'reward_points_desc']))
+        ->assertOk()
+        ->assertSee('Meeste punten eerst')
+        ->assertSeeInOrder([
+            'Hoge beloning',
+            'Lagere beloning',
+            'Al ingevuld met meeste punten',
+        ])
+        ->assertSee('Beloning: 50 punten')
+        ->assertSee('Enquête al ingevuld');
 });
 
 it('enforces one response per participant and survey in the database', function () {
