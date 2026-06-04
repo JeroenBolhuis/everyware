@@ -122,6 +122,7 @@ class SurveyManagerController extends Controller
                 'is_active' => (bool) $validated['is_active'],
                 'ends_at' => $validated['ends_at'] ?? null,
                 'reward_points' => $validated['reward_points'] ?? 10,
+                'target_academy' => $validated['target_academy'] ?? null,
                 'created_by_user_id' => auth()->id(),
             ]);
 
@@ -154,6 +155,7 @@ class SurveyManagerController extends Controller
                 'is_active' => (bool) $validated['is_active'],
                 'ends_at' => $validated['ends_at'] ?? null,
                 'reward_points' => $validated['reward_points'] ?? 10,
+                'target_academy' => $validated['target_academy'] ?? null,
             ]);
 
             $existingQuestions = $survey->questions()->get()->keyBy('id');

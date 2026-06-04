@@ -187,6 +187,29 @@
                                 Laat dit veld leeg om standaard 10 punten toe te kennen.
                             </p>
                         </div>
+
+                        <div>
+                            <label for="target_academy" class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                                Doelgroep
+                            </label>
+                            <select
+                                id="target_academy"
+                                name="target_academy"
+                                class="w-full rounded-full border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                            >
+                                <option value="" @selected(old('target_academy', $survey->target_academy ?? '') === '')>
+                                    Alle studenten
+                                </option>
+                                @foreach (\App\Support\Academies::options() as $academy => $label)
+                                    <option value="{{ $academy }}" @selected(old('target_academy', $survey->target_academy ?? '') === $academy)>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                Avans wordt automatisch herkend aan e-mailadressen met avans.nl.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>

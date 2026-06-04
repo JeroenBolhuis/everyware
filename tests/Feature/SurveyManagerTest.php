@@ -260,6 +260,68 @@ class SurveyManagerTest extends TestCase
         ]);
     }
 
+    public function test_survey_can_be_created_for_avans_students(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $response = $this->post(route('survey-manager.store'), [
+            'title' => 'Avans enquete',
+            'description' => 'Beschrijving',
+            'is_active' => '1',
+            'target_academy' => 'avans',
+            'reward_points' => 10,
+            'questions' => [
+                [
+                    'question' => 'Wat vind je ervan?',
+                    'type' => 'radio',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Ja'],
+                        ['label' => 'Nee'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+
+        $this->assertDatabaseHas('surveys', [
+            'title' => 'Avans enquete',
+            'target_academy' => 'avans',
+        ]);
+    }
+
+    public function test_survey_can_be_created_for_fontys_students(): void
+    {
+        $this->actingAsSurveyManager();
+
+        $response = $this->post(route('survey-manager.store'), [
+            'title' => 'Fontys enquete',
+            'description' => 'Beschrijving',
+            'is_active' => '1',
+            'target_academy' => 'fontys',
+            'reward_points' => 10,
+            'questions' => [
+                [
+                    'question' => 'Wat vind je ervan?',
+                    'type' => 'radio',
+                    'required' => '1',
+                    'options' => [
+                        ['label' => 'Ja'],
+                        ['label' => 'Nee'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('survey-manager.index'));
+
+        $this->assertDatabaseHas('surveys', [
+            'title' => 'Fontys enquete',
+            'target_academy' => 'fontys',
+        ]);
+    }
+
     public function test_new_surveys_receive_ten_reward_points_by_default(): void
     {
         $survey = Survey::factory()->create();
