@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SurveySeeder::class,
             SurveyAnswerSeeder::class,
+            ContactInformationSubmissionSeeder::class,
         ]);
 
         User::factory()->admin()->create([

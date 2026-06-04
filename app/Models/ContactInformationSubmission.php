@@ -12,6 +12,11 @@ class ContactInformationSubmission extends Model
 {
     use HasFactory;
 
+    /**
+     * Store survey contact details on the personal database connection.
+     */
+    protected $connection = 'personal';
+
     protected $fillable = [
         'survey_id',
         'survey_response_id',

@@ -21,6 +21,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Personal Data Connection
+    |--------------------------------------------------------------------------
+    | This connection is used exclusively for PII (participant email addresses).
+    | In production this should point to a separate database server with
+    | restricted credentials. The main application only accesses it through
+    | App\Services\ParticipantService, never with direct Eloquent queries.
+    |--------------------------------------------------------------------------
+    */
+    'personal_connection' => env('DB_PERSONAL_CONNECTION', env('DB_CONNECTION', 'mysql')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
     |
@@ -31,6 +43,31 @@ return [
     */
 
     'connections' => [
+
+        /*
+         * Personal data database — only holds participant_identities (email ↔ participant_id).
+         * Credentials should differ from the main DB in production.
+         */
+        'personal' => [
+            'driver' => env('DB_PERSONAL_CONNECTION', env('DB_CONNECTION', 'mysql')),
+            'url' => env('DB_PERSONAL_URL', env('DB_URL')),
+            'host' => env('DB_PERSONAL_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_PERSONAL_PORT', env('DB_PORT', '3306')),
+            'database' => env('DB_PERSONAL_DATABASE', env('DB_DATABASE', 'laravel_personal')),
+            'username' => env('DB_PERSONAL_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('DB_PERSONAL_PASSWORD', env('DB_PASSWORD', '')),
+            'unix_socket' => env('DB_PERSONAL_SOCKET', env('DB_SOCKET', '')),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+            'busy_timeout' => null,
+            'journal_mode' => null,
+            'synchronous' => null,
+        ],
 
         'sqlite' => [
             'driver' => 'sqlite',

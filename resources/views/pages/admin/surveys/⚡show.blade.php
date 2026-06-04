@@ -63,9 +63,19 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                             <flux:table.cell variant="strong">#{{ $response->id }}</flux:table.cell>
                             <flux:table.cell>{{ $response->submitted_at?->format('d-m-Y H:i') ?? '—' }}</flux:table.cell>
                             <flux:table.cell>
-                                <flux:badge :color="$response->hasSharedContactDetails() ? 'emerald' : 'zinc'" size="sm">
-                                    {{ $response->hasSharedContactDetails() ? __('Gedeeld') : __('Niet gedeeld') }}
-                                </flux:badge>
+                                @if ($response->hasSharedContactDetails() && $response->contactInformationSubmission)
+                                    <div class="space-y-0.5">
+                                        <flux:badge color="emerald" size="sm">{{ __('Gedeeld') }}</flux:badge>
+                                        @if ($response->contactInformationSubmission->name)
+                                            <flux:text size="sm" class="text-zinc-700 dark:text-zinc-300">{{ $response->contactInformationSubmission->name }}</flux:text>
+                                        @endif
+                                        @if ($response->contactInformationSubmission->email)
+                                            <flux:text size="sm" class="text-zinc-500 dark:text-zinc-400">{{ $response->contactInformationSubmission->email }}</flux:text>
+                                        @endif
+                                    </div>
+                                @else
+                                    <flux:badge color="zinc" size="sm">{{ __('Niet gedeeld') }}</flux:badge>
+                                @endif
                             </flux:table.cell>
                             <flux:table.cell align="end">
                                     <a href="{{ route('admin.responses.show', $response) }}" class="btn-primary" wire:navigate aria-label="{{ __('Open inzending #:id', ['id' => $response->id]) }}">{{ __('Open inzending') }}</a>

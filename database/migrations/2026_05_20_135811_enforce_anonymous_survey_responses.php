@@ -17,7 +17,7 @@ return new class extends Migration
             ->pluck('id');
 
         if ($orphanedResponseIds->isNotEmpty()) {
-            DB::table('contact_information_submissions')
+            DB::connection('personal')->table('contact_information_submissions')
                 ->whereIn('survey_response_id', $orphanedResponseIds)
                 ->delete();
 
@@ -35,7 +35,7 @@ return new class extends Migration
                 ->delete();
         }
 
-        DB::table('contact_information_submissions')->delete();
+        DB::connection('personal')->table('contact_information_submissions')->delete();
 
         if (! Schema::hasColumn('survey_responses', 'is_anonymous')) {
             Schema::table('survey_responses', function (Blueprint $table) {

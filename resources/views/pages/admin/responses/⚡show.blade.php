@@ -3,6 +3,7 @@
 use App\Actions\Surveys\DeleteSurveySubmission;
 use App\Models\Participant;
 use App\Models\SurveyResponse;
+use App\Services\ParticipantService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Title;
@@ -43,7 +44,6 @@ new #[Title('Enquete-inzending')] class extends Component {
 
         abort_unless($this->canViewPersonalData, 403);
 
-
         if ($this->respondentEmail === null) {
             return;
         }
@@ -52,11 +52,9 @@ new #[Title('Enquete-inzending')] class extends Component {
         $deleteSurveySubmission = app(DeleteSurveySubmission::class);
 
         DB::transaction(function () use ($deleteSurveySubmission): void {
-            $participant = Participant::firstOrCreate(
-                ['email' => $this->respondentEmail],
-            );
-
-            $participant->block();
+            /** @var ParticipantService $service */
+            $service = app(ParticipantService::class);
+            $service->blockByEmail($this->respondentEmail);
             $deleteSurveySubmission->handle($this->response);
         });
 
@@ -77,12 +75,15 @@ new #[Title('Enquete-inzending')] class extends Component {
             return;
         }
 
-        $this->respondentEmail = $this->response->participant?->email;
+        // Email is retrieved from the personal DB via the service — never from the feedback DB.
+        /** @var ParticipantService $service */
+        $service = app(ParticipantService::class);
+        $this->respondentEmail = $this->response->participant_id !== null
+            ? $service->emailForParticipant($this->response->participant_id)
+            : null;
+
         $this->respondentIsBlocked = $this->respondentEmail !== null
-            && Participant::query()
-                ->where('email', $this->respondentEmail)
-                ->whereNotNull('blocked_at')
-                ->exists();
+            && $service->isEmailBlocked($this->respondentEmail);
     }
 }; ?>
 
