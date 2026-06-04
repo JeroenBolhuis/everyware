@@ -21,6 +21,8 @@ class SurveyController extends Controller
 {
     public function index(Request $request)
     {
+        $completedSurveyIds = $this->completedSurveyIdsForCurrentParticipant();
+
         $query = Survey::query()
             ->withCount('questions')
             ->where('is_active', true)
@@ -34,8 +36,18 @@ class SurveyController extends Controller
             $query->where('title', 'like', '%'.$request->search.'%');
         }
 
-        $surveys = $query->latest()->paginate(10);
-        $completedSurveyIds = $this->completedSurveyIdsForCurrentParticipant();
+        if ($request->string('sort')->value() === 'reward_points_desc') {
+            if ($completedSurveyIds !== []) {
+                $query->orderByRaw('CASE WHEN id IN ('.implode(',', $completedSurveyIds).') THEN 1 ELSE 0 END');
+            }
+
+            $query->orderByDesc('reward_points')
+                ->latest();
+        } else {
+            $query->latest();
+        }
+
+        $surveys = $query->paginate(10);
 
         return view('surveys.index', compact('completedSurveyIds', 'surveys'));
     }
