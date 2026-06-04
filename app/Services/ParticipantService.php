@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Participant;
 use App\Models\ParticipantIdentity;
+use App\Models\SurveyResponse;
 use App\Models\User;
 use App\Support\Academies;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -73,6 +74,52 @@ class ParticipantService
         }
 
         return $this->emailForParticipant($participantId);
+    }
+
+    /**
+     * Return unique participant email addresses for respondents of the given surveys.
+     *
+     * @param  array<int, int>  $surveyIds
+     * @return array<int, string>
+     *
+     * @throws AuthorizationException
+     */
+    public function emailsForSurveyRespondents(User $user, array $surveyIds): array
+    {
+        if (! $user->isAdmin()) {
+            throw new AuthorizationException('Only admins may use participant mailing lists.');
+        }
+
+        $surveyIds = collect($surveyIds)
+            ->map(fn (mixed $surveyId): int => (int) $surveyId)
+            ->filter(fn (int $surveyId): bool => $surveyId > 0)
+            ->unique()
+            ->values();
+
+        if ($surveyIds->isEmpty()) {
+            return [];
+        }
+
+        $participantIds = SurveyResponse::query()
+            ->visibleInResults()
+            ->whereIn('survey_id', $surveyIds)
+            ->whereNotNull('participant_id')
+            ->pluck('participant_id')
+            ->unique()
+            ->values();
+
+        if ($participantIds->isEmpty()) {
+            return [];
+        }
+
+        return ParticipantIdentity::query()
+            ->whereIn('participant_id', $participantIds)
+            ->pluck('email')
+            ->map(fn (string $email): string => $this->normalizeEmail($email))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
