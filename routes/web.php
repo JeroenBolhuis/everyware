@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified', 'role:admin|LICEmployee'])
         Route::post('/', [SurveyManagerController::class, 'store'])->name('store');
         Route::get('/{survey}/bewerken', [SurveyManagerController::class, 'edit'])->name('edit');
         Route::put('/{survey}', [SurveyManagerController::class, 'update'])->name('update');
+        Route::get('/{survey}/qr-code', [SurveyManagerController::class, 'showQrCode'])->name('qr-code');
         Route::patch('/{survey}/sluiten', [SurveyManagerController::class, 'close'])->name('close');
     });
 
