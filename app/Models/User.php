@@ -78,6 +78,7 @@ class User extends Authenticatable
 
         return $this;
     }
+
     public function removeRole(RoleEnum|string $role): static
     {
         if ($this->hasRole($role)) {
@@ -86,6 +87,7 @@ class User extends Authenticatable
 
         return $this;
     }
+
     /**
      * @param  array<int, RoleEnum|string>  $roles
      */

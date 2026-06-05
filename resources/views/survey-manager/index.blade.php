@@ -182,11 +182,59 @@
                                     >
                                     <button
                                         type="button"
-                                        onclick="navigator.clipboard.writeText('{{ route('survey.share.show', $survey->share_token) }}').then(() => { this.textContent = 'Gekopieerd!'; setTimeout(() => this.textContent = 'Kopieer', 2000); })"
+                                        onclick="const input = document.getElementById('share-link-{{ $survey->id }}'); const button = this; const markCopied = () => { button.textContent = 'Gekopieerd!'; setTimeout(() => button.textContent = 'Kopieer', 2000); }; const fallbackCopy = () => { input.select(); input.setSelectionRange(0, input.value.length); document.execCommand('copy'); markCopied(); }; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(input.value).then(markCopied).catch(fallbackCopy); } else { fallbackCopy(); }"
                                         class="shrink-0 text-xs text-indigo-600 hover:underline dark:text-indigo-400"
                                         aria-label="{{ __('Kopieer openbare enquête-link voor :title', ['title' => $survey->title]) }}"
                                     >Kopieer</button>
+                                    <flux:modal.trigger name="survey-qr-code-{{ $survey->id }}">
+                                        <button
+                                            type="button"
+                                            class="shrink-0 text-xs text-indigo-600 hover:underline dark:text-indigo-400"
+                                            aria-label="{{ __('Bekijk QR-code voor openbare enquête-link van :title', ['title' => $survey->title]) }}"
+                                        >
+                                            QR-code
+                                        </button>
+                                    </flux:modal.trigger>
                                 </div>
+
+                                <flux:modal name="survey-qr-code-{{ $survey->id }}" class="max-w-md">
+                                    <div class="space-y-6">
+                                        <div>
+                                            <flux:heading size="lg">{{ __('QR-code') }}</flux:heading>
+                                            <flux:subheading class="mt-2">{{ $survey->title }}</flux:subheading>
+                                        </div>
+
+                                        <div class="flex justify-center">
+                                            <div class="aspect-square w-full max-w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700">
+                                                <img
+                                                    src="{{ route('survey-manager.qr-code', $survey) }}"
+                                                    alt="{{ __('QR-code voor openbare enquête-link van :title', ['title' => $survey->title]) }}"
+                                                    class="h-full w-full"
+                                                >
+                                            </div>
+                                        </div>
+
+                                        <p class="text-sm text-zinc-600 dark:text-zinc-300">
+                                            {{ __('Je kunt de QR-code kopiëren door met de rechtermuisknop op de afbeelding te klikken en Afbeelding kopiëren te kiezen.') }}
+                                        </p>
+
+                                        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                            <flux:modal.close>
+                                                <flux:button variant="ghost" type="button">
+                                                    {{ __('Sluiten') }}
+                                                </flux:button>
+                                            </flux:modal.close>
+
+                                            <flux:button
+                                                variant="outline"
+                                                icon="arrow-down-tray"
+                                                href="{{ route('survey-manager.qr-code', ['survey' => $survey, 'download' => 1]) }}"
+                                            >
+                                                {{ __('Download') }}
+                                            </flux:button>
+                                        </div>
+                                    </div>
+                                </flux:modal>
                             @endif
 
                             <div class="flex flex-wrap gap-2 lg:justify-end">
