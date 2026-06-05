@@ -40,9 +40,11 @@ it('shows the participant mail page to admins without exposing addresses', funct
 
     get(route('admin.participants.mail'))
         ->assertOk()
+        ->assertSee('Mailen')
         ->assertSee('Deelnemers mailen')
         ->assertSee('Dubbele e-mailadressen worden niet toegevoegd')
         ->assertSee('Meest recente enquete')
+        ->assertDontSee('Beheer gebruikers en toegangsrechten')
         ->assertDontSee('student@example.com');
 });
 

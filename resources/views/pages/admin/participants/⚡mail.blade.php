@@ -255,14 +255,14 @@ new #[Title('Deelnemers mailen')] class extends Component {
 }; ?>
 
 <section class="w-full" aria-labelledby="admin-participant-mail-page-title">
-    @include('partials.admin-heading')
-
     <flux:heading class="sr-only" id="admin-participant-mail-page-title">{{ __('Deelnemers mailen') }}</flux:heading>
 
-    <x-pages::admin.layout
-        :heading="__('Deelnemers mailen')"
-        :subheading="__('Stel een maillijst samen uit eerdere enquete-inzendingen zonder e-mailadressen in de interface te tonen.')"
-    >
+    <div class="w-full max-w-6xl">
+        <div>
+            <flux:heading>{{ __('Mailen') }}</flux:heading>
+            <flux:subheading>{{ __('Stel een maillijst samen en verstuur een bericht zonder e-mailadressen in de interface te tonen.') }}</flux:subheading>
+        </div>
+
         <div class="my-6 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sky-950 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-100">
             <flux:heading size="lg">{{ __('Dubbele e-mailadressen worden niet toegevoegd') }}</flux:heading>
             <flux:text class="mt-2 text-sm">
@@ -270,7 +270,7 @@ new #[Title('Deelnemers mailen')] class extends Component {
             </flux:text>
         </div>
 
-        <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
+        <div class="space-y-6">
             <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-zinc-900 sm:p-6">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -476,5 +476,5 @@ new #[Title('Deelnemers mailen')] class extends Component {
                 </form>
             </div>
         </div>
-    </x-pages::admin.layout>
+    </div>
 </section>

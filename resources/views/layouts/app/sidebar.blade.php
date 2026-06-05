@@ -62,18 +62,21 @@
                                 {{ __('Deelnemers') }}
                             </flux:sidebar.item>
 
-                            @if (auth()->user()->isAdmin())
-                                <flux:sidebar.item
-                                    icon="envelope"
-                                    :href="route('admin.participants.mail')"
-                                    :current="request()->routeIs('admin.participants.mail')"
-                                    wire:navigate
-                                >
-                                    {{ __('Deelnemers mailen') }}
-                                </flux:sidebar.item>
-                            @endif
                         @endif
                     </flux:sidebar.group>
+
+                    @if (auth()->user()->isAdmin())
+                        <flux:sidebar.group :heading="__('Mailen')" class="grid">
+                            <flux:sidebar.item
+                                icon="envelope"
+                                :href="route('admin.participants.mail')"
+                                :current="request()->routeIs('admin.participants.mail')"
+                                wire:navigate
+                            >
+                                {{ __('Deelnemers mailen') }}
+                            </flux:sidebar.item>
+                        </flux:sidebar.group>
+                    @endif
                 @endif
             </flux:sidebar.nav>
 
