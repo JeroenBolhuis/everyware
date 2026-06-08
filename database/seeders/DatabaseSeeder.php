@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Role;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -20,16 +21,22 @@ class DatabaseSeeder extends Seeder
             ContactInformationSubmissionSeeder::class,
         ]);
 
-        User::factory()->admin()->create([
-            'name' => 'Admin',
-            'email' => 'p.groep@everyware.nl',
-            'password' => Hash::make('QSpx34P32Jt!pfZ'),
-        ]);
+        User::query()->updateOrCreate(
+            ['email' => 'p.groep@everyware.nl'],
+            [
+                'name' => 'Admin',
+                'role' => Role::Admin,
+                'password' => Hash::make('QSpx34P32Jt!pfZ'),
+            ]
+        );
 
-        User::factory()->licEmployee()->create([
-            'name' => 'LIC Medewerker',
-            'email' => 'lic.medewerker@everyware.nl',
-            'password' => Hash::make('QSpx34P32Jt!pfZ'),
-        ]);
+        User::query()->updateOrCreate(
+            ['email' => 'lic.medewerker@everyware.nl'],
+            [
+                'name' => 'LIC Medewerker',
+                'role' => Role::LicEmployee,
+                'password' => Hash::make('QSpx34P32Jt!pfZ'),
+            ]
+        );
     }
 }

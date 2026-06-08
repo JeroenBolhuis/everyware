@@ -42,10 +42,10 @@ class ParticipantService
                 'academy' => Academies::fromEmail($email),
             ]);
 
-            ParticipantIdentity::create([
-                'participant_id' => $participant->id,
-                'email' => $email,
-            ]);
+            ParticipantIdentity::updateOrCreate(
+                ['participant_id' => $participant->id],
+                ['email' => $email],
+            );
 
             return $participant;
         });

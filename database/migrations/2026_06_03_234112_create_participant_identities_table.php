@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Schema;
  * This is the only table in the application that stores email addresses (PII).
  * In production it lives on a separate database server with restricted credentials.
  */
-return new class extends Migration {
+return new class extends Migration
+{
     protected $connection = 'personal';
 
     /**
@@ -18,6 +19,10 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        if (Schema::connection('personal')->hasTable('participant_identities')) {
+            return;
+        }
+
         Schema::connection('personal')->create('participant_identities', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('participant_id')->unique();

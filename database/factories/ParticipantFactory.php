@@ -39,10 +39,10 @@ class ParticipantFactory extends Factory
         })->afterCreating(function (Participant $participant) {
             $email = $participant->pendingEmail ?? fake()->unique()->safeEmail();
 
-            ParticipantIdentity::create([
-                'participant_id' => $participant->id,
-                'email' => $email,
-            ]);
+            ParticipantIdentity::updateOrCreate(
+                ['participant_id' => $participant->id],
+                ['email' => $email],
+            );
 
             $academy = Academies::fromEmail($email);
             if ($academy !== null) {
