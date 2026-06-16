@@ -39,10 +39,17 @@ new #[Title('Gebruikers')] class extends Component {
         @endif
 
         <div class="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
-            <div class="flex flex-col sm:flex-row sm:justify-end gap-2 sm:gap-0">
-                <a href="{{ route('admin.users.create') }}" class="btn-primary w-full sm:w-auto text-center" wire:navigate aria-label="{{ __('Gebruiker toevoegen') }}">
+            <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <flux:button
+                    variant="primary"
+                    icon="plus"
+                    class="w-full sm:w-auto"
+                    :href="route('admin.users.create')"
+                    wire:navigate
+                    aria-label="{{ __('Gebruiker toevoegen') }}"
+                >
                     {{ __('Gebruiker toevoegen') }}
-                </a>
+                </flux:button>
             </div>
 
             <div class="overflow-x-auto">
@@ -62,9 +69,16 @@ new #[Title('Gebruikers')] class extends Component {
                                     <flux:badge color="zinc" size="sm">{{ $user->role->label() }}</flux:badge>
                                 </flux:table.cell>
                                 <flux:table.cell align="end">
-                                    <a href="{{ route('admin.users.edit', $user) }}" class="btn-secondary text-xs sm:text-sm whitespace-nowrap" wire:navigate aria-label="{{ __('Bewerk gebruiker :name', ['name' => $user->name]) }}">
+                                    <flux:button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon="pencil-square"
+                                        :href="route('admin.users.edit', $user)"
+                                        wire:navigate
+                                        aria-label="{{ __('Bewerk gebruiker :name', ['name' => $user->name]) }}"
+                                    >
                                         {{ __('Bewerken') }}
-                                    </a>
+                                    </flux:button>
                                 </flux:table.cell>
                             </flux:table.row>
                         @endforeach

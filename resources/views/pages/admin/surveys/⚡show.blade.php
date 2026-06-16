@@ -33,7 +33,14 @@ new #[Title('Enquete-inzendingen')] class extends Component {
     >
         <div class="space-y-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <div>
-                <a href="{{ route('admin.surveys.index') }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquetes') }}</a>
+                <flux:button
+                    variant="ghost"
+                    icon="arrow-left"
+                    :href="route('admin.surveys.index')"
+                    wire:navigate
+                >
+                    {{ __('Terug naar enquetes') }}
+                </flux:button>
             </div>
 
             @if (session('status'))
@@ -75,8 +82,17 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                                 @endif
                             </flux:table.cell>
                             <flux:table.cell align="end">
-                                    <a href="{{ route('admin.responses.show', $response) }}" class="btn-primary" wire:navigate aria-label="{{ __('Open inzending #:id', ['id' => $response->id]) }}">{{ __('Open inzending') }}</a>
-                                </flux:table.cell>
+                                <flux:button
+                                    variant="primary"
+                                    size="sm"
+                                    icon="arrow-top-right-on-square"
+                                    :href="route('admin.responses.show', $response)"
+                                    wire:navigate
+                                    aria-label="{{ __('Open inzending #:id', ['id' => $response->id]) }}"
+                                >
+                                    {{ __('Open inzending') }}
+                                </flux:button>
+                            </flux:table.cell>
                         </flux:table.row>
                     @endforeach
                 </flux:table.rows>

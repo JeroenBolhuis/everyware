@@ -89,9 +89,16 @@ new #[Title('Deelnemers')] class extends Component {
                                     @endif
                                 </flux:table.cell>
                                 <flux:table.cell align="end">
-                                    <a href="{{ route('admin.participants.show', $participant) }}" class="btn-secondary text-xs sm:text-sm whitespace-nowrap" wire:navigate aria-label="{{ __('Bekijk deelnemer :name', ['name' => $participant->displayNameFor(auth()->user())]) }}">
+                                    <flux:button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon="eye"
+                                        :href="route('admin.participants.show', $participant)"
+                                        wire:navigate
+                                        aria-label="{{ __('Bekijk deelnemer :name', ['name' => $participant->displayNameFor(auth()->user())]) }}"
+                                    >
                                         {{ __('Bekijken') }}
-                                    </a>
+                                    </flux:button>
                                 </flux:table.cell>
                             </flux:table.row>
                         @empty

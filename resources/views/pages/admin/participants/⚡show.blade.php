@@ -176,9 +176,14 @@ new #[Title('Deelnemer')] class extends Component {
             </div>
 
             <div>
-                <a href="{{ route('admin.participants.index') }}" class="btn-secondary" wire:navigate>
+                <flux:button
+                    variant="ghost"
+                    icon="arrow-left"
+                    :href="route('admin.participants.index')"
+                    wire:navigate
+                >
                     {{ __('Terug naar deelnemers') }}
-                </a>
+                </flux:button>
             </div>
 
         </div>

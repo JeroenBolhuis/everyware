@@ -98,7 +98,14 @@ new #[Title('Enquete-inzending')] class extends Component {
     >
         <div class="space-y-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <a href="{{ route('admin.surveys.show', $response->survey) }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquete-inzendingen') }}</a>
+                <flux:button
+                    variant="ghost"
+                    icon="arrow-left"
+                    :href="route('admin.surveys.show', $response->survey)"
+                    wire:navigate
+                >
+                    {{ __('Terug naar enquete-inzendingen') }}
+                </flux:button>
 
                 <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
                     @if ($canViewPersonalData && $respondentEmail !== null && ! $respondentIsBlocked)

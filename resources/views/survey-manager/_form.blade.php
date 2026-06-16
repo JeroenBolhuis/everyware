@@ -63,8 +63,9 @@
                     </p>
                 </div>
 
-                <a href="{{ route('survey-manager.index') }}" class="btn-primary">
-                    Terug naar overzicht
+                <a href="{{ route('survey-manager.index') }}" class="btn-primary gap-2">
+                    <flux:icon.arrow-left variant="mini" />
+                    <span>Terug naar overzicht</span>
                 </a>
             </div>
         </header>
@@ -233,8 +234,9 @@
                                     Vraag <span class="question-number">{{ $index + 1 }}</span>
                                 </h3>
 
-                                <button type="button" class="remove-question btn-secondary">
-                                    Verwijderen
+                                <button type="button" class="remove-question btn-secondary gap-2">
+                                    <flux:icon.trash variant="mini" />
+                                    <span>Verwijderen</span>
                                 </button>
                             </header>
 
@@ -310,8 +312,9 @@
                                     </legend>
 
                                     <div class="mb-2 flex items-center justify-between gap-3">
-                                        <button type="button" class="add-option btn-secondary">
-                                            Optie toevoegen
+                                        <button type="button" class="add-option btn-secondary gap-2">
+                                            <flux:icon.plus variant="mini" />
+                                            <span>Optie toevoegen</span>
                                         </button>
                                     </div>
 
@@ -428,8 +431,9 @@
                                                     <div
                                                         class="{{ $isSwipe ? 'md:col-span-2' : 'md:col-span-1' }} option-remove-col flex items-start md:items-center">
                                                         <button type="button"
-                                                                class="remove-option btn-secondary w-full">
-                                                            Verwijderen
+                                                                class="remove-option btn-secondary w-full gap-2">
+                                                            <flux:icon.trash variant="mini" />
+                                                            <span>Verwijderen</span>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -443,8 +447,9 @@
                 </div>
 
                 <div class="mt-6 flex justify-center">
-                    <button type="button" id="add-question" class="btn-primary">
-                        Vraag toevoegen
+                    <button type="button" id="add-question" class="btn-primary gap-2">
+                        <flux:icon.plus variant="mini" />
+                        <span>Vraag toevoegen</span>
                     </button>
                 </div>
             </section>
@@ -453,11 +458,13 @@
             <p id="survey-manager-a11y-status" class="sr-only" role="status" aria-live="polite"></p>
 
             <div class="flex flex-wrap justify-end gap-3">
-                <a href="{{ route('survey-manager.index') }}" class="btn-secondary">
-                    Annuleren
+                <a href="{{ route('survey-manager.index') }}" class="btn-secondary gap-2">
+                    <flux:icon.x-mark variant="mini" />
+                    <span>Annuleren</span>
                 </a>
-                <button type="submit" class="btn-primary">
-                    {{ $isEdit ? 'Wijzigingen opslaan' : 'Enquête opslaan' }}
+                <button type="submit" class="btn-primary gap-2">
+                    <flux:icon.check variant="mini" />
+                    <span>{{ $isEdit ? 'Wijzigingen opslaan' : 'Enquête opslaan' }}</span>
                 </button>
             </div>
         </form>
@@ -470,8 +477,9 @@
                     Vraag <span class="question-number"></span>
                 </h3>
 
-                <button type="button" class="remove-question btn-secondary">
-                    Verwijderen
+                <button type="button" class="remove-question btn-secondary gap-2">
+                    <flux:icon.trash variant="mini" />
+                    <span>Verwijderen</span>
                 </button>
             </header>
 
@@ -524,8 +532,9 @@
                     </legend>
 
                     <div class="mb-2 flex items-center justify-between gap-3">
-                        <button type="button" class="add-option btn-secondary">
-                            Optie toevoegen
+                        <button type="button" class="add-option btn-secondary gap-2">
+                            <flux:icon.plus variant="mini" />
+                            <span>Optie toevoegen</span>
                         </button>
                     </div>
 
@@ -605,8 +614,9 @@
                 </div>
 
                 <div class="option-remove-col flex items-start md:col-span-1 md:items-center">
-                    <button type="button" class="remove-option btn-secondary w-full">
-                        Verwijderen
+                    <button type="button" class="remove-option btn-secondary w-full gap-2">
+                        <flux:icon.trash variant="mini" />
+                        <span>Verwijderen</span>
                     </button>
                 </div>
             </div>

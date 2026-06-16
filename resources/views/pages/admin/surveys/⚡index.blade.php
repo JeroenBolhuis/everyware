@@ -99,14 +99,14 @@ new #[Title('Enquete-inzendingen')] class extends Component {
             <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 sm:p-6 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
                 <div class="flex items-start justify-between gap-3">
                     <flux:heading size="lg">{{ __('Waarschuwing automatische verwijdering') }}</flux:heading>
-                    <button
+                    <flux:button
                         type="button"
-                        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-300 bg-white/70 text-amber-900 hover:bg-white dark:border-amber-600 dark:bg-amber-950/40 dark:text-amber-100"
+                        variant="ghost"
+                        size="sm"
+                        icon="x-mark"
                         wire:click="dismissUpcomingDeletionWarning"
                         aria-label="{{ __('Melding sluiten') }}"
-                    >
-                        &times;
-                    </button>
+                    />
                 </div>
 
                 @if ($this->upcomingDeletionWarning['count'] > 0)
@@ -125,13 +125,15 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                                     <span>
                                         {{ __('Inzending #:id (:survey) - verwijdering op :date', ['id' => $upcomingResponse->id, 'survey' => $upcomingResponse->survey?->title ?? __('Onbekende enquete'), 'date' => $upcomingResponse->deleteOnDate()?->format('d-m-Y')]) }}
                                     </span>
-                                    <a
-                                        href="{{ route('admin.responses.show', $upcomingResponse) }}"
-                                        class="btn-secondary w-fit text-xs"
+                                    <flux:button
+                                        size="sm"
+                                        variant="ghost"
+                                        icon="arrow-top-right-on-square"
+                                        :href="route('admin.responses.show', $upcomingResponse)"
                                         wire:navigate
                                     >
                                         {{ __('Open inzending') }}
-                                    </a>
+                                    </flux:button>
                                 </div>
                             @endforeach
                         </div>
@@ -161,7 +163,9 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                     />
 
                     <div class="flex items-center gap-4">
-                        <button type="submit" class="btn-primary">{{ __('Opslaan') }}</button>
+                        <flux:button type="submit" variant="primary" icon="check">
+                            {{ __('Opslaan') }}
+                        </flux:button>
 
                         <x-action-message on="retention-setting-saved">
                             {{ __('Opgeslagen.') }}
@@ -198,10 +202,16 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                                 <flux:table.cell
                                     class="text-xs sm:text-sm">{{ $survey->responses_count }}</flux:table.cell>
                                 <flux:table.cell align="end">
-                                    <a href="{{ route('admin.surveys.show', $survey) }}"
-                                       class="btn-secondary text-xs sm:text-sm whitespace-nowrap"
-                                       wire:navigate
-                                       aria-label="{{ __('Bekijk inzendingen van enquête :title', ['title' => $survey->title]) }}">{{ __('Bekijk inzendingen') }}</a>
+                                    <flux:button
+                                        variant="ghost"
+                                        size="sm"
+                                        icon="eye"
+                                        :href="route('admin.surveys.show', $survey)"
+                                        wire:navigate
+                                        aria-label="{{ __('Bekijk inzendingen van enquête :title', ['title' => $survey->title]) }}"
+                                    >
+                                        {{ __('Bekijk inzendingen') }}
+                                    </flux:button>
                                 </flux:table.cell>
                             </flux:table.row>
                         @endforeach

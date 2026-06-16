@@ -56,9 +56,14 @@ new #[Title('Gebruiker aanmaken')] class extends Component {
     >
         <div class="space-y-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <div>
-                <a href="{{ route('admin.users.index') }}" class="btn-secondary" wire:navigate>
+                <flux:button
+                    variant="ghost"
+                    icon="arrow-left"
+                    :href="route('admin.users.index')"
+                    wire:navigate
+                >
                     {{ __('Terug naar gebruikers') }}
-                </a>
+                </flux:button>
             </div>
 
             <form wire:submit="save" class="max-w-2xl space-y-6" aria-label="{{ __('Nieuw gebruikersaccount aanmaken') }}">
@@ -81,7 +86,9 @@ new #[Title('Gebruiker aanmaken')] class extends Component {
                 </flux:field>
 
                 <div class="flex items-center gap-4">
-                    <button type="submit" class="btn-primary">{{ __('Gebruiker aanmaken') }}</button>
+                    <flux:button type="submit" variant="primary" icon="user-plus">
+                        {{ __('Gebruiker aanmaken') }}
+                    </flux:button>
                 </div>
             </form>
         </div>

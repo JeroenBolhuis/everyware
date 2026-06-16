@@ -96,6 +96,7 @@
                         </flux:button>
                         <flux:button
                             variant="ghost"
+                            icon="arrow-path"
                             :href="route('survey-manager.index')"
                             aria-label="{{ __('Filters resetten') }}"
                         >
@@ -168,28 +169,55 @@
                                 </div>
 
                                 @if ($survey->isAcceptingResponses())
-                                    <div class="flex w-full items-center gap-2 rounded-xl border border-neutral-200 bg-zinc-50 px-3 py-2 dark:border-neutral-700 dark:bg-zinc-800/50 lg:max-w-xl">
+                                    <div
+                                        x-data="{ copied: false }"
+                                        class="flex w-full items-center gap-1 rounded-xl border border-neutral-200 bg-zinc-50 px-3 py-2 dark:border-neutral-700 dark:bg-zinc-800/50 lg:max-w-xl"
+                                    >
                                         <input
+                                            x-ref="shareLink"
                                             type="text"
                                             readonly
                                             value="{{ route('survey.share.show', $survey->share_token) }}"
                                             class="min-w-0 flex-1 bg-transparent text-xs text-zinc-600 focus:outline-none dark:text-zinc-300"
                                             id="share-link-{{ $survey->id }}"
                                         >
-                                        <button
-                                            type="button"
-                                            onclick="const input = document.getElementById('share-link-{{ $survey->id }}'); const button = this; const markCopied = () => { button.textContent = 'Gekopieerd!'; setTimeout(() => button.textContent = 'Kopieer', 2000); }; const fallbackCopy = () => { input.select(); input.setSelectionRange(0, input.value.length); document.execCommand('copy'); markCopied(); }; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(input.value).then(markCopied).catch(fallbackCopy); } else { fallbackCopy(); }"
-                                            class="shrink-0 text-xs font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
-                                            aria-label="{{ __('Kopieer openbare enquête-link voor :title', ['title' => $survey->title]) }}"
-                                        >{{ __('Kopieer') }}</button>
-                                        <flux:modal.trigger name="survey-qr-code-{{ $survey->id }}">
-                                            <button
+                                        <flux:tooltip :content="__('Kopieer link')">
+                                            <flux:button
                                                 type="button"
-                                                class="shrink-0 text-xs font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
-                                                aria-label="{{ __('Bekijk QR-code voor openbare enquête-link van :title', ['title' => $survey->title]) }}"
+                                                variant="ghost"
+                                                size="sm"
+                                                aria-label="{{ __('Kopieer openbare enquête-link voor :title', ['title' => $survey->title]) }}"
+                                                x-on:click="
+                                                    const input = $refs.shareLink;
+                                                    const markCopied = () => {
+                                                        copied = true;
+                                                        setTimeout(() => copied = false, 2000);
+                                                    };
+                                                    const fallbackCopy = () => {
+                                                        input.select();
+                                                        input.setSelectionRange(0, input.value.length);
+                                                        document.execCommand('copy');
+                                                        markCopied();
+                                                    };
+                                                    if (navigator.clipboard && window.isSecureContext) {
+                                                        navigator.clipboard.writeText(input.value).then(markCopied).catch(fallbackCopy);
+                                                    } else {
+                                                        fallbackCopy();
+                                                    }
+                                                "
                                             >
-                                                {{ __('QR-code') }}
-                                            </button>
+                                                <flux:icon.document-duplicate x-show="!copied" variant="mini" />
+                                                <flux:icon.check x-cloak x-show="copied" variant="mini" class="text-emerald-600 dark:text-emerald-400" />
+                                            </flux:button>
+                                        </flux:tooltip>
+                                        <flux:modal.trigger name="survey-qr-code-{{ $survey->id }}">
+                                            <flux:button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                icon="qr-code"
+                                                aria-label="{{ __('Bekijk QR-code voor openbare enquête-link van :title', ['title' => $survey->title]) }}"
+                                            />
                                         </flux:modal.trigger>
                                     </div>
 
@@ -292,6 +320,7 @@
                                 <flux:button
                                     class="mt-4"
                                     variant="ghost"
+                                    icon="arrow-path"
                                     :href="route('survey-manager.index')"
                                 >
                                     {{ __('Filters resetten') }}

@@ -94,9 +94,14 @@ new #[Title('Gebruiker bewerken')] class extends Component {
     >
         <div class="space-y-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <div>
-                <a href="{{ route('admin.users.index') }}" class="btn-secondary" wire:navigate>
+                <flux:button
+                    variant="ghost"
+                    icon="arrow-left"
+                    :href="route('admin.users.index')"
+                    wire:navigate
+                >
                     {{ __('Terug naar gebruikers') }}
-                </a>
+                </flux:button>
             </div>
 
             <form wire:submit="save" class="max-w-2xl space-y-6" aria-label="{{ __('Gebruikersaccount :name bewerken', ['name' => $user->name]) }}">
@@ -125,7 +130,9 @@ new #[Title('Gebruiker bewerken')] class extends Component {
                 </flux:field>
 
                 <div class="flex flex-wrap items-center gap-4">
-                    <button type="submit" class="btn-primary">{{ __('Wijzigingen opslaan') }}</button>
+                    <flux:button type="submit" variant="primary" icon="check">
+                        {{ __('Wijzigingen opslaan') }}
+                    </flux:button>
 
                     <x-action-message on="user-saved">
                         {{ __('Opgeslagen.') }}
@@ -141,14 +148,15 @@ new #[Title('Gebruiker bewerken')] class extends Component {
                     <flux:text
                         class="text-sm text-zinc-500">{{ __('Dit verwijdert het account definitief.') }}</flux:text>
                     <flux:error name="delete"/>
-                    <button
+                    <flux:button
                         type="button"
-                        class="btn-primary"
+                        variant="danger"
+                        icon="trash"
                         wire:click="deleteUser"
                         wire:confirm="{{ __('Weet je zeker dat je deze gebruiker wilt verwijderen?') }}"
                     >
                         {{ __('Gebruiker verwijderen') }}
-                    </button>
+                    </flux:button>
                 </div>
             @endif
         </div>
