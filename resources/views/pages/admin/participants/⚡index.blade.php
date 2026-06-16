@@ -38,15 +38,12 @@ new #[Title('Deelnemers')] class extends Component {
 @endphp
 
 <section class="w-full" aria-labelledby="admin-participants-page-title">
-    @include('partials.admin-heading')
-
-    <flux:heading class="sr-only" id="admin-participants-page-title">{{ __('Deelnemers') }}</flux:heading>
-
     <x-pages::admin.layout
         :heading="__('Deelnemers')"
         :subheading="__('Bekijk deelnemers, hun puntensaldo en boek punten af.')"
+        heading-id="admin-participants-page-title"
     >
-        <div class="my-6 rounded-lg sm:rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <div class="mb-4">
                 <flux:input
                     wire:model.live.debounce.300ms="search"

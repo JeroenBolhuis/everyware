@@ -26,26 +26,23 @@ new #[Title('Enquete-inzendingen')] class extends Component {
 }; ?>
 
 <section class="w-full" aria-labelledby="admin-survey-show-page-title">
-    @include('partials.admin-heading')
-
-    <flux:heading class="sr-only" id="admin-survey-show-page-title">{{ __('Enquete-inzendingen') }}</flux:heading>
-
     <x-pages::admin.layout
         :heading="$survey->title"
         :subheading="__('Bekijk ingestuurde inzendingen en open contactgegevens wanneer die zijn gedeeld.')"
+        heading-id="admin-survey-show-page-title"
     >
-        <div class="my-6 space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="space-y-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <div>
                 <a href="{{ route('admin.surveys.index') }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquetes') }}</a>
             </div>
 
             @if (session('status'))
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status" aria-live="polite">
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200" role="status" aria-live="polite">
                     {{ session('status') }}
                 </div>
             @endif
 
-            <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+            <div class="rounded-xl border border-neutral-200 bg-zinc-50 p-4 dark:border-neutral-700 dark:bg-zinc-800/50">
                 <flux:text>{{ $survey->description }}</flux:text>
             </div>
 

@@ -91,15 +91,12 @@ new #[Title('Enquete-inzending')] class extends Component {
 }; ?>
 
 <section class="w-full" aria-labelledby="admin-response-show-page-title">
-    @include('partials.admin-heading')
-
-    <flux:heading class="sr-only" id="admin-response-show-page-title">{{ __('Enquete-inzending') }}</flux:heading>
-
     <x-pages::admin.layout
         :heading="__('Inzending #:id', ['id' => $response->id])"
         :subheading="$response->survey->title"
+        heading-id="admin-response-show-page-title"
     >
-        <div class="my-6 space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="space-y-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <a href="{{ route('admin.surveys.show', $response->survey) }}" class="btn-secondary" wire:navigate>{{ __('Terug naar enquete-inzendingen') }}</a>
 
@@ -207,7 +204,7 @@ new #[Title('Enquete-inzending')] class extends Component {
             </flux:modal>
 
             <div class="grid gap-4 md:grid-cols-2">
-                <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+                <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                     <flux:heading size="lg">{{ __('Inzendingsdetails') }}</flux:heading>
 
                     <dl class="mt-4 space-y-3 text-sm">
@@ -222,7 +219,7 @@ new #[Title('Enquete-inzending')] class extends Component {
                     </dl>
                 </div>
 
-                <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+                <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                     <flux:heading size="lg">{{ __('Deelnemer') }}</flux:heading>
 
                 @if (! $canViewPersonalData)
@@ -242,12 +239,12 @@ new #[Title('Enquete-inzending')] class extends Component {
                 </div>
             </div>
 
-            <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700">
+            <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                 <flux:heading size="lg">{{ __('Antwoorden') }}</flux:heading>
 
                 <div class="mt-4 space-y-4">
                     @forelse ($response->answers as $answer)
-                        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700" wire:key="answer-{{ $answer->id }}">
+                        <div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" wire:key="answer-{{ $answer->id }}">
                             <div class="min-w-0">
                                 <flux:text class="font-medium text-zinc-900 dark:text-zinc-100">
                                     {{ $answer->question?->question ?? __('Vraag verwijderd') }}

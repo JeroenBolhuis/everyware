@@ -54,34 +54,30 @@ new #[Title('Deelnemer')] class extends Component {
 @endphp
 
 <section class="w-full" aria-labelledby="admin-participant-show-page-title">
-    @include('partials.admin-heading')
-
-    <flux:heading class="sr-only" id="admin-participant-show-page-title">{{ __('Deelnemer') }}</flux:heading>
-
     <x-pages::admin.layout
         :heading="$participant->displayNameFor(auth()->user())"
         :subheading="__('Puntenhistorie en puntenaftrek voor deze deelnemer.')"
+        heading-id="admin-participant-show-page-title"
     >
         @if (session('status'))
-            <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200" role="status" aria-live="polite">
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200" role="status" aria-live="polite">
                 {{ session('status') }}
             </div>
         @endif
 
-        <div class="my-6 space-y-6">
-
+        <div class="space-y-6">
             <div class="grid gap-4 sm:grid-cols-3">
-                <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                     <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Pseudoniem') }}</flux:text>
                     <flux:heading class="mt-1">{{ $participant->displayNameFor(auth()->user()) }}</flux:heading>
                 </div>
                 @if ($canViewParticipantDetails)
-                    <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                    <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                         <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('E-mail') }}</flux:text>
                         <flux:heading class="mt-1">{{ $participant->displayEmailFor(auth()->user()) }}</flux:heading>
                     </div>
                 @endif
-                <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+                <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                     <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Huidige punten') }}</flux:text>
                     <flux:heading class="mt-1">{{ $participant->current_points }}</flux:heading>
                 </div>

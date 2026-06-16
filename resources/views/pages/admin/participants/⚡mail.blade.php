@@ -255,15 +255,12 @@ new #[Title('Deelnemers mailen')] class extends Component {
 }; ?>
 
 <section class="w-full" aria-labelledby="admin-participant-mail-page-title">
-    <flux:heading class="sr-only" id="admin-participant-mail-page-title">{{ __('Deelnemers mailen') }}</flux:heading>
-
-    <div class="w-full max-w-6xl">
-        <div>
-            <flux:heading>{{ __('Mailen') }}</flux:heading>
-            <flux:subheading>{{ __('Stel een maillijst samen en verstuur een bericht zonder e-mailadressen in de interface te tonen.') }}</flux:subheading>
-        </div>
-
-        <div class="my-6 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sky-950 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-100">
+    <x-pages::admin.layout
+        :heading="__('Deelnemers mailen')"
+        :subheading="__('Stel een maillijst samen en verstuur een bericht zonder e-mailadressen in de interface te tonen.')"
+        heading-id="admin-participant-mail-page-title"
+    >
+        <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sky-950 sm:p-6 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-100">
             <flux:heading size="lg">{{ __('Dubbele e-mailadressen worden niet toegevoegd') }}</flux:heading>
             <flux:text class="mt-2 text-sm">
                 {{ __('Je start met een lege maillijst. Voeg van meest recent naar minder recent de deelnemers toe die op eerdere enquetes hebben gereageerd, of voeg handmatig een e-mailadres toe. Als hetzelfde adres meerdere keren voorkomt, ontvangt die persoon maar een mail.') }}
@@ -271,7 +268,7 @@ new #[Title('Deelnemers mailen')] class extends Component {
         </div>
 
         <div class="space-y-6">
-            <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-zinc-900 sm:p-6">
+            <div class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <flux:heading size="lg">{{ __('Eerdere enquetes') }}</flux:heading>
@@ -338,7 +335,7 @@ new #[Title('Deelnemers mailen')] class extends Component {
                     </flux:table>
                 </div>
 
-                <div class="mt-6 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                <div class="mt-6 rounded-xl border border-neutral-200 bg-zinc-50 p-4 dark:border-neutral-700 dark:bg-zinc-800/50 sm:p-6">
                     <flux:heading size="lg">{{ __('Handmatig e-mailadres') }}</flux:heading>
                     <flux:text class="mt-1 text-sm text-zinc-500">
                         {{ __('Het adres wordt toegevoegd aan de maillijst, maar niet als zichtbaar adres getoond.') }}
@@ -366,7 +363,7 @@ new #[Title('Deelnemers mailen')] class extends Component {
                 </div>
             </div>
 
-            <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-zinc-900 sm:p-6">
+            <div class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <flux:heading size="lg">{{ __('Huidige maillijst') }}</flux:heading>
@@ -393,7 +390,7 @@ new #[Title('Deelnemers mailen')] class extends Component {
 
                 <div class="mt-4 space-y-2">
                     @forelse ($this->selectedSurveys as $survey)
-                        <div wire:key="selected-mail-survey-{{ $survey->id }}" class="flex items-center justify-between gap-3 rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-700">
+                        <div wire:key="selected-mail-survey-{{ $survey->id }}" class="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700">
                             <span class="truncate">{{ $survey->title }}</span>
                             <flux:button
                                 size="sm"
@@ -404,7 +401,7 @@ new #[Title('Deelnemers mailen')] class extends Component {
                             />
                         </div>
                     @empty
-                        <flux:text class="rounded-md border border-dashed border-zinc-300 p-4 text-center text-sm text-zinc-500 dark:border-zinc-700">
+                        <flux:text class="rounded-lg border border-dashed border-neutral-300 p-4 text-center text-sm text-zinc-500 dark:border-neutral-700">
                             {{ __('Je maillijst is nog leeg.') }}
                         </flux:text>
                     @endforelse
@@ -476,5 +473,5 @@ new #[Title('Deelnemers mailen')] class extends Component {
                 </form>
             </div>
         </div>
-    </div>
+    </x-pages::admin.layout>
 </section>

@@ -90,16 +90,13 @@ new #[Title('Enquete-inzendingen')] class extends Component {
 }; ?>
 
 <section class="w-full" aria-labelledby="admin-surveys-page-title">
-    @include('partials.admin-heading')
-
-    <flux:heading class="sr-only" id="admin-surveys-page-title">{{ __('Enquete-inzendingen') }}</flux:heading>
-
     <x-pages::admin.layout
         :heading="__('Enquete-inzendingen')"
         :subheading="__('Bekijk enquetes en open individuele inzendingen, inclusief gedeelde contactgegevens.')"
+        heading-id="admin-surveys-page-title"
     >
         @if ($showUpcomingDeletionWarning)
-            <div class="my-6 rounded-lg sm:rounded-xl border border-amber-300 bg-amber-50 p-4 sm:p-6 text-amber-950 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
+            <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 sm:p-6 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
                 <div class="flex items-start justify-between gap-3">
                     <flux:heading size="lg">{{ __('Waarschuwing automatische verwijdering') }}</flux:heading>
                     <button
@@ -147,8 +144,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
             </div>
         @endif
 
-        <div
-            class="my-6 rounded-lg sm:rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('Automatische verwijdering van antwoorden') }}</flux:heading>
             <flux:text class="mt-2 text-sm text-zinc-500">
                 {{ __('Ingestelde bewaartermijn: :value jaar', ['value' => $retentionYears]) }}
@@ -179,8 +175,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
             @endif
         </div>
 
-        <div
-            class="my-6 rounded-lg sm:rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
             <div class="overflow-x-auto">
                 <flux:table :paginate="$this->surveys">
                     <flux:table.columns>
