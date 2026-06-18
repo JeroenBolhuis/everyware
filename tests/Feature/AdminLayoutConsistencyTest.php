@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Participant;
+use App\Models\Survey;
+use App\Models\SurveyResponse;
 use App\Models\User;
 
 use function Pest\Laravel\actingAs;
@@ -64,4 +67,56 @@ it('renders participant section navigation on participant pages', function () {
         ->assertOk()
         ->assertSee('Overzicht')
         ->assertSee('Punten aanpassen');
+});
+
+it('only renders survey response actions when a survey has visible responses', function () {
+    $admin = User::factory()->admin()->createOne();
+    $participant = Participant::factory()->createOne();
+    $emptySurvey = Survey::factory()->createOne(['title' => 'Enquete zonder inzendingen']);
+    $surveyWithResponses = Survey::factory()->createOne(['title' => 'Enquete met inzendingen']);
+
+    SurveyResponse::query()->create([
+        'survey_id' => $surveyWithResponses->id,
+        'participant_id' => $participant->id,
+        'withdrawal_token' => (string) str()->uuid(),
+        'submitted_at' => now(),
+    ]);
+
+    actingAs($admin);
+
+    get(route('admin.surveys.index'))
+        ->assertOk()
+        ->assertSee($emptySurvey->title)
+        ->assertSee($surveyWithResponses->title)
+        ->assertDontSee('Bekijk inzendingen van enquête '.$emptySurvey->title, false)
+        ->assertSee('Bekijk inzendingen van enquête '.$surveyWithResponses->title, false);
+});
+
+it('shows response counts on the participants overview', function () {
+    $admin = User::factory()->admin()->createOne();
+    $participant = Participant::factory()->createOne();
+    $firstSurvey = Survey::factory()->createOne();
+    $secondSurvey = Survey::factory()->createOne();
+
+    SurveyResponse::query()->create([
+        'survey_id' => $firstSurvey->id,
+        'participant_id' => $participant->id,
+        'withdrawal_token' => (string) str()->uuid(),
+        'submitted_at' => now(),
+    ]);
+
+    SurveyResponse::query()->create([
+        'survey_id' => $secondSurvey->id,
+        'participant_id' => $participant->id,
+        'withdrawal_token' => (string) str()->uuid(),
+        'submitted_at' => now(),
+    ]);
+
+    actingAs($admin);
+
+    get(route('admin.participants.index'))
+        ->assertOk()
+        ->assertSee('Inzendingen')
+        ->assertSee($participant->displayNameFor($admin))
+        ->assertSee('2');
 });

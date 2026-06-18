@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Actions\Surveys\SurveyRetentionSettings;
-use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,7 +28,7 @@ class SurveyResponse extends Model
         'is_anonymous' => 'boolean',
     ];
 
-    public function deleteOnDate(): ?Carbon
+    public function deleteOnDate(): ?CarbonInterface
     {
         $referenceDate = $this->submitted_at ?? $this->created_at;
 

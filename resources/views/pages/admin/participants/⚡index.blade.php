@@ -25,6 +25,7 @@ new #[Title('Deelnemers')] class extends Component {
         $search = trim($this->search);
 
         return Participant::query()
+            ->withCount(['surveyResponses' => fn ($query) => $query->visibleInResults()])
             ->when($search !== '', fn ($query) => $query
                 ->where('public_code', preg_replace('/\D/', '', $search) ?: '__none__')
             )
@@ -57,6 +58,7 @@ new #[Title('Deelnemers')] class extends Component {
                         <flux:table.columns>
                             <flux:table.column class="text-xs sm:text-sm">{{ __('Volgnummer') }}</flux:table.column>
                             <flux:table.column class="text-xs sm:text-sm">{{ __('Status') }}</flux:table.column>
+                            <flux:table.column class="text-xs sm:text-sm">{{ __('Inzendingen') }}</flux:table.column>
                             <flux:table.column align="end" class="text-xs sm:text-sm">{{ __('Acties') }}</flux:table.column>
                         </flux:table.columns>
 
@@ -73,6 +75,9 @@ new #[Title('Deelnemers')] class extends Component {
                                             <flux:badge color="emerald" size="sm">{{ __('Actief') }}</flux:badge>
                                         @endif
                                     </flux:table.cell>
+                                    <flux:table.cell class="text-xs sm:text-sm">
+                                        {{ $participant->survey_responses_count }}
+                                    </flux:table.cell>
                                     <flux:table.cell align="end">
                                         <flux:button
                                             variant="ghost"
@@ -88,7 +93,7 @@ new #[Title('Deelnemers')] class extends Component {
                                 </flux:table.row>
                             @empty
                                 <flux:table.row>
-                                    <flux:table.cell colspan="3">
+                                    <flux:table.cell colspan="4">
                                         <flux:text class="text-center text-xs sm:text-sm text-zinc-500">
                                             {{ $search ? __('Geen deelnemers gevonden voor ":search".', ['search' => $search]) : __('Er zijn nog geen deelnemers.') }}
                                         </flux:text>
