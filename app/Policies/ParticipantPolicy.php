@@ -24,7 +24,7 @@ class ParticipantPolicy
         ]);
     }
 
-    public function correctPoints(User $user, Participant $participant): bool
+    public function correctPoints(User $user, ?Participant $participant = null): bool
     {
         return $user->hasAnyRole([
             Role::Admin->value,

@@ -17,10 +17,15 @@ it('lets admins deduct participant points', function () {
 
     actingAs($admin);
 
-    Livewire::test('pages::admin.participants.show', ['participant' => $participant])
-        ->set('pointsToDeduct', 5)
+    Livewire::test('pages::admin.participants.points')
+        ->set('emailSearch', 'jamie@example.com')
+        ->call('findParticipantByEmail')
+        ->assertSet('emailParticipantId', $participant->id)
+        ->assertDontSee($participant->public_code)
+        ->set('mutationType', 'deduct')
+        ->set('pointsAmount', 5)
         ->set('reason', 'Handmatige correctie')
-        ->call('deductPoints')
+        ->call('adjustEmailParticipantPoints')
         ->assertHasNoErrors();
 
     expect($participant->fresh()->current_points)->toBe(3);

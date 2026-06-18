@@ -4,11 +4,17 @@ namespace App\Actions\Participants;
 
 use App\Models\Participant;
 use App\Models\ParticipantPointsHistory;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class DeductParticipantPoints
 {
+    private AdjustParticipantPoints $adjustParticipantPoints;
+
+    public function __construct(?AdjustParticipantPoints $adjustParticipantPoints = null)
+    {
+        $this->adjustParticipantPoints = $adjustParticipantPoints ?? app(AdjustParticipantPoints::class);
+    }
+
     public function __invoke(Participant $participant, int $points, string $reason): ParticipantPointsHistory
     {
         $reason = trim($reason);
@@ -21,28 +27,6 @@ class DeductParticipantPoints
             throw new InvalidArgumentException('Geef een reden op voor de puntenaftrek.');
         }
 
-        return DB::transaction(function () use ($participant, $points, $reason): ParticipantPointsHistory {
-            $participant = Participant::query()
-                ->whereKey($participant)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($participant->current_points < $points) {
-                throw new InvalidArgumentException('De deelnemer heeft niet genoeg punten.');
-            }
-
-            $history = ParticipantPointsHistory::create([
-                'participant_id' => $participant->id,
-                'amount' => -$points,
-                'reason' => $reason,
-                'source_type' => null,
-                'source_id' => null,
-            ]);
-
-            $participant->decrement('current_points', $points);
-            $participant->refresh();
-
-            return $history;
-        });
+        return ($this->adjustParticipantPoints)($participant, -$points, $reason);
     }
 }

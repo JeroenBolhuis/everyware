@@ -13,7 +13,6 @@ it('does not render duplicate in-page admin navigation', function () {
     $pages = [
         route('admin.surveys.index'),
         route('admin.users.index'),
-        route('admin.participants.index'),
         route('admin.participants.mail'),
     ];
 
@@ -43,5 +42,26 @@ it('renders a consistent page heading on admin index pages', function () {
     get(route('admin.participants.index'))
         ->assertOk()
         ->assertSee('id="admin-participants-page-title"', false)
-        ->assertSee('Bekijk deelnemers, hun puntensaldo', false);
+        ->assertSee('Zoek op volgnummer om inzendingen', false);
+
+    get(route('admin.participants.points'))
+        ->assertOk()
+        ->assertSee('id="admin-participant-points-page-title"', false)
+        ->assertSee('Pas punten aan via e-mail', false);
+});
+
+it('renders participant section navigation on participant pages', function () {
+    $admin = User::factory()->admin()->createOne();
+
+    actingAs($admin);
+
+    get(route('admin.participants.index'))
+        ->assertOk()
+        ->assertSee('Overzicht')
+        ->assertSee('Punten aanpassen');
+
+    get(route('admin.participants.points'))
+        ->assertOk()
+        ->assertSee('Overzicht')
+        ->assertSee('Punten aanpassen');
 });

@@ -18,16 +18,29 @@ it('lets admins deduct points from a participant', function () {
 
     get(route('admin.participants.index'))
         ->assertSuccessful()
-        ->assertSee('jamie@example.com');
+        ->assertDontSee('jamie@example.com')
+        ->assertDontSee('Punten aanpassen via e-mail')
+        ->assertSee('Overzicht');
+
+    get(route('admin.participants.points'))
+        ->assertSuccessful()
+        ->assertDontSee($participant->public_code)
+        ->assertSee('Punten aanpassen');
 
     get(route('admin.participants.show', $participant))
         ->assertSuccessful()
-        ->assertSee('jamie@example.com');
+        ->assertDontSee('jamie@example.com')
+        ->assertSee($participant->public_code);
 
-    Livewire::test('pages::admin.participants.show', ['participant' => $participant])
-        ->set('pointsToDeduct', 5)
+    Livewire::test('pages::admin.participants.points')
+        ->set('emailSearch', 'jamie@example.com')
+        ->call('findParticipantByEmail')
+        ->assertSet('emailParticipantId', $participant->id)
+        ->assertDontSee($participant->public_code)
+        ->set('mutationType', 'deduct')
+        ->set('pointsAmount', 5)
         ->set('reason', 'Extern beloning ingeleverd')
-        ->call('deductPoints')
+        ->call('adjustEmailParticipantPoints')
         ->assertHasNoErrors();
 
     expect($participant->fresh()->current_points)->toBe(7);
@@ -51,18 +64,23 @@ it('lets lic employees view participants and deduct points', function () {
 
     get(route('admin.participants.index'))
         ->assertSuccessful()
-        ->assertSee("#{$participant->id}")
+        ->assertSee($participant->public_code)
         ->assertDontSee('sam@example.com');
 
     get(route('admin.participants.show', $participant))
         ->assertSuccessful()
-        ->assertSee("#{$participant->id}")
+        ->assertSee($participant->public_code)
         ->assertDontSee('sam@example.com');
 
-    Livewire::test('pages::admin.participants.show', ['participant' => $participant])
-        ->set('pointsToDeduct', 4)
+    Livewire::test('pages::admin.participants.points')
+        ->set('emailSearch', 'sam@example.com')
+        ->call('findParticipantByEmail')
+        ->assertSet('emailParticipantId', $participant->id)
+        ->assertDontSee($participant->public_code)
+        ->set('mutationType', 'deduct')
+        ->set('pointsAmount', 4)
         ->set('reason', 'Lunchbon ingeleverd')
-        ->call('deductPoints')
+        ->call('adjustEmailParticipantPoints')
         ->assertHasNoErrors();
 
     expect($participant->fresh()->current_points)->toBe(6);
@@ -81,6 +99,7 @@ it('keeps regular users from deducting participant points', function () {
     actingAs($user);
 
     get(route('admin.participants.index'))->assertForbidden();
+    get(route('admin.participants.points'))->assertForbidden();
 
     Livewire::test('pages::admin.participants.show', ['participant' => $participant])
         ->assertForbidden();
@@ -94,12 +113,14 @@ it('validates the deduction form', function () {
 
     actingAs($admin);
 
-    Livewire::test('pages::admin.participants.show', ['participant' => $participant])
-        ->set('pointsToDeduct', 0)
+    Livewire::test('pages::admin.participants.points')
+        ->set('emailSearch', 'jamie@example.com')
+        ->call('findParticipantByEmail')
+        ->set('pointsAmount', 0)
         ->set('reason', '')
-        ->call('deductPoints')
+        ->call('adjustEmailParticipantPoints')
         ->assertHasErrors([
-            'pointsToDeduct' => 'min',
+            'pointsAmount' => 'min',
             'reason' => 'required',
         ]);
 
@@ -113,11 +134,43 @@ it('does not let admins deduct more points than the participant has', function (
 
     actingAs($admin);
 
-    Livewire::test('pages::admin.participants.show', ['participant' => $participant])
-        ->set('pointsToDeduct', 4)
+    Livewire::test('pages::admin.participants.points')
+        ->set('emailSearch', 'jamie@example.com')
+        ->call('findParticipantByEmail')
+        ->set('mutationType', 'deduct')
+        ->set('pointsAmount', 4)
         ->set('reason', 'Te veel punten')
-        ->call('deductPoints')
-        ->assertHasErrors(['pointsToDeduct']);
+        ->call('adjustEmailParticipantPoints')
+        ->assertHasErrors(['pointsAmount']);
 
     expect($participant->fresh()->current_points)->toBe(3);
+});
+
+it('lets employees add points from an email lookup without showing the public code', function () {
+    $employee = User::factory()->licEmployee()->createOne();
+    $participant = Participant::factory()->withEmail('sam@example.com')->createOne();
+
+    $participant->forceFill(['current_points' => 2])->save();
+
+    actingAs($employee);
+
+    Livewire::test('pages::admin.participants.points')
+        ->set('emailSearch', 'sam@example.com')
+        ->call('findParticipantByEmail')
+        ->assertSet('emailParticipantId', $participant->id)
+        ->assertSee('Huidige punten')
+        ->assertDontSee($participant->public_code)
+        ->set('mutationType', 'add')
+        ->set('pointsAmount', 3)
+        ->set('reason', 'Correctie')
+        ->call('adjustEmailParticipantPoints')
+        ->assertHasNoErrors();
+
+    expect($participant->fresh()->current_points)->toBe(5);
+
+    assertDatabaseHas('participant_points_history', [
+        'participant_id' => $participant->id,
+        'amount' => 3,
+        'reason' => 'Correctie',
+    ]);
 });

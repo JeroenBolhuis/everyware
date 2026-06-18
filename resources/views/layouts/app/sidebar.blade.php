@@ -56,7 +56,7 @@
                             <flux:sidebar.item
                                 icon="academic-cap"
                                 :href="route('admin.participants.index')"
-                                :current="request()->routeIs('admin.participants.index') || request()->routeIs('admin.participants.show')"
+                                :current="request()->routeIs('admin.participants.index') || request()->routeIs('admin.participants.show') || request()->routeIs('admin.participants.points')"
                                 wire:navigate
                             >
                                 {{ __('Deelnemers') }}

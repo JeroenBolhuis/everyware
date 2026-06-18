@@ -13,6 +13,7 @@ Route::middleware(['auth', 'verified'])
             Route::livewire('surveys/{survey}', 'pages::admin.surveys.show')->name('surveys.show');
             Route::livewire('responses/{response}', 'pages::admin.responses.show')->name('responses.show');
             Route::livewire('participants', 'pages::admin.participants.index')->name('participants.index');
+            Route::livewire('participants/points', 'pages::admin.participants.points')->name('participants.points');
             Route::livewire('participants/mail', 'pages::admin.participants.mail')
                 ->middleware('role:admin')
                 ->name('participants.mail');
