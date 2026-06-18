@@ -57,7 +57,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                 <flux:table.columns>
                     <flux:table.column>{{ __('Inzending') }}</flux:table.column>
                     <flux:table.column>{{ __('Ingestuurd') }}</flux:table.column>
-                    <flux:table.column>{{ __('Contactgegevens') }}</flux:table.column>
+                    <flux:table.column>{{ __('Contactstatus') }}</flux:table.column>
                     <flux:table.column align="end">{{ __('Acties') }}</flux:table.column>
                 </flux:table.columns>
 
@@ -68,15 +68,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                             <flux:table.cell>{{ $response->submitted_at?->format('d-m-Y H:i') ?? '—' }}</flux:table.cell>
                             <flux:table.cell>
                                 @if ($response->hasSharedContactDetails() && $response->contactInformationSubmission)
-                                    <div class="space-y-0.5">
-                                        <flux:badge color="emerald" size="sm">{{ __('Gedeeld') }}</flux:badge>
-                                        @if ($response->contactInformationSubmission->name)
-                                            <flux:text size="sm" class="text-zinc-700 dark:text-zinc-300">{{ $response->contactInformationSubmission->name }}</flux:text>
-                                        @endif
-                                        @if ($response->contactInformationSubmission->email)
-                                            <flux:text size="sm" class="text-zinc-500 dark:text-zinc-400">{{ $response->contactInformationSubmission->email }}</flux:text>
-                                        @endif
-                                    </div>
+                                    <flux:badge color="emerald" size="sm">{{ __('Gedeeld') }}</flux:badge>
                                 @else
                                     <flux:badge color="zinc" size="sm">{{ __('Niet gedeeld') }}</flux:badge>
                                 @endif

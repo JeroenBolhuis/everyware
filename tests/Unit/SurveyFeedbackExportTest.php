@@ -7,7 +7,6 @@ use App\Models\Survey;
 use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
-use App\Services\ParticipantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -15,7 +14,7 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 it('reports supported formats and generated file names', function () {
-    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook, app(ParticipantService::class));
+    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook);
     $survey = new Survey(['title' => 'LIC feedback ronde']);
 
     expect($export->supports('xlsx'))->toBeTrue()
@@ -29,7 +28,7 @@ it('reports supported formats and generated file names', function () {
 });
 
 it('builds csv exports with personal data and visible responses only', function () {
-    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook, app(ParticipantService::class));
+    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook);
     $survey = Survey::factory()->createOne(['title' => 'Tevredenheid']);
     $firstQuestion = SurveyQuestion::factory()->createOne([
         'survey_id' => $survey->id,
@@ -81,14 +80,15 @@ it('builds csv exports with personal data and visible responses only', function 
     expect($csv)->toStartWith("\xEF\xBB\xBF")
         ->and($csv)->toContain('"Inzending ID";')
         ->and($csv)->toContain('"Nog opmerkingen?";"Hoe ging het?"')
-        ->and($csv)->toContain('student@example.com')
+        ->and($csv)->toContain($participant->public_code)
+        ->and($csv)->not->toContain('student@example.com')
         ->and($csv)->toContain('-;Goed')
         ->and($csv)->not->toContain('blocked@example.com')
         ->and($csv)->not->toContain('Verborgen');
 });
 
 it('builds anonymized csv exports', function () {
-    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook, app(ParticipantService::class));
+    $export = new BuildSurveyFeedbackExport(new BuildSurveyFeedbackWorkbook);
     $survey = Survey::factory()->createOne();
     SurveyQuestion::factory()->createOne([
         'survey_id' => $survey->id,
@@ -111,8 +111,9 @@ it('builds anonymized csv exports', function () {
 
     $csv = $export->build($survey, 'csv', includePersonalData: false);
 
-    expect($csv)->toContain('Contactgegevens')
-        ->and($csv)->toContain('Ingetrokken;Anoniem;-')
+    expect($csv)->toContain('Volgnummer')
+        ->and($csv)->toContain($response->participant->public_code)
+        ->and($csv)->toContain('Ingetrokken')
         ->and($csv)->not->toContain('student@example.com');
 });
 

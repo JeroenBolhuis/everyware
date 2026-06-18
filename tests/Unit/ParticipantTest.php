@@ -35,8 +35,9 @@ it('uses a pseudonym as participant display name', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $participant = Participant::factory()->withEmail('jamie@example.com')->createOne();
 
-    expect($participant->displayNameFor($admin))->toBe("#{$participant->id}")
-        ->and($participant->displayEmailFor($admin))->toBe('jamie@example.com')
-        ->and($participant->displayNameFor($employee))->toBe("#{$participant->id}")
+    expect($participant->public_code)->toHaveLength(8)
+        ->and($participant->displayNameFor($admin))->toBe($participant->public_code)
+        ->and($participant->displayEmailFor($admin))->toBe('Afgeschermd')
+        ->and($participant->displayNameFor($employee))->toBe($participant->public_code)
         ->and($participant->displayEmailFor($employee))->toBe('Afgeschermd');
 });

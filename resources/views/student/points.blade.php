@@ -7,9 +7,6 @@
                         <div>
                             <p class="text-sm font-semibold uppercase tracking-wide text-red-700">Studentpunten</p>
                             <h1 class="mt-1 text-2xl font-bold text-gray-950 sm:text-3xl">Jouw overzicht</h1>
-                            <p class="mt-2 text-sm text-gray-600">
-                                Ingelogd als {{ $participant->email }}.
-                            </p>
                         </div>
 
                         <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950">

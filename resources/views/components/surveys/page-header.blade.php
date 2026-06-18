@@ -17,15 +17,14 @@
                     aria-label="Studentmenu"
                 >
                     <span class="grid size-7 place-items-center rounded-full bg-red-50 text-xs font-bold text-red-700">
-                        {{ str(auth('participant')->user()->email)->substr(0, 1)->upper() }}
+                        S
                     </span>
-                    <span class="hidden max-w-36 truncate sm:block">{{ auth('participant')->user()->email }}</span>
+                    <span class="hidden max-w-36 truncate sm:block">Student</span>
                 </summary>
 
                 <div class="absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-lg">
                     <div class="border-b border-zinc-100 px-4 py-3">
                         <p class="text-xs font-medium uppercase tracking-wide text-zinc-500">Ingelogd als student</p>
-                        <p class="mt-1 truncate text-sm text-zinc-700">{{ auth('participant')->user()->email }}</p>
                     </div>
 
                     <a href="{{ route('student.points') }}" class="block px-4 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50">

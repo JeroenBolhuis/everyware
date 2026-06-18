@@ -3,7 +3,6 @@
 namespace App\Actions\Surveys;
 
 use App\Models\Survey;
-use App\Services\ParticipantService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -21,28 +20,18 @@ class BuildSurveyFeedbackExport
         'Inzending ID',
         'Ingestuurd op',
         'Status',
-        'E-mail',
+        'Volgnummer',
     ];
 
-    private const BASE_WIDTHS = [70, 110, 90, 180];
-
-    private const ANONYMOUS_BASE_HEADERS = [
-        'Inzending ID',
-        'Ingestuurd op',
-        'Status',
-        'Contactgegevens',
-    ];
-
-    private const ANONYMOUS_BASE_WIDTHS = [70, 110, 90, 130];
+    private const BASE_WIDTHS = [70, 110, 90, 100];
 
     public function __construct(
         private readonly BuildSurveyFeedbackWorkbook $buildSurveyFeedbackWorkbook,
-        private readonly ParticipantService $participantService,
     ) {}
 
     public function build(Survey $survey, string $format = 'xlsx', bool $includePersonalData = true): string
     {
-        $data = $this->data($survey, $includePersonalData);
+        $data = $this->data($survey);
 
         return $format === 'csv' ? $this->csv($data) : $this->buildSurveyFeedbackWorkbook->build($data);
     }
@@ -64,7 +53,7 @@ class BuildSurveyFeedbackExport
         return isset(self::FORMATS[$format]);
     }
 
-    private function data(Survey $survey, bool $includePersonalData): array
+    private function data(Survey $survey): array
     {
         // Laad alles vooraf zodat de export per survey een vaste kolomvolgorde en complete response-data heeft.
         $survey->loadMissing([
@@ -78,33 +67,23 @@ class BuildSurveyFeedbackExport
 
         return [
             'sheet' => $this->buildSurveyFeedbackWorkbook->sheetName($survey->title),
-            'headers' => [...$this->baseHeaders($includePersonalData), ...$questions->pluck('question')->all()],
-            'widths' => [...$this->baseWidths($includePersonalData), ...array_fill(0, $questions->count(), 260)],
-            'rows' => $this->rows($survey, $questions, $includePersonalData),
+            'headers' => [...self::BASE_HEADERS, ...$questions->pluck('question')->all()],
+            'widths' => [...self::BASE_WIDTHS, ...array_fill(0, $questions->count(), 260)],
+            'rows' => $this->rows($survey, $questions),
         ];
     }
 
-    private function rows(Survey $survey, Collection $questions, bool $includePersonalData): array
+    private function rows(Survey $survey, Collection $questions): array
     {
         return $survey->responses
             ->sortByDesc(fn ($response) => $response->submitted_at?->getTimestamp() ?? 0)
-            ->map(function ($response) use ($questions, $includePersonalData) {
+            ->map(function ($response) use ($questions) {
                 $answers = $response->answers->pluck('answer', 'survey_question_id');
-                $baseColumns = $includePersonalData ? [
+                $baseColumns = [
                     (string) $response->id,
                     $response->submitted_at?->format('d-m-Y H:i') ?? self::EMPTY_VALUE,
                     $response->withdrawn_at ? 'Ingetrokken' : 'Actief',
-                    // Email is retrieved from the personal DB via the service — never stored in feedback DB.
-                    $response->is_anonymous
-                        ? self::EMPTY_VALUE
-                        : $this->cellValue($response->participant_id !== null
-                            ? $this->participantService->emailForParticipant($response->participant_id)
-                            : null),
-                ] : [
-                    (string) $response->id,
-                    $response->submitted_at?->format('d-m-Y H:i') ?? self::EMPTY_VALUE,
-                    $response->withdrawn_at ? 'Ingetrokken' : 'Actief',
-                    $response->is_anonymous ? 'Anoniem' : 'Niet anoniem',
+                    $this->cellValue($response->participant?->pseudonym()),
                 ];
 
                 return [
@@ -114,16 +93,6 @@ class BuildSurveyFeedbackExport
             })
             ->values()
             ->all();
-    }
-
-    private function baseHeaders(bool $includePersonalData): array
-    {
-        return $includePersonalData ? self::BASE_HEADERS : self::ANONYMOUS_BASE_HEADERS;
-    }
-
-    private function baseWidths(bool $includePersonalData): array
-    {
-        return $includePersonalData ? self::BASE_WIDTHS : self::ANONYMOUS_BASE_WIDTHS;
     }
 
     private function cellValue(mixed $value): string

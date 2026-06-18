@@ -93,7 +93,7 @@ it('exports all feedback for a survey as an xlsx file', function () {
     $employee = User::factory()->admin()->createOne();
     $survey = createExportableSurvey();
 
-    addSurveyResponseWithAnswers(
+    $identifiedResponse = addSurveyResponseWithAnswers(
         $survey,
         [
             'De docent legde de stof helder uit.',
@@ -133,9 +133,11 @@ it('exports all feedback for a survey as an xlsx file', function () {
     expect($xlsx['sheet'])
         ->toContain('<autoFilter ref="A1:F3"/>')
         ->toContain('Inzending ID')
+        ->toContain('Volgnummer')
         ->toContain('Wat ging er goed?')
         ->toContain('Wat kan beter?')
-        ->toContain('sam@example.com')
+        ->toContain($identifiedResponse->participant->public_code)
+        ->not->toContain('sam@example.com')
         ->toContain('De docent legde de stof helder uit.')
         ->toContain('Meer praktijkvoorbeelden toevoegen.')
         ->toContain('Fijn tempo tijdens de les.');
@@ -153,7 +155,7 @@ it('exports all feedback for a survey as a csv file', function () {
     $employee = User::factory()->admin()->createOne();
     $survey = createExportableSurvey();
 
-    addSurveyResponseWithAnswers(
+    $responseWithParticipant = addSurveyResponseWithAnswers(
         $survey,
         ['Sterke uitleg', 'Meer voorbeelden'],
         ['name' => 'Alex', 'email' => 'alex@example.com'],
@@ -172,9 +174,11 @@ it('exports all feedback for a survey as a csv file', function () {
 
     expect($content)
         ->toContain('Inzending ID')
+        ->toContain('Volgnummer')
         ->toContain('Wat ging er goed?')
         ->toContain('Wat kan beter?')
-        ->toContain('alex@example.com')
+        ->toContain($responseWithParticipant->participant->public_code)
+        ->not->toContain('alex@example.com')
         ->toContain('Sterke uitleg')
         ->toContain('Meer voorbeelden');
 });
@@ -208,16 +212,16 @@ it('does not expose participant email for anonymous responses in exports', funct
     $response->assertOk();
 
     expect($response->getContent())
-        ->toContain('Contactgegevens')
+        ->toContain('Volgnummer')
         ->toContain('Sterke uitleg')
         ->not->toContain('alex@example.com');
 });
 
-it('does not expose participant email to lic employees in exports', function () {
+it('does not expose participant email in exports', function () {
     $employee = User::factory()->licEmployee()->createOne();
     $survey = createExportableSurvey();
 
-    addSurveyResponseWithAnswers(
+    $responseWithParticipant = addSurveyResponseWithAnswers(
         $survey,
         ['Sterke uitleg', 'Meer voorbeelden'],
         ['email' => 'alex@example.com'],
@@ -228,8 +232,8 @@ it('does not expose participant email to lic employees in exports', function () 
     $response->assertOk();
 
     expect($response->getContent())
-        ->toContain('Contactgegevens')
-        ->toContain('Niet anoniem')
+        ->toContain('Volgnummer')
+        ->toContain($responseWithParticipant->participant->public_code)
         ->toContain('Sterke uitleg')
         ->not->toContain('E-mail')
         ->not->toContain('alex@example.com');

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Services\ParticipantService;
 use Database\Factories\ParticipantFactory;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
@@ -37,6 +36,17 @@ class Participant extends Model implements AuthenticatableContract
         'onboarded_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (Participant $participant): void {
+            if (filled($participant->public_code)) {
+                return;
+            }
+
+            $participant->public_code = self::generatePublicCode();
+        });
+    }
+
     /**
      * Participants never use a password; access is only via signed magic links.
      */
@@ -67,7 +77,7 @@ class Participant extends Model implements AuthenticatableContract
 
     public function pseudonym(): string
     {
-        return __('#:id', ['id' => $this->id]);
+        return $this->public_code ?? __('Onbekend');
     }
 
     /**
@@ -80,18 +90,10 @@ class Participant extends Model implements AuthenticatableContract
     }
 
     /**
-     * Returns a display email for admin users, fetched via the personal DB service.
-     * For non-admins always returns a masked placeholder.
+     * Participant emails are intentionally never displayed in internal UI.
      */
     public function displayEmailFor(?User $user): string
     {
-        if ($user?->isAdmin()) {
-            /** @var ParticipantService $service */
-            $service = app(ParticipantService::class);
-
-            return $service->emailForAdmin($user, $this->id) ?? __('Onbekend');
-        }
-
         return __('Afgeschermd');
     }
 
@@ -117,5 +119,14 @@ class Participant extends Model implements AuthenticatableContract
         $this->forceFill([
             'blocked_at' => now(),
         ])->save();
+    }
+
+    private static function generatePublicCode(): string
+    {
+        do {
+            $code = (string) random_int(10_000_000, 99_999_999);
+        } while (self::query()->where('public_code', $code)->exists());
+
+        return $code;
     }
 }
