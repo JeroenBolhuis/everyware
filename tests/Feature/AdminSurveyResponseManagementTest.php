@@ -1,10 +1,12 @@
 <?php
 
+use App\Mail\AdminParticipantMessageMail;
 use App\Models\Participant;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -82,10 +84,11 @@ it('lets lic employees open the survey response overview', function () {
         ->assertSee($survey->title);
 });
 
-it('shows participant email to admins for non anonymous responses', function () {
+it('shows participant public code for non anonymous responses without email', function () {
     $admin = User::factory()->admin()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
+    $participant = participantByEmail('jamie@example.com');
 
     $response->forceFill(['is_anonymous' => false])->save();
 
@@ -93,7 +96,8 @@ it('shows participant email to admins for non anonymous responses', function () 
 
     get(route('admin.responses.show', $response))
         ->assertOk()
-        ->assertSee('jamie@example.com')
+        ->assertSee($participant->public_code)
+        ->assertDontSee('jamie@example.com')
         ->assertSee('Very helpful and practical.');
 });
 
@@ -106,7 +110,8 @@ it('shows when no contact information was provided', function () {
 
     get(route('admin.responses.show', $response))
         ->assertOk()
-        ->assertSee('Deze inzending is anoniem. De deelnemer en het e-mailadres worden niet getoond.');
+        ->assertSee($response->participant->public_code)
+        ->assertDontSee('jamie@example.com');
 });
 it('hides participant email from lic employees for non anonymous responses', function () {
     $employee = User::factory()->licEmployee()->createOne();
@@ -122,8 +127,58 @@ it('hides participant email from lic employees for non anonymous responses', fun
         ->assertDontSee('Jamie Jansen')
         ->assertDontSee('+31612345678')
         ->assertDontSee('jamie@example.com')
-        ->assertSee('Je hebt geen rechten om deze persoonsgegevens te bekijken.')
+        ->assertSee($response->participant->public_code)
         ->assertSee('Very helpful and practical.');
+});
+
+it('lets lic employees mail a non anonymous respondent from the response page without seeing the email', function () {
+    Mail::fake();
+
+    $employee = User::factory()->licEmployee()->createOne();
+    $survey = createReviewableSurvey();
+    $response = createReviewableResponse($survey);
+
+    $response->forceFill(['is_anonymous' => false])->save();
+
+    actingAs($employee);
+
+    get(route('admin.responses.show', $response))
+        ->assertOk()
+        ->assertSee('Niet anoniem')
+        ->assertSee('Student mailen')
+        ->assertDontSee('jamie@example.com');
+
+    Livewire::test('pages::admin.responses.show', ['response' => $response])
+        ->set('mailSubject', 'Vraag over je inzending')
+        ->set('mailMessage', 'Kun je contact opnemen?')
+        ->call('sendRespondentMessage')
+        ->assertHasNoErrors();
+
+    Mail::assertSent(AdminParticipantMessageMail::class, function (AdminParticipantMessageMail $mail) {
+        return $mail->hasTo('jamie@example.com')
+            && $mail->subjectLine === 'Vraag over je inzending'
+            && $mail->messageBody === 'Kun je contact opnemen?';
+    });
+});
+
+it('does not allow mailing anonymous respondents from the response page', function () {
+    Mail::fake();
+
+    $employee = User::factory()->licEmployee()->createOne();
+    $survey = createReviewableSurvey();
+    $response = createReviewableResponse($survey);
+
+    $response->forceFill(['is_anonymous' => true])->save();
+
+    actingAs($employee);
+
+    get(route('admin.responses.show', $response))
+        ->assertOk()
+        ->assertSee('Anoniem')
+        ->assertDontSee('Student mailen')
+        ->assertDontSee('jamie@example.com');
+
+    Mail::assertNothingSent();
 });
 it('lets lic employees delete a full submission and shows a success message', function () {
     $employee = User::factory()->licEmployee()->createOne();
@@ -179,7 +234,7 @@ it('lets lic employees delete a full submission and shows a success message', fu
         ->assertSee('De inzending is succesvol verwijderd.');
 });
 
-it('lets admins block an email address and delete the current submission', function () {
+it('lets admins block a participant by public code without deleting the current submission', function () {
     $admin = User::factory()->admin()->createOne();
     $survey = createReviewableSurvey();
     $response = createReviewableResponse($survey);
@@ -190,21 +245,15 @@ it('lets admins block an email address and delete the current submission', funct
 
     get(route('admin.responses.show', $response))
         ->assertOk()
-        ->assertSee('E-mailadres blokkeren')
-        ->assertSee('Blokkeren en verwijderen');
+        ->assertSee('Deelnemer blokkeren')
+        ->assertSee('Blokkeren');
 
     Livewire::test('pages::admin.responses.show', ['response' => $response])
         ->call('blockRespondent')
-        ->assertRedirect(route('admin.surveys.show', $survey));
+        ->assertHasNoErrors();
 
-    expect(session('status'))->toBe('De inzending is verwijderd en het e-mailadres is geblokkeerd.');
-
-    assertDatabaseMissing('survey_responses', [
-        'id' => $response->id,
-    ]);
-
-    // Email lives in the personal DB — verify the participant record is blocked.
     expect(participantByEmail('jamie@example.com')?->blocked_at)->not->toBeNull();
+    expect($response->fresh())->not->toBeNull();
 });
 it('hides the email block action from lic employees for non anonymous responses', function () {
     $employee = User::factory()->licEmployee()->createOne();
@@ -217,10 +266,12 @@ it('hides the email block action from lic employees for non anonymous responses'
 
     get(route('admin.responses.show', $response))
         ->assertOk()
-        ->assertDontSee('E-mailadres blokkeren')
-        ->assertDontSee('Blokkeren en verwijderen');
+        ->assertSee('Deelnemer blokkeren')
+        ->assertDontSee('E-mailadres blokkeren');
 
     Livewire::test('pages::admin.responses.show', ['response' => $response])
         ->call('blockRespondent')
-        ->assertForbidden();
+        ->assertHasNoErrors();
+
+    expect(participantByEmail('jamie@example.com')?->blocked_at)->not->toBeNull();
 });

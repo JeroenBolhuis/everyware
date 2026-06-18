@@ -1,24 +1,25 @@
 <?php
 
 use App\Actions\Surveys\DeleteSurveySubmission;
-use App\Models\Participant;
+use App\Mail\AdminParticipantMessageMail;
 use App\Models\SurveyResponse;
+use App\Models\User;
 use App\Services\ParticipantService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Enquete-inzending')] class extends Component {
     public SurveyResponse $response;
-    public ?string $respondentEmail = null;
     public bool $respondentIsBlocked = false;
-    public bool $canViewPersonalData = false;
+    public string $mailSubject = '';
+    public string $mailMessage = '';
 
     public function mount(): void
     {
         $this->authorize('view', $this->response);
-        $this->canViewPersonalData = auth()->user()?->isAdmin() === true;
         $this->refreshResponse();
     }
 
@@ -42,25 +43,53 @@ new #[Title('Enquete-inzending')] class extends Component {
     {
         $this->authorize('delete', $this->response);
 
-        abort_unless($this->canViewPersonalData, 403);
-
-        if ($this->respondentEmail === null) {
+        if ($this->response->participant === null) {
             return;
         }
 
-        $survey = $this->response->survey;
-        $deleteSurveySubmission = app(DeleteSurveySubmission::class);
+        $this->response->participant->block();
 
-        DB::transaction(function () use ($deleteSurveySubmission): void {
-            /** @var ParticipantService $service */
-            $service = app(ParticipantService::class);
-            $service->blockByEmail($this->respondentEmail);
-            $deleteSurveySubmission->handle($this->response);
-        });
+        Session::flash('status', __('De deelnemer is geblokkeerd.'));
 
-        Session::flash('status', __('De inzending is verwijderd en het e-mailadres is geblokkeerd.'));
+        $this->refreshResponse();
+    }
 
-        $this->redirect(route('admin.surveys.show', $survey));
+    public function sendRespondentMessage(ParticipantService $participantService): void
+    {
+        $this->authorize('view', $this->response);
+
+        if ($this->response->participant_id === null || $this->response->is_anonymous) {
+            abort(404);
+        }
+
+        $validated = $this->validate([
+            'mailSubject' => ['required', 'string', 'max:255'],
+            'mailMessage' => ['required', 'string', 'max:5000'],
+        ], [
+            'mailSubject.required' => 'Vul een onderwerp in.',
+            'mailMessage.required' => 'Vul een bericht in.',
+        ]);
+
+        /** @var User $user */
+        $user = auth()->user();
+        $email = $participantService->emailForParticipantMessage($user, $this->response->participant_id);
+
+        if ($email === null) {
+            $this->addError('mailSubject', __('Er is geen e-mailadres beschikbaar voor deze deelnemer.'));
+
+            return;
+        }
+
+        Mail::to($email)->send(new AdminParticipantMessageMail(
+            $validated['mailSubject'],
+            $validated['mailMessage'],
+            null,
+            $this->response->survey?->title,
+        ));
+
+        $this->reset('mailSubject', 'mailMessage');
+
+        Session::flash('status', __('Bericht succesvol verstuurd.'));
     }
 
     protected function refreshResponse(): void
@@ -68,25 +97,7 @@ new #[Title('Enquete-inzending')] class extends Component {
         $this->response->refresh();
         $this->response->load('survey', 'answers.question', 'participant');
 
-        if (! $this->canViewPersonalData || $this->response->is_anonymous) {
-            $this->respondentEmail = null;
-            $this->respondentIsBlocked = false;
-
-            return;
-        }
-
-        // Email is retrieved from the personal DB via the service — never from the feedback DB.
-        /** @var ParticipantService $service */
-        $service = app(ParticipantService::class);
-        $user = auth()->user();
-        abort_unless($user instanceof \App\Models\User, 403);
-
-        $this->respondentEmail = $this->response->participant_id !== null
-            ? $service->emailForAdmin($user, $this->response->participant_id)
-            : null;
-
-        $this->respondentIsBlocked = $this->respondentEmail !== null
-            && $service->isEmailBlocked($this->respondentEmail);
+        $this->respondentIsBlocked = $this->response->participant?->isBlocked() ?? false;
     }
 }; ?>
 
@@ -97,6 +108,12 @@ new #[Title('Enquete-inzending')] class extends Component {
         heading-id="admin-response-show-page-title"
     >
         <div class="space-y-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
+            @if (session('status'))
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200" role="status" aria-live="polite">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <flux:button
                     variant="ghost"
@@ -108,14 +125,26 @@ new #[Title('Enquete-inzending')] class extends Component {
                 </flux:button>
 
                 <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                    @if ($canViewPersonalData && $respondentEmail !== null && ! $respondentIsBlocked)
+                    @if ($response->participant !== null && ! $response->is_anonymous)
+                        <flux:modal.trigger name="mail-response-participant">
+                            <flux:button
+                                variant="ghost"
+                                type="button"
+                                icon="envelope"
+                            >
+                                {{ __('Student mailen') }}
+                            </flux:button>
+                        </flux:modal.trigger>
+                    @endif
+
+                    @if ($response->participant !== null && ! $respondentIsBlocked)
                         <flux:modal.trigger name="confirm-respondent-blocking">
                             <flux:button
                                 variant="danger"
                                 type="button"
                                 icon="no-symbol"
                             >
-                                {{ __('E-mailadres blokkeren') }}
+                                {{ __('Deelnemer blokkeren') }}
                             </flux:button>
                         </flux:modal.trigger>
                     @endif
@@ -134,23 +163,23 @@ new #[Title('Enquete-inzending')] class extends Component {
 
             @if ($respondentIsBlocked)
                 <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-950 dark:border-rose-800/70 dark:bg-rose-950/30 dark:text-rose-100">
-                    {{ __('Dit e-mailadres is geblokkeerd. Nieuwe inzendingen met dit e-mailadres worden automatisch verwijderd.') }}
+                    {{ __('Deze deelnemer is geblokkeerd. Nieuwe inzendingen van dit volgnummer worden niet meegenomen in resultaten.') }}
                 </div>
             @endif
 
-            @if ($canViewPersonalData && $respondentEmail !== null && ! $respondentIsBlocked)
+            @if ($response->participant !== null && ! $respondentIsBlocked)
                 <flux:modal name="confirm-respondent-blocking" class="max-w-lg">
                     <div class="space-y-6">
                         <div>
-                            <flux:heading size="lg">{{ __('E-mailadres blokkeren?') }}</flux:heading>
+                            <flux:heading size="lg">{{ __('Deelnemer blokkeren?') }}</flux:heading>
 
                             <flux:subheading class="mt-2">
-                                {{ __('Dit blokkeert :email voor toekomstige enquête-inzendingen en verwijdert deze huidige inzending direct.', ['email' => $respondentEmail]) }}
+                                {{ __('Dit blokkeert volgnummer :code voor toekomstige enquête-inzendingen.', ['code' => $response->participant->displayNameFor(auth()->user())]) }}
                             </flux:subheading>
                         </div>
 
                         <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-800/70 dark:bg-amber-950/30 dark:text-amber-100">
-                            {{ __('Gebruik dit alleen wanneer je wilt voorkomen dat deze persoon opnieuw enquêtes kan insturen met hetzelfde e-mailadres.') }}
+                            {{ __('Gebruik dit alleen wanneer je wilt voorkomen dat deze deelnemer opnieuw enquêtes kan insturen.') }}
                         </div>
 
                         <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -168,10 +197,47 @@ new #[Title('Enquete-inzending')] class extends Component {
                                 wire:loading.attr="disabled"
                                 wire:target="blockRespondent"
                             >
-                                {{ __('Blokkeren en verwijderen') }}
+                                {{ __('Blokkeren') }}
                             </flux:button>
                         </div>
                     </div>
+                </flux:modal>
+            @endif
+
+            @if ($response->participant !== null && ! $response->is_anonymous)
+                <flux:modal name="mail-response-participant" class="max-w-xl">
+                    <form wire:submit="sendRespondentMessage" class="space-y-6">
+                        <div>
+                            <flux:heading size="lg">{{ __('Student mailen') }}</flux:heading>
+                            <flux:subheading class="mt-2">
+                                {{ __('Dit bericht wordt via het systeem verstuurd. Het e-mailadres wordt niet getoond.') }}
+                            </flux:subheading>
+                        </div>
+
+                        <flux:field>
+                            <flux:label>{{ __('Onderwerp') }}</flux:label>
+                            <flux:input wire:model="mailSubject" />
+                            <flux:error name="mailSubject" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>{{ __('Bericht') }}</flux:label>
+                            <flux:textarea wire:model="mailMessage" rows="5" />
+                            <flux:error name="mailMessage" />
+                        </flux:field>
+
+                        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                            <flux:modal.close>
+                                <flux:button variant="ghost" type="button">
+                                    {{ __('Annuleren') }}
+                                </flux:button>
+                            </flux:modal.close>
+
+                            <flux:button type="submit" variant="primary" icon="envelope" wire:loading.attr="disabled" wire:target="sendRespondentMessage">
+                                {{ __('Versturen') }}
+                            </flux:button>
+                        </div>
+                    </form>
                 </flux:modal>
             @endif
 
@@ -223,26 +289,26 @@ new #[Title('Enquete-inzending')] class extends Component {
                             <dt class="font-medium text-zinc-500">{{ __('Intrekkingsstatus') }}</dt>
                             <dd>{{ $response->withdrawn_at ? __('Ingetrokken') : __('Actief') }}</dd>
                         </div>
+                        <div>
+                            <dt class="font-medium text-zinc-500">{{ __('Type') }}</dt>
+                            <dd>{{ $response->is_anonymous ? __('Anoniem') : __('Niet anoniem') }}</dd>
+                        </div>
                     </dl>
                 </div>
 
                 <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
                     <flux:heading size="lg">{{ __('Deelnemer') }}</flux:heading>
 
-                @if (! $canViewPersonalData)
-                    <flux:text class="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
-                        {{ __('Je hebt geen rechten om deze persoonsgegevens te bekijken.') }}
-                    </flux:text>
-                @elseif (! $response->is_anonymous)
-                    <dl class="mt-4 space-y-3 text-sm">
-                        <div>
-                            <dt class="font-medium text-zinc-500">{{ __('E-mail') }}</dt>
-                            <dd>{{ $response->participant?->email ?: '—' }}</dd>
-                        </div>
-                    </dl>
-                @else
-                    <flux:text class="mt-4">{{ __('Deze inzending is anoniem. De deelnemer en het e-mailadres worden niet getoond.') }}</flux:text>
-                @endif
+                    @if ($response->participant)
+                        <dl class="mt-4 space-y-3 text-sm">
+                            <div>
+                                <dt class="font-medium text-zinc-500">{{ __('Volgnummer') }}</dt>
+                                <dd>{{ $response->participant->displayNameFor(auth()->user()) }}</dd>
+                            </div>
+                        </dl>
+                    @else
+                        <flux:text class="mt-4">{{ __('Er is geen deelnemer gekoppeld aan deze inzending.') }}</flux:text>
+                    @endif
                 </div>
             </div>
 

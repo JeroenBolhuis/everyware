@@ -1,62 +1,97 @@
 <?php
 
-use App\Actions\Participants\DeductParticipantPoints;
+use App\Mail\AdminParticipantMessageMail;
 use App\Models\Participant;
+use App\Models\SurveyResponse;
+use App\Models\User;
+use App\Services\ParticipantService;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Title;
-use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 new #[Title('Deelnemer')] class extends Component {
     public Participant $participant;
 
-    #[Validate('required|integer|min:1', message: [
-        'required' => 'Vul het aantal punten in.',
-        'integer'  => 'Het aantal punten moet een heel getal zijn.',
-        'min'      => 'Het aantal punten moet minimaal 1 zijn.',
-    ])]
-    public ?int $pointsToDeduct = null;
+    public string $mailSubject = '';
 
-    #[Validate('required|string|max:255', message: [
-        'required' => 'Geef een reden op voor de correctie.',
-        'max'      => 'De reden mag maximaal 255 tekens bevatten.',
-    ])]
-    public string $reason = '';
+    public string $mailMessage = '';
 
     public function mount(): void
     {
         $this->authorize('view', $this->participant);
+
+        $this->participant->load([
+            'surveyResponses' => fn ($query) => $query
+                ->visibleInResults()
+                ->with('survey')
+                ->latest('submitted_at'),
+        ]);
     }
 
-    public function deductPoints(DeductParticipantPoints $deductParticipantPoints): void
+    public function blockParticipant(): void
     {
-        $this->authorize('correctPoints', $this->participant);
+        $this->authorize('view', $this->participant);
 
-        $this->validate();
+        $this->participant->block();
+        $this->participant->refresh();
+        $this->participant->load([
+            'surveyResponses' => fn ($query) => $query
+                ->visibleInResults()
+                ->with('survey')
+                ->latest('submitted_at'),
+        ]);
 
-        if ($this->pointsToDeduct > $this->participant->current_points) {
-            $this->addError('pointsToDeduct', __('Je kunt niet meer punten afboeken dan de deelnemer heeft.'));
+        Session::flash('status', __('Deelnemer succesvol geblokkeerd.'));
+    }
+
+    public function sendResponseMessage(int $responseId, ParticipantService $participantService): void
+    {
+        $this->authorize('view', $this->participant);
+
+        $validated = $this->validate([
+            'mailSubject' => ['required', 'string', 'max:255'],
+            'mailMessage' => ['required', 'string', 'max:5000'],
+        ], [
+            'mailSubject.required' => 'Vul een onderwerp in.',
+            'mailMessage.required' => 'Vul een bericht in.',
+        ]);
+
+        $response = SurveyResponse::query()
+            ->whereKey($responseId)
+            ->where('participant_id', $this->participant->id)
+            ->where('is_anonymous', false)
+            ->first();
+
+        abort_unless($response instanceof SurveyResponse, 404);
+
+        /** @var User $user */
+        $user = auth()->user();
+        $email = $participantService->emailForParticipantMessage($user, $this->participant->id);
+
+        if ($email === null) {
+            $this->addError('mailSubject', __('Er is geen e-mailadres beschikbaar voor deze deelnemer.'));
 
             return;
         }
 
-        $deductParticipantPoints($this->participant, $this->pointsToDeduct, $this->reason);
+        Mail::to($email)->send(new AdminParticipantMessageMail(
+            $validated['mailSubject'],
+            $validated['mailMessage'],
+            null,
+            $response->survey?->title,
+        ));
 
-        $this->reset('pointsToDeduct', 'reason');
-        $this->participant->refresh();
+        $this->reset('mailSubject', 'mailMessage');
 
-        Session::flash('status', __('Punten succesvol afgeboekt.'));
+        Session::flash('status', __('Bericht succesvol verstuurd.'));
     }
 }; ?>
-
-@php
-    $canViewParticipantDetails = auth()->user()?->isAdmin() === true;
-@endphp
 
 <section class="w-full" aria-labelledby="admin-participant-show-page-title">
     <x-pages::admin.layout
         :heading="$participant->displayNameFor(auth()->user())"
-        :subheading="__('Puntenhistorie en puntenaftrek voor deze deelnemer.')"
+        :subheading="__('Inzendingen en blokkering voor dit volgnummer.')"
         heading-id="admin-participant-show-page-title"
     >
         @if (session('status'))
@@ -68,104 +103,97 @@ new #[Title('Deelnemer')] class extends Component {
         <div class="space-y-6">
             <div class="grid gap-4 sm:grid-cols-3">
                 <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Pseudoniem') }}</flux:text>
+                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Volgnummer') }}</flux:text>
                     <flux:heading class="mt-1">{{ $participant->displayNameFor(auth()->user()) }}</flux:heading>
                 </div>
-                @if ($canViewParticipantDetails)
-                    <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                        <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('E-mail') }}</flux:text>
-                        <flux:heading class="mt-1">{{ $participant->displayEmailFor(auth()->user()) }}</flux:heading>
-                    </div>
-                @endif
                 <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Huidige punten') }}</flux:text>
-                    <flux:heading class="mt-1">{{ $participant->current_points }}</flux:heading>
+                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Status') }}</flux:text>
+                    <div class="mt-2">
+                        @if ($participant->isBlocked())
+                            <flux:badge color="red">{{ __('Geblokkeerd') }}</flux:badge>
+                        @else
+                            <flux:badge color="emerald">{{ __('Actief') }}</flux:badge>
+                        @endif
+                    </div>
+                </div>
+                <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
+                    <flux:text class="text-xs font-medium uppercase tracking-wide text-zinc-500">{{ __('Inzendingen') }}</flux:text>
+                    <flux:heading class="mt-1">{{ $participant->surveyResponses->count() }}</flux:heading>
                 </div>
             </div>
 
             <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                <flux:heading size="lg">{{ __('Punten afboeken') }}</flux:heading>
-                <flux:subheading class="mt-1">
-                    {{ __('Trek punten af wanneer een deelnemer deze extern inlevert voor een beloning.') }}
-                </flux:subheading>
-
-                <form wire:submit="deductPoints" class="mt-6 space-y-4 max-w-lg" aria-label="{{ __('Punten afboeken voor :name', ['name' => $participant->displayNameFor(auth()->user())]) }}">
-                    <flux:field>
-                        <flux:label>{{ __('Aantal punten') }}</flux:label>
-                        <flux:description>{{ __('Vul het positieve aantal punten in dat van het saldo wordt afgehaald.') }}</flux:description>
-                        <flux:input
-                            wire:model="pointsToDeduct"
-                            type="number"
-                            min="1"
-                            placeholder="{{ __('Bijv. 10') }}"
-                        />
-                        <flux:error name="pointsToDeduct" />
-                    </flux:field>
-
-                    <flux:field>
-                        <flux:label>{{ __('Reden') }}</flux:label>
-                        <flux:description>{{ __('Omschrijf welke externe beloning of afspraak hierbij hoort.') }}</flux:description>
-                        <flux:textarea
-                            wire:model="reason"
-                            placeholder="{{ __('Bijv. Bol.com cadeaubon ingeleverd') }}"
-                            rows="3"
-                        />
-                        <flux:error name="reason" />
-                    </flux:field>
-
-                    <div class="flex items-center gap-3">
-                        <flux:button type="submit" variant="primary" wire:loading.attr="disabled" wire:target="deductPoints">
-                            {{ __('Punten afboeken') }}
-                        </flux:button>
-                        <flux:text class="text-xs text-zinc-500" wire:loading wire:target="deductPoints">
-                            {{ __('Bezig...') }}
-                        </flux:text>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <flux:heading size="lg">{{ __('Inzendingen') }}</flux:heading>
+                        <flux:subheading class="mt-1">{{ __('Alle zichtbare inzendingen van dit volgnummer.') }}</flux:subheading>
                     </div>
-                </form>
-            </div>
 
-            <div class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                <flux:heading size="lg">{{ __('Puntenhistorie') }}</flux:heading>
+                    @if (! $participant->isBlocked())
+                        <flux:modal.trigger name="confirm-participant-blocking">
+                            <flux:button variant="danger" icon="no-symbol" type="button">
+                                {{ __('Blokkeren') }}
+                            </flux:button>
+                        </flux:modal.trigger>
+                    @endif
+                </div>
 
                 <div class="mt-4">
                     <flux:table>
                         <flux:table.columns>
-                            <flux:table.column>{{ __('Datum') }}</flux:table.column>
-                            <flux:table.column>{{ __('Bedrag') }}</flux:table.column>
-                            <flux:table.column>{{ __('Bron') }}</flux:table.column>
-                            <flux:table.column>{{ __('Reden') }}</flux:table.column>
+                            <flux:table.column>{{ __('Enquete') }}</flux:table.column>
+                            <flux:table.column>{{ __('Ingestuurd') }}</flux:table.column>
+                            <flux:table.column>{{ __('Status') }}</flux:table.column>
+                            <flux:table.column>{{ __('Type') }}</flux:table.column>
+                            <flux:table.column align="end">{{ __('Acties') }}</flux:table.column>
                         </flux:table.columns>
 
                         <flux:table.rows>
-                            @forelse ($participant->pointsHistories()->latest()->get() as $history)
-                                <flux:table.row :key="$history->id">
+                            @forelse ($participant->surveyResponses as $response)
+                                <flux:table.row :key="$response->id">
+                                    <flux:table.cell variant="strong">{{ $response->survey?->title ?? __('Enquete verwijderd') }}</flux:table.cell>
+                                    <flux:table.cell>{{ $response->submitted_at?->format('d-m-Y H:i') ?? '—' }}</flux:table.cell>
                                     <flux:table.cell>
-                                        {{ $history->created_at->format('d-m-Y H:i') }}
-                                    </flux:table.cell>
-                                    <flux:table.cell>
-                                        <flux:badge
-                                            color="{{ $history->amount >= 0 ? 'emerald' : 'red' }}"
-                                            size="sm"
-                                        >
-                                            {{ $history->amount >= 0 ? '+' : '' }}{{ $history->amount }}
-                                        </flux:badge>
-                                    </flux:table.cell>
-                                    <flux:table.cell>
-                                        @if ($history->source_type === null)
-                                            <flux:badge color="amber" size="sm">{{ __('Handmatige mutatie') }}</flux:badge>
+                                        @if ($response->withdrawn_at)
+                                            <flux:badge color="amber" size="sm">{{ __('Ingetrokken') }}</flux:badge>
                                         @else
-                                            <flux:badge color="zinc" size="sm">{{ __('Enquete-inzending #:id', ['id' => $history->source_id]) }}</flux:badge>
+                                            <flux:badge color="emerald" size="sm">{{ __('Actief') }}</flux:badge>
                                         @endif
                                     </flux:table.cell>
                                     <flux:table.cell>
-                                        {{ $history->reason ?: '—' }}
+                                        @if ($response->is_anonymous)
+                                            <flux:badge color="zinc" size="sm">{{ __('Anoniem') }}</flux:badge>
+                                        @else
+                                            <flux:badge color="blue" size="sm">{{ __('Niet anoniem') }}</flux:badge>
+                                        @endif
+                                    </flux:table.cell>
+                                    <flux:table.cell align="end">
+                                        <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                                            @if (! $response->is_anonymous)
+                                                <flux:modal.trigger name="mail-participant-response-{{ $response->id }}">
+                                                    <flux:button variant="ghost" size="sm" icon="envelope" type="button">
+                                                        {{ __('Mailen') }}
+                                                    </flux:button>
+                                                </flux:modal.trigger>
+                                            @endif
+
+                                            <flux:button
+                                                variant="primary"
+                                                size="sm"
+                                                icon="arrow-top-right-on-square"
+                                                :href="route('admin.responses.show', $response)"
+                                                wire:navigate
+                                            >
+                                                {{ __('Open inzending') }}
+                                            </flux:button>
+                                        </div>
                                     </flux:table.cell>
                                 </flux:table.row>
                             @empty
                                 <flux:table.row>
-                                    <flux:table.cell colspan="4">
+                                    <flux:table.cell colspan="5">
                                         <flux:text class="text-center text-zinc-500">
-                                            {{ __('Nog geen puntenhistorie voor deze deelnemer.') }}
+                                            {{ __('Nog geen zichtbare inzendingen voor dit volgnummer.') }}
                                         </flux:text>
                                     </flux:table.cell>
                                 </flux:table.row>
@@ -174,6 +202,75 @@ new #[Title('Deelnemer')] class extends Component {
                     </flux:table>
                 </div>
             </div>
+
+            @foreach ($participant->surveyResponses as $response)
+                @if (! $response->is_anonymous)
+                    <flux:modal name="mail-participant-response-{{ $response->id }}" class="max-w-xl">
+                        <form wire:submit="sendResponseMessage({{ $response->id }})" class="space-y-6">
+                            <div>
+                                <flux:heading size="lg">{{ __('Student mailen') }}</flux:heading>
+                                <flux:subheading class="mt-2">
+                                    {{ __('Dit bericht wordt via het systeem verstuurd. Het e-mailadres wordt niet getoond.') }}
+                                </flux:subheading>
+                            </div>
+
+                            <flux:field>
+                                <flux:label>{{ __('Onderwerp') }}</flux:label>
+                                <flux:input wire:model="mailSubject" />
+                                <flux:error name="mailSubject" />
+                            </flux:field>
+
+                            <flux:field>
+                                <flux:label>{{ __('Bericht') }}</flux:label>
+                                <flux:textarea wire:model="mailMessage" rows="5" />
+                                <flux:error name="mailMessage" />
+                            </flux:field>
+
+                            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <flux:modal.close>
+                                    <flux:button variant="ghost" type="button">
+                                        {{ __('Annuleren') }}
+                                    </flux:button>
+                                </flux:modal.close>
+
+                                <flux:button type="submit" variant="primary" icon="envelope" wire:loading.attr="disabled" wire:target="sendResponseMessage">
+                                    {{ __('Versturen') }}
+                                </flux:button>
+                            </div>
+                        </form>
+                    </flux:modal>
+                @endif
+            @endforeach
+
+            <flux:modal name="confirm-participant-blocking" class="max-w-lg">
+                <div class="space-y-6">
+                    <div>
+                        <flux:heading size="lg">{{ __('Deelnemer blokkeren?') }}</flux:heading>
+                        <flux:subheading class="mt-2">
+                            {{ __('Dit blokkeert dit volgnummer voor toekomstige enquête-inzendingen.') }}
+                        </flux:subheading>
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <flux:modal.close>
+                            <flux:button variant="ghost" type="button">
+                                {{ __('Annuleren') }}
+                            </flux:button>
+                        </flux:modal.close>
+
+                        <flux:button
+                            variant="danger"
+                            type="button"
+                            icon="no-symbol"
+                            wire:click="blockParticipant"
+                            wire:loading.attr="disabled"
+                            wire:target="blockParticipant"
+                        >
+                            {{ __('Blokkeren') }}
+                        </flux:button>
+                    </div>
+                </div>
+            </flux:modal>
 
             <div>
                 <flux:button

@@ -77,6 +77,21 @@ class ParticipantService
     }
 
     /**
+     * Return the email address for internal message delivery without exposing it
+     * to the employee-facing UI.
+     *
+     * @throws AuthorizationException
+     */
+    public function emailForParticipantMessage(User $user, int $participantId): ?string
+    {
+        if (! $user->canReviewSurveyResponses()) {
+            throw new AuthorizationException('Only survey reviewers may message participants.');
+        }
+
+        return $this->emailForParticipant($participantId);
+    }
+
+    /**
      * Return unique participant email addresses for respondents of the given surveys.
      *
      * @param  array<int, int>  $surveyIds
