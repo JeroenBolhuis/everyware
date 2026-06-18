@@ -61,6 +61,41 @@ it('shows retention period to lic employees as read-only', function () {
         ->assertForbidden();
 });
 
+it('does not show an automatic deletion warning when there are no upcoming deletions', function () {
+    $admin = User::factory()->admin()->createOne();
+
+    config()->set('surveys.retention_years', 5);
+
+    actingAs($admin);
+
+    get(route('admin.surveys.index'))
+        ->assertOk()
+        ->assertDontSee('Waarschuwing automatische verwijdering')
+        ->assertDontSee('Er staan momenteel geen automatische verwijderingen gepland binnen 7 dagen.');
+});
+
+it('shows an automatic deletion warning when responses will be deleted soon', function () {
+    $admin = User::factory()->admin()->createOne();
+    $survey = Survey::factory()->createOne(['title' => 'Bijna verlopen enquete']);
+
+    config()->set('surveys.retention_years', 5);
+
+    SurveyResponse::query()->create([
+        'survey_id' => $survey->id,
+        'participant_id' => participantIdForRetainedResponse(),
+        'withdrawal_token' => (string) str()->uuid(),
+        'submitted_at' => now()->subYears(5)->addDays(3),
+    ]);
+
+    actingAs($admin);
+
+    get(route('admin.surveys.index'))
+        ->assertOk()
+        ->assertSee('Waarschuwing automatische verwijdering')
+        ->assertSee('Er worden binnenkort 1 inzendingen automatisch verwijderd.')
+        ->assertSee('Bijna verlopen enquete');
+});
+
 it('prunes expired responses and deletes related feedback and personal data', function () {
     $admin = User::factory()->admin()->createOne();
 
