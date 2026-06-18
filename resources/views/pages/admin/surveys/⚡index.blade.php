@@ -95,7 +95,7 @@ new #[Title('Enquete-inzendingen')] class extends Component {
         :subheading="__('Bekijk enquetes en open individuele inzendingen, inclusief gedeelde contactgegevens.')"
         heading-id="admin-surveys-page-title"
     >
-        @if ($showUpcomingDeletionWarning)
+        @if ($showUpcomingDeletionWarning && $this->upcomingDeletionWarning['count'] > 0)
             <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950 sm:p-6 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100">
                 <div class="flex items-start justify-between gap-3">
                     <flux:heading size="lg">{{ __('Waarschuwing automatische verwijdering') }}</flux:heading>
@@ -109,40 +109,34 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                     />
                 </div>
 
-                @if ($this->upcomingDeletionWarning['count'] > 0)
-                    <flux:text class="mt-2 text-sm">
-                        {{ __('Er worden binnenkort :count inzendingen automatisch verwijderd. Eerstvolgende verwijderdatum: :date.', ['count' => $this->upcomingDeletionWarning['count'], 'date' => $this->upcomingDeletionWarning['next_delete_on_date']?->format('d-m-Y')]) }}
-                    </flux:text>
+                <flux:text class="mt-2 text-sm">
+                    {{ __('Er worden binnenkort :count inzendingen automatisch verwijderd. Eerstvolgende verwijderdatum: :date.', ['count' => $this->upcomingDeletionWarning['count'], 'date' => $this->upcomingDeletionWarning['next_delete_on_date']?->format('d-m-Y')]) }}
+                </flux:text>
 
-                    <details class="mt-4 rounded-lg border border-amber-300 bg-white/70 p-3 text-sm dark:border-amber-600 dark:bg-amber-950/40">
-                        <summary class="cursor-pointer font-medium">
-                            {{ __('Toon inzendingen die binnenkort verwijderd worden') }}
-                        </summary>
+                <details class="mt-4 rounded-lg border border-amber-300 bg-white/70 p-3 text-sm dark:border-amber-600 dark:bg-amber-950/40">
+                    <summary class="cursor-pointer font-medium">
+                        {{ __('Toon inzendingen die binnenkort verwijderd worden') }}
+                    </summary>
 
-                        <div class="mt-3 space-y-2">
-                            @foreach ($this->upcomingDeletionResponses as $upcomingResponse)
-                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                                    <span>
-                                        {{ __('Inzending #:id (:survey) - verwijdering op :date', ['id' => $upcomingResponse->id, 'survey' => $upcomingResponse->survey?->title ?? __('Onbekende enquete'), 'date' => $upcomingResponse->deleteOnDate()?->format('d-m-Y')]) }}
-                                    </span>
-                                    <flux:button
-                                        size="sm"
-                                        variant="ghost"
-                                        icon="arrow-top-right-on-square"
-                                        :href="route('admin.responses.show', $upcomingResponse)"
-                                        wire:navigate
-                                    >
-                                        {{ __('Open inzending') }}
-                                    </flux:button>
-                                </div>
-                            @endforeach
-                        </div>
-                    </details>
-                @else
-                    <flux:text class="mt-2 text-sm">
-                        {{ __('Er staan momenteel geen automatische verwijderingen gepland binnen :days dagen.', ['days' => $upcomingDeletionWarningDays]) }}
-                    </flux:text>
-                @endif
+                    <div class="mt-3 space-y-2">
+                        @foreach ($this->upcomingDeletionResponses as $upcomingResponse)
+                            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                <span>
+                                    {{ __('Inzending #:id (:survey) - verwijdering op :date', ['id' => $upcomingResponse->id, 'survey' => $upcomingResponse->survey?->title ?? __('Onbekende enquete'), 'date' => $upcomingResponse->deleteOnDate()?->format('d-m-Y')]) }}
+                                </span>
+                                <flux:button
+                                    size="sm"
+                                    variant="ghost"
+                                    icon="arrow-top-right-on-square"
+                                    :href="route('admin.responses.show', $upcomingResponse)"
+                                    wire:navigate
+                                >
+                                    {{ __('Open inzending') }}
+                                </flux:button>
+                            </div>
+                        @endforeach
+                    </div>
+                </details>
             </div>
         @endif
 
@@ -202,16 +196,18 @@ new #[Title('Enquete-inzendingen')] class extends Component {
                                 <flux:table.cell
                                     class="text-xs sm:text-sm">{{ $survey->responses_count }}</flux:table.cell>
                                 <flux:table.cell align="end">
-                                    <flux:button
-                                        variant="ghost"
-                                        size="sm"
-                                        icon="eye"
-                                        :href="route('admin.surveys.show', $survey)"
-                                        wire:navigate
-                                        aria-label="{{ __('Bekijk inzendingen van enquête :title', ['title' => $survey->title]) }}"
-                                    >
-                                        {{ __('Bekijk inzendingen') }}
-                                    </flux:button>
+                                    @if ($survey->responses_count > 0)
+                                        <flux:button
+                                            variant="ghost"
+                                            size="sm"
+                                            icon="eye"
+                                            :href="route('admin.surveys.show', $survey)"
+                                            wire:navigate
+                                            aria-label="{{ __('Bekijk inzendingen van enquête :title', ['title' => $survey->title]) }}"
+                                        >
+                                            {{ __('Bekijk inzendingen') }}
+                                        </flux:button>
+                                    @endif
                                 </flux:table.cell>
                             </flux:table.row>
                         @endforeach
