@@ -107,59 +107,12 @@ new #[Title('Enquete-inzending')] class extends Component {
         :subheading="$response->survey->title"
         heading-id="admin-response-show-page-title"
     >
-        <div class="space-y-6 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
+        <div class="space-y-6">
             @if (session('status'))
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-800/70 dark:bg-emerald-950/30 dark:text-emerald-200" role="status" aria-live="polite">
                     {{ session('status') }}
                 </div>
             @endif
-
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <flux:button
-                    variant="ghost"
-                    icon="arrow-left"
-                    :href="route('admin.surveys.show', $response->survey)"
-                    wire:navigate
-                >
-                    {{ __('Terug naar enquete-inzendingen') }}
-                </flux:button>
-
-                <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                    @if ($response->participant !== null && ! $response->is_anonymous)
-                        <flux:modal.trigger name="mail-response-participant">
-                            <flux:button
-                                variant="ghost"
-                                type="button"
-                                icon="envelope"
-                            >
-                                {{ __('Student mailen') }}
-                            </flux:button>
-                        </flux:modal.trigger>
-                    @endif
-
-                    @if ($response->participant !== null && ! $respondentIsBlocked)
-                        <flux:modal.trigger name="confirm-respondent-blocking">
-                            <flux:button
-                                variant="danger"
-                                type="button"
-                                icon="no-symbol"
-                            >
-                                {{ __('Deelnemer blokkeren') }}
-                            </flux:button>
-                        </flux:modal.trigger>
-                    @endif
-
-                    <flux:modal.trigger name="confirm-submission-deletion">
-                        <flux:button
-                            variant="danger"
-                            type="button"
-                            icon="trash"
-                        >
-                            {{ __('Inzending verwijderen') }}
-                        </flux:button>
-                    </flux:modal.trigger>
-                </div>
-            </div>
 
             @if ($respondentIsBlocked)
                 <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-950 dark:border-rose-800/70 dark:bg-rose-950/30 dark:text-rose-100">
@@ -276,62 +229,97 @@ new #[Title('Enquete-inzending')] class extends Component {
                 </div>
             </flux:modal>
 
-            <div class="grid gap-4 md:grid-cols-2">
-                <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                    <flux:heading size="lg">{{ __('Inzendingsdetails') }}</flux:heading>
+            <div class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-zinc-900">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <flux:button
+                        variant="ghost"
+                        icon="arrow-left"
+                        :href="route('admin.surveys.show', $response->survey)"
+                        wire:navigate
+                    >
+                        {{ __('Terug naar enquete-inzendingen') }}
+                    </flux:button>
 
-                    <dl class="mt-4 space-y-3 text-sm">
-                        <div>
-                            <dt class="font-medium text-zinc-500">{{ __('Ingestuurd') }}</dt>
-                            <dd>{{ $response->submitted_at?->format('d-m-Y H:i') ?? '—' }}</dd>
-                        </div>
-                        <div>
-                            <dt class="font-medium text-zinc-500">{{ __('Intrekkingsstatus') }}</dt>
-                            <dd>{{ $response->withdrawn_at ? __('Ingetrokken') : __('Actief') }}</dd>
-                        </div>
-                        <div>
-                            <dt class="font-medium text-zinc-500">{{ __('Type') }}</dt>
-                            <dd>{{ $response->is_anonymous ? __('Anoniem') : __('Niet anoniem') }}</dd>
-                        </div>
-                    </dl>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                        @if ($response->participant !== null && ! $response->is_anonymous)
+                            <flux:modal.trigger name="mail-response-participant">
+                                <flux:button
+                                    variant="ghost"
+                                    type="button"
+                                    icon="envelope"
+                                >
+                                    {{ __('Student mailen') }}
+                                </flux:button>
+                            </flux:modal.trigger>
+                        @endif
+
+                        @if ($response->participant !== null && ! $respondentIsBlocked)
+                            <flux:modal.trigger name="confirm-respondent-blocking">
+                                <flux:button
+                                    variant="danger"
+                                    type="button"
+                                    icon="no-symbol"
+                                >
+                                    {{ __('Deelnemer blokkeren') }}
+                                </flux:button>
+                            </flux:modal.trigger>
+                        @endif
+
+                        <flux:modal.trigger name="confirm-submission-deletion">
+                            <flux:button
+                                variant="danger"
+                                type="button"
+                                icon="trash"
+                            >
+                                {{ __('Inzending verwijderen') }}
+                            </flux:button>
+                        </flux:modal.trigger>
+                    </div>
                 </div>
 
-                <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                    <flux:heading size="lg">{{ __('Deelnemer') }}</flux:heading>
+                <dl class="mt-6 grid gap-x-8 gap-y-5 border-y border-neutral-200 py-5 text-sm sm:grid-cols-2 lg:grid-cols-4 dark:border-neutral-700">
+                    <div>
+                        <dt class="font-medium text-zinc-500 dark:text-zinc-400">{{ __('Ingestuurd') }}</dt>
+                        <dd class="mt-1 text-zinc-950 dark:text-zinc-100">{{ $response->submitted_at?->format('d-m-Y H:i') ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-zinc-500 dark:text-zinc-400">{{ __('Status') }}</dt>
+                        <dd class="mt-1 text-zinc-950 dark:text-zinc-100">{{ $response->withdrawn_at ? __('Ingetrokken') : __('Actief') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-zinc-500 dark:text-zinc-400">{{ __('Type') }}</dt>
+                        <dd class="mt-1 text-zinc-950 dark:text-zinc-100">{{ $response->is_anonymous ? __('Anoniem') : __('Niet anoniem') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-zinc-500 dark:text-zinc-400">{{ __('Volgnummer') }}</dt>
+                        <dd class="mt-1 text-zinc-950 dark:text-zinc-100">
+                            {{ $response->participant?->displayNameFor(auth()->user()) ?? __('Geen deelnemer') }}
+                        </dd>
+                    </div>
+                </dl>
 
-                    @if ($response->participant)
-                        <dl class="mt-4 space-y-3 text-sm">
-                            <div>
-                                <dt class="font-medium text-zinc-500">{{ __('Volgnummer') }}</dt>
-                                <dd>{{ $response->participant->displayNameFor(auth()->user()) }}</dd>
-                            </div>
-                        </dl>
-                    @else
-                        <flux:text class="mt-4">{{ __('Er is geen deelnemer gekoppeld aan deze inzending.') }}</flux:text>
-                    @endif
-                </div>
-            </div>
+                <div class="mt-6">
+                    <flux:heading size="lg">{{ __('Antwoorden') }}</flux:heading>
 
-            <div class="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-700 dark:bg-zinc-900">
-                <flux:heading size="lg">{{ __('Antwoorden') }}</flux:heading>
+                    <div class="mt-4 divide-y divide-neutral-200 border-y border-neutral-200 dark:divide-neutral-700 dark:border-neutral-700">
+                        @forelse ($response->answers as $answer)
+                            <div class="grid gap-3 py-5 lg:grid-cols-[minmax(16rem,24rem)_minmax(0,1fr)] lg:gap-8" wire:key="answer-{{ $answer->id }}">
+                                <div class="min-w-0">
+                                    <flux:text class="font-medium leading-6 text-zinc-950 dark:text-zinc-100">
+                                        {{ $answer->question?->question ?? __('Vraag verwijderd') }}
+                                    </flux:text>
+                                </div>
 
-                <div class="mt-4 space-y-4">
-                    @forelse ($response->answers as $answer)
-                        <div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700" wire:key="answer-{{ $answer->id }}">
-                            <div class="min-w-0">
-                                <flux:text class="font-medium text-zinc-900 dark:text-zinc-100">
-                                    {{ $answer->question?->question ?? __('Vraag verwijderd') }}
+                                <flux:text class="whitespace-pre-wrap leading-6 text-zinc-700 dark:text-zinc-300">
+                                    {{ filled($answer->answer) ? $answer->answer : '—' }}
                                 </flux:text>
-                                <flux:text class="mt-2 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-300">
-                                    {{ $answer->answer }}
-                                </flux:text>
                             </div>
-                        </div>
-                    @empty
-                        <flux:text class="text-sm text-zinc-600 dark:text-zinc-300">
-                            {{ __('Er zijn geen antwoorden meer zichtbaar voor deze inzending.') }}
-                        </flux:text>
-                    @endforelse
+                        @empty
+                            <flux:text class="py-5 text-sm text-zinc-600 dark:text-zinc-300">
+                                {{ __('Er zijn geen antwoorden meer zichtbaar voor deze inzending.') }}
+                            </flux:text>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>
