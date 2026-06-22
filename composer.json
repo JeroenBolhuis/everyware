@@ -60,9 +60,20 @@
             "cp -r public/build /vercel/output/static/"
         ],
         "lint": [
+            "@lint:style",
+            "@lint:architecture"
+        ],
+        "lint:style": [
             "pint --parallel"
         ],
+        "lint:architecture": [
+            "@php artisan test --compact tests/Unit/LaravelStructureTest.php"
+        ],
         "lint:check": [
+            "@lint:style:check",
+            "@lint:architecture"
+        ],
+        "lint:style:check": [
             "pint --parallel --test"
         ],
         "ci:check": [

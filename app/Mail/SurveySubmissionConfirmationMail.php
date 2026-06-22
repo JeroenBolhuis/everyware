@@ -17,9 +17,7 @@ class SurveySubmissionConfirmationMail extends Mailable
     public function __construct(
         public SurveyResponse $response,
         public ?string $recipientName = null,
-    )
-    {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {

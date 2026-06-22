@@ -238,7 +238,7 @@ XML;
     ): string {
         return pack(
             'VvvvvvVVVvv',
-            0x04034b50,
+            0x04034B50,
             20,
             0x0800,
             0,
@@ -263,7 +263,7 @@ XML;
     ): string {
         return pack(
             'VvvvvvvVVVvvvvvVV',
-            0x02014b50,
+            0x02014B50,
             20,
             20,
             0x0800,
@@ -287,7 +287,7 @@ XML;
     {
         return pack(
             'VvvvvVVv',
-            0x06054b50,
+            0x06054B50,
             0,
             0,
             $count,

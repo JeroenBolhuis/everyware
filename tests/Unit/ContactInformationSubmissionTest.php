@@ -23,7 +23,7 @@ it('encrypts and decrypts contact fields transparently', function () {
 });
 
 it('stores contact submissions on the personal database connection', function () {
-    $submission = new ContactInformationSubmission();
+    $submission = new ContactInformationSubmission;
 
     expect($submission->getConnectionName())->toBe('personal');
 });
@@ -41,7 +41,7 @@ it('stores empty contact values as null', function () {
 });
 
 it('returns null when legacy contact data cannot be decrypted', function () {
-    $submission = new ContactInformationSubmission();
+    $submission = new ContactInformationSubmission;
     $submission->setRawAttributes([
         'name' => 'plain-text',
         'email' => 'also-plain-text',
