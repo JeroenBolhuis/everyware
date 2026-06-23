@@ -9,11 +9,20 @@ class Academies
     public static function options(): array
     {
         return [
-            'avans' => 'Avans',
-            'fontys' => 'Fontys',
-            'hogeschool-utrecht' => 'Hogeschool Utrecht',
-            'hogeschool-rotterdam' => 'Hogeschool Rotterdam',
-            'inholland' => 'Inholland',
+            'abe' => 'ABE: Academie voor Business en Entrepreneurship',
+            'aafm' => 'AAFM: Academie voor Algemeen en Financieel Management',
+            'amba' => 'AMBA: Academie voor Marketing en Business Analytics',
+            'ahrm' => 'AHRM: Academie voor Human Resource Management',
+            'jha' => 'JHA: Juridische Hogeschool Avans-Fontys',
+            'atd' => 'ATD: Academie voor Technologie en Design',
+            'abi' => 'ABI: Academie voor Bouw en Infra',
+            'aci' => 'ACI: Avans Creative Innovation',
+            'agz' => 'AGZ: Academie voor Gezondheid en Welzijn',
+            'asb-asdb' => 'ASB / ASDB: Academie voor Sociale Studies',
+            'atgm' => 'ATGM: Academie voor de Technologie van Gezondheid en Milieu',
+            'alst' => 'ALST: Academie voor Life Sciences en Technologie',
+            'aaad' => 'AAAd: Avans Academie Associate degrees',
+            'avd' => 'AVD: Academie voor Deeltijd',
         ];
     }
 
@@ -29,35 +38,5 @@ class Academies
         }
 
         return self::options()[$academy] ?? Str::headline($academy);
-    }
-
-    public static function fromEmail(?string $email): ?string
-    {
-        if ($email === null || ! str_contains($email, '@')) {
-            return null;
-        }
-
-        $domain = Str::of($email)->afterLast('@')->lower()->toString();
-
-        foreach (self::emailDomains() as $academy => $domains) {
-            foreach ($domains as $allowedDomain) {
-                if ($domain === $allowedDomain || Str::endsWith($domain, '.'.$allowedDomain)) {
-                    return $academy;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static function emailDomains(): array
-    {
-        return [
-            'avans' => ['avans.nl'],
-            'fontys' => ['fontys.nl'],
-            'hogeschool-utrecht' => ['hu.nl', 'student.hu.nl'],
-            'hogeschool-rotterdam' => ['hr.nl', 'student.hr.nl'],
-            'inholland' => ['inholland.nl', 'student.inholland.nl'],
-        ];
     }
 }

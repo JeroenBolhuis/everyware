@@ -45,7 +45,7 @@ class SurveyFactory extends Factory
     public function forAvans(): static
     {
         return $this->state(fn (): array => [
-            'target_academy' => 'avans',
+            'target_academy' => 'abe',
         ]);
     }
 }

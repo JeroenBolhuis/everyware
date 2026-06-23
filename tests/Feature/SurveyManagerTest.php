@@ -260,15 +260,15 @@ class SurveyManagerTest extends TestCase
         ]);
     }
 
-    public function test_survey_can_be_created_for_avans_students(): void
+    public function test_survey_can_be_created_for_business_students(): void
     {
         $this->actingAsSurveyManager();
 
         $response = $this->post(route('survey-manager.store'), [
-            'title' => 'Avans enquete',
+            'title' => 'Business enquete',
             'description' => 'Beschrijving',
             'is_active' => '1',
-            'target_academy' => 'avans',
+            'target_academy' => 'abe',
             'reward_points' => 10,
             'questions' => [
                 [
@@ -286,20 +286,20 @@ class SurveyManagerTest extends TestCase
         $response->assertRedirect(route('survey-manager.index'));
 
         $this->assertDatabaseHas('surveys', [
-            'title' => 'Avans enquete',
-            'target_academy' => 'avans',
+            'title' => 'Business enquete',
+            'target_academy' => 'abe',
         ]);
     }
 
-    public function test_survey_can_be_created_for_fontys_students(): void
+    public function test_survey_can_be_created_for_hrm_students(): void
     {
         $this->actingAsSurveyManager();
 
         $response = $this->post(route('survey-manager.store'), [
-            'title' => 'Fontys enquete',
+            'title' => 'HRM enquete',
             'description' => 'Beschrijving',
             'is_active' => '1',
-            'target_academy' => 'fontys',
+            'target_academy' => 'ahrm',
             'reward_points' => 10,
             'questions' => [
                 [
@@ -317,8 +317,8 @@ class SurveyManagerTest extends TestCase
         $response->assertRedirect(route('survey-manager.index'));
 
         $this->assertDatabaseHas('surveys', [
-            'title' => 'Fontys enquete',
-            'target_academy' => 'fontys',
+            'title' => 'HRM enquete',
+            'target_academy' => 'ahrm',
         ]);
     }
 
