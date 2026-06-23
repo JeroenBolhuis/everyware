@@ -36,7 +36,8 @@ class SurveyController extends Controller
             ->visibleToParticipant($request->user('participant'));
 
         if ($completedSurveyIds !== []) {
-            $query->orderByRaw('CASE WHEN id IN ('.implode(',', $completedSurveyIds).') THEN 1 ELSE 0 END');
+            $placeholders = implode(',', array_fill(0, count($completedSurveyIds), '?'));
+            $query->orderByRaw('CASE WHEN id IN ('.$placeholders.') THEN 1 ELSE 0 END', $completedSurveyIds);
         }
 
         if ($request->string('sort')->value() === 'reward_points_desc') {
