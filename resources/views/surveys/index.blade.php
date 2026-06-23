@@ -4,15 +4,8 @@
             <h1 class="text-2xl font-bold text-zinc-950 sm:text-3xl">Enquêtes</h1>
             <p class="mt-2 text-sm text-zinc-600">Kies een actieve enquête om feedback te geven.</p>
 
-            <div class="mt-6 flex flex-col gap-3 border-y border-zinc-200 py-4 sm:flex-row sm:items-end sm:gap-4">
-                <div class="w-full sm:flex-1">
-                    <label for="search" class="mb-1 block text-sm font-medium text-zinc-700">Zoeken op titel</label>
-                    <input type="text" name="search" id="search" value="{{ request('search') }}"
-                           placeholder="Zoeken..."
-                           class="w-full rounded-lg border-zinc-300 px-4 py-3 shadow-sm focus:border-red-500 focus:ring-red-500">
-                </div>
-
-                <div class="w-full sm:w-64">
+            <div class="mt-6 flex flex-col gap-3 border-y border-zinc-200 py-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+                <div class="w-full md:w-64 md:flex-none">
                     <label for="sort" class="mb-1 block text-sm font-medium text-zinc-700">Sorteren op</label>
                     <select id="sort" name="sort" class="w-full rounded-lg border-zinc-300 px-4 py-3 shadow-sm focus:border-red-500 focus:ring-red-500">
                         <option value="latest" @selected(request('sort', 'latest') === 'latest')>Nieuwste eerst</option>
@@ -20,7 +13,7 @@
                     </select>
                 </div>
 
-                <button id="clear-btn" type="button" class="btn-secondary w-full sm:w-auto">
+                <button id="clear-btn" type="button" class="btn-secondary w-full sm:w-auto sm:flex-none">
                     Wissen
                 </button>
             </div>
@@ -30,10 +23,12 @@
                     @forelse ($surveys as $survey)
                         @php
                             $hasCompletedSurvey = in_array($survey->id, $completedSurveyIds, true);
+                            $rewardPoints = (int) $survey->reward_points;
+                            $rewardUnit = $rewardPoints === 1 ? 'punt' : 'punten';
                         @endphp
 
                         <div class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
-                            <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+                            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                 <div class="flex-1 min-w-0">
                                     <h2 class="break-words text-lg font-semibold text-zinc-950 sm:text-xl">{{ $survey->title }}</h2>
                                     <x-truncated-text
@@ -46,9 +41,6 @@
                                             Actief
                                         </span>
                                         <span class="text-xs text-zinc-500 sm:text-sm">
-                                            Beloning: {{ $survey->reward_points }} {{ $survey->reward_points === 1 ? 'punt' : 'punten' }}
-                                        </span>
-                                        <span class="text-xs text-zinc-500 sm:text-sm">
                                             Einddatum: {{ $survey->ends_at?->format('d-m-Y') ?? 'Geen einddatum' }}
                                         </span>
                                         <span class="text-xs text-zinc-500 sm:text-sm">
@@ -56,16 +48,23 @@
                                         </span>
                                     </div>
                                 </div>
-                                <div class="w-full sm:w-auto ml-0 sm:ml-4">
+                                <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:ml-4 md:w-48 md:flex-none md:flex-col md:items-stretch md:justify-start">
                                     @if ($hasCompletedSurvey)
-                                        <span class="btn-disabled block w-full text-center sm:w-auto">
+                                        <span class="btn-disabled w-full text-center sm:w-auto sm:min-w-40 md:w-full md:min-w-0 lg:max-w-none">
                                             Enquête al ingevuld
                                         </span>
                                     @else
-                                        <a href="{{ route('survey.show', $survey) }}" class="btn-primary block w-full text-center sm:w-auto">
+                                        <a href="{{ route('survey.show', $survey) }}" class="btn-primary w-full text-center sm:w-auto sm:min-w-40 md:w-full md:min-w-0 lg:max-w-none">
                                             Enquête invullen
                                         </a>
                                     @endif
+
+                                    <div class="flex w-full items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800 shadow-sm sm:w-auto sm:min-w-40 md:w-full md:min-w-0">
+                                        <span class="text-xs font-semibold uppercase tracking-wide text-red-700">Beloning</span>
+                                        <span class="whitespace-nowrap text-right text-lg font-bold leading-none">
+                                            {{ $rewardPoints }} <span class="text-sm font-semibold">{{ $rewardUnit }}</span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -86,11 +85,9 @@
     </div>
 
     <script>
-        const searchInput = document.getElementById('search');
         const sortInput = document.getElementById('sort');
         const clearBtn = document.getElementById('clear-btn');
         const container = document.getElementById('surveys-container');
-        let debounceTimer;
 
         function initializeTruncatedText() {
             const buttons = document.querySelectorAll('.toggle-more-info');
@@ -121,9 +118,8 @@
         }
 
         function fetchSurveys(page) {
-            const search = searchInput.value;
             const sort = sortInput.value;
-            const params = new URLSearchParams({search, sort, page: page || 1});
+            const params = new URLSearchParams({sort, page: page || 1});
 
             fetch(`{{ route('surveys.index') }}?${params}`, {
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -139,7 +135,7 @@
                     attachPaginationListeners();
 
                     const url = new URL(window.location.href);
-                    url.searchParams.set('search', search);
+                    url.searchParams.delete('search');
                     url.searchParams.set('sort', sort);
                     url.searchParams.set('page', page || 1);
                     window.history.replaceState({}, '', url);
@@ -156,13 +152,7 @@
             });
         }
 
-        searchInput.addEventListener('input', () => {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => fetchSurveys(1), 300);
-        });
-
         clearBtn.addEventListener('click', () => {
-            searchInput.value = '';
             sortInput.value = 'latest';
             fetchSurveys(1);
         });
