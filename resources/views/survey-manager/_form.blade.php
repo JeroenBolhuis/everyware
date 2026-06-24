@@ -201,14 +201,14 @@
                                 <option value="" @selected(old('target_academy', $survey->target_academy ?? '') === '')>
                                     Alle studenten
                                 </option>
-                                @foreach (\App\Support\Academies::options() as $academy => $label)
+                                @foreach (\App\Enums\Academy::options() as $academy => $label)
                                     <option value="{{ $academy }}" @selected(old('target_academy', $survey->target_academy ?? '') === $academy)>
                                         {{ $label }}
                                     </option>
                                 @endforeach
                             </select>
                             <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-                                Avans wordt automatisch herkend aan e-mailadressen met avans.nl.
+                                Studenten kiezen hun afdeling zelf tijdens de onboarding.
                             </p>
                         </div>
                     </div>
@@ -234,7 +234,7 @@
                                     Vraag <span class="question-number">{{ $index + 1 }}</span>
                                 </h3>
 
-                                <button type="button" class="remove-question btn-secondary gap-2">
+                                <button type="button" class="remove-question btn-secondary btn-compact shrink-0 gap-2 whitespace-nowrap">
                                     <flux:icon.trash variant="mini" />
                                     <span>Verwijderen</span>
                                 </button>
@@ -351,7 +351,7 @@
                                                 class="option-row rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
                                                 <div class="grid gap-3 md:grid-cols-12">
                                                     <div
-                                                        class="option-label-col {{ $isSwipe ? 'md:col-span-6' : 'md:col-span-11' }}">
+                                                        class="option-label-col {{ $isSwipe ? 'md:col-span-6' : 'md:col-span-10' }}">
                                                         <label
                                                             class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                                                             <span class="mb-1 block">Antwoordoptie</span>
@@ -429,9 +429,9 @@
                                                     </div>
 
                                                     <div
-                                                        class="{{ $isSwipe ? 'md:col-span-2' : 'md:col-span-1' }} option-remove-col flex items-start md:items-center">
+                                                        class="option-remove-col flex items-start md:col-span-2 md:items-center md:justify-end">
                                                         <button type="button"
-                                                                class="remove-option btn-secondary w-full gap-2">
+                                                                class="remove-option btn-secondary btn-compact gap-2 whitespace-nowrap">
                                                             <flux:icon.trash variant="mini" />
                                                             <span>Verwijderen</span>
                                                         </button>
@@ -477,7 +477,7 @@
                     Vraag <span class="question-number"></span>
                 </h3>
 
-                <button type="button" class="remove-question btn-secondary gap-2">
+                <button type="button" class="remove-question btn-secondary btn-compact shrink-0 gap-2 whitespace-nowrap">
                     <flux:icon.trash variant="mini" />
                     <span>Verwijderen</span>
                 </button>
@@ -551,7 +551,7 @@
     <template id="option-template">
         <article class="option-row rounded-xl border border-neutral-200 p-4 dark:border-neutral-700">
             <div class="grid gap-3 md:grid-cols-12">
-                <div class="option-label-col md:col-span-11">
+                <div class="option-label-col md:col-span-10">
                     <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
                         <span class="mb-1 block">Antwoordoptie</span>
                         <input
@@ -613,8 +613,8 @@
                     </label>
                 </div>
 
-                <div class="option-remove-col flex items-start md:col-span-1 md:items-center">
-                    <button type="button" class="remove-option btn-secondary w-full gap-2">
+                <div class="option-remove-col flex items-start md:col-span-2 md:items-center md:justify-end">
+                    <button type="button" class="remove-option btn-secondary btn-compact gap-2 whitespace-nowrap">
                         <flux:icon.trash variant="mini" />
                         <span>Verwijderen</span>
                     </button>

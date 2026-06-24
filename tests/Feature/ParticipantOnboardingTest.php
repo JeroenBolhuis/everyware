@@ -13,20 +13,43 @@ it('shows required onboarding to participants who have not completed it', functi
     get(route('surveys.index'))
         ->assertOk()
         ->assertSee('Welkom bij LIC Feedback')
-        ->assertSee('Deze uitleg moet je eenmalig afronden');
+        ->assertSee('Deze uitleg moet je eenmalig afronden')
+        ->assertSee('Studentenafdeling')
+        ->assertSee('ABE: Academie voor Business en Entrepreneurship');
 });
 
-it('marks participant onboarding as completed', function () {
+it('stores the selected academy and marks participant onboarding as completed', function () {
     $participant = Participant::factory()->create([
+        'academy' => null,
         'onboarded_at' => null,
     ]);
 
     loginParticipantAs($participant);
 
-    post(route('student.onboarding.complete'))
+    post(route('student.onboarding.complete'), [
+        'academy' => 'abe',
+    ])
         ->assertRedirect();
 
-    expect($participant->fresh()->onboarded_at)->not->toBeNull();
+    expect($participant->fresh()->academy)->toBe('abe')
+        ->and($participant->fresh()->onboarded_at)->not->toBeNull();
+});
+
+it('requires an academy before completing onboarding', function () {
+    $participant = Participant::factory()->create([
+        'academy' => null,
+        'onboarded_at' => null,
+    ]);
+
+    loginParticipantAs($participant);
+
+    post(route('student.onboarding.complete'), [
+        'academy' => '',
+    ])
+        ->assertSessionHasErrors('academy');
+
+    expect($participant->fresh()->academy)->toBeNull()
+        ->and($participant->fresh()->onboarded_at)->toBeNull();
 });
 
 it('does not show onboarding after it has been completed', function () {

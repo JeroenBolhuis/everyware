@@ -98,7 +98,7 @@ class Participant extends Model implements AuthenticatableContract
     }
 
     /**
-     * Non-PII academy derived from email domain at registration time.
+     * Non-PII academy selected by the participant during onboarding.
      */
     public function academy(): ?string
     {

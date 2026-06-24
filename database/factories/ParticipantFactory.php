@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\Participant;
 use App\Models\ParticipantIdentity;
-use App\Support\Academies;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +19,7 @@ class ParticipantFactory extends Factory
     public function definition(): array
     {
         return [
-            // academy is derived from the email and stored as non-PII.
+            // academy is selected during onboarding and stored as non-PII.
             // The actual email lives in participant_identities (personal DB), created in configure().
             'academy' => null,
         ];
@@ -43,11 +42,6 @@ class ParticipantFactory extends Factory
                 ['participant_id' => $participant->id],
                 ['email' => $email],
             );
-
-            $academy = Academies::fromEmail($email);
-            if ($academy !== null) {
-                $participant->forceFill(['academy' => $academy])->save();
-            }
         });
     }
 
