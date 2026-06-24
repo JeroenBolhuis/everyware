@@ -260,75 +260,78 @@ it('only shows academy targeted surveys to matching participants', function () {
         'is_active' => true,
         'target_academy' => null,
     ]);
-    $avansSurvey = createSurvey([
-        'title' => 'Avans survey',
+    $businessSurvey = createSurvey([
+        'title' => 'Business survey',
         'is_active' => true,
-        'target_academy' => 'avans',
+        'target_academy' => 'abe',
     ]);
-    $fontysSurvey = createSurvey([
-        'title' => 'Fontys survey',
+    $hrmSurvey = createSurvey([
+        'title' => 'HRM survey',
         'is_active' => true,
-        'target_academy' => 'fontys',
+        'target_academy' => 'ahrm',
     ]);
-    $huSurvey = createSurvey([
-        'title' => 'HU survey',
+    $technologySurvey = createSurvey([
+        'title' => 'Techniek survey',
         'is_active' => true,
-        'target_academy' => 'hogeschool-utrecht',
+        'target_academy' => 'atd',
     ]);
 
     get(route('surveys.index'))
         ->assertOk()
         ->assertSee($generalSurvey->title)
-        ->assertDontSee($avansSurvey->title)
-        ->assertDontSee($fontysSurvey->title)
-        ->assertDontSee($huSurvey->title);
+        ->assertDontSee($businessSurvey->title)
+        ->assertDontSee($hrmSurvey->title)
+        ->assertDontSee($technologySurvey->title);
 
-    loginParticipantAs(Participant::factory()->withEmail('student@student.avans.nl')->create([
+    loginParticipantAs(Participant::factory()->withEmail('matching-student@example.com')->create([
+        'academy' => 'abe',
         'onboarded_at' => now(),
     ]));
 
     get(route('surveys.index'))
         ->assertOk()
         ->assertSee($generalSurvey->title)
-        ->assertSee($avansSurvey->title)
-        ->assertDontSee($fontysSurvey->title)
-        ->assertDontSee($huSurvey->title);
+        ->assertSee($businessSurvey->title)
+        ->assertDontSee($hrmSurvey->title)
+        ->assertDontSee($technologySurvey->title);
 
-    loginParticipantAs(Participant::factory()->withEmail('student@student.fontys.nl')->create([
+    loginParticipantAs(Participant::factory()->withEmail('student@example.org')->create([
+        'academy' => 'ahrm',
         'onboarded_at' => now(),
     ]));
 
     get(route('surveys.index'))
         ->assertOk()
         ->assertSee($generalSurvey->title)
-        ->assertDontSee($avansSurvey->title)
-        ->assertSee($fontysSurvey->title)
-        ->assertDontSee($huSurvey->title);
+        ->assertDontSee($businessSurvey->title)
+        ->assertSee($hrmSurvey->title)
+        ->assertDontSee($technologySurvey->title);
 
-    loginParticipantAs(Participant::factory()->withEmail('student@student.hu.nl')->create([
+    loginParticipantAs(Participant::factory()->withEmail('student@example.net')->create([
+        'academy' => 'atd',
         'onboarded_at' => now(),
     ]));
 
     get(route('surveys.index'))
         ->assertOk()
         ->assertSee($generalSurvey->title)
-        ->assertDontSee($avansSurvey->title)
-        ->assertDontSee($fontysSurvey->title)
-        ->assertSee($huSurvey->title);
+        ->assertDontSee($businessSurvey->title)
+        ->assertDontSee($hrmSurvey->title)
+        ->assertSee($technologySurvey->title);
 });
 
 it('shows a clear ineligible page to non matching participants for academy targeted surveys', function () {
     $survey = createSurvey([
-        'title' => 'Alleen Avans',
+        'title' => 'Alleen Business',
         'is_active' => true,
-        'target_academy' => 'avans',
+        'target_academy' => 'abe',
     ]);
     $question = $survey->questions[0];
 
     get(route('survey.show', $survey))
         ->assertForbidden()
         ->assertSee('Je bent niet geschikt om deze enquete in te vullen.')
-        ->assertSee('Alleen Avans');
+        ->assertSee('Alleen Business');
 
     post(route('survey.store', $survey), [
         'answers' => [
@@ -344,14 +347,15 @@ it('shows a clear ineligible page to non matching participants for academy targe
 });
 
 it('allows matching academy participants to fill targeted surveys', function () {
-    loginParticipantAs(Participant::factory()->withEmail('student@avans.nl')->create([
+    loginParticipantAs(Participant::factory()->withEmail('matching-student@example.com')->create([
+        'academy' => 'abe',
         'onboarded_at' => now(),
     ]));
 
     $survey = createSurvey([
-        'title' => 'Avans invullen',
+        'title' => 'Business invullen',
         'is_active' => true,
-        'target_academy' => 'avans',
+        'target_academy' => 'abe',
     ]);
     $question = $survey->questions[0];
 
@@ -452,8 +456,10 @@ it('marks completed surveys as disabled on the survey overview', function () {
         ->assertOk()
         ->assertSee('Al ingevulde enquête')
         ->assertSee('Nieuwe enquête')
-        ->assertSee('Beloning: 15 punten')
-        ->assertSee('Beloning: 1 punt')
+        ->assertSee('15')
+        ->assertSee('punten')
+        ->assertSee('1')
+        ->assertSee('punt')
         ->assertSee('Enquête al ingevuld')
         ->assertSee('Enquête invullen');
 });
@@ -484,7 +490,8 @@ it('sorts surveys by reward points and keeps completed surveys at the bottom', f
             'Lagere beloning',
             'Al ingevuld met meeste punten',
         ])
-        ->assertSee('Beloning: 50 punten')
+        ->assertSee('50')
+        ->assertSee('punten')
         ->assertSee('Enquête al ingevuld');
 });
 

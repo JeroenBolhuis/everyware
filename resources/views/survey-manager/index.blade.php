@@ -143,7 +143,7 @@
                                     <flux:text class="text-sm text-zinc-500">{{ $survey->responses_count }} {{ __('reactie(s)') }}</flux:text>
                                     <flux:text class="text-sm text-zinc-500">{{ __('Aangemaakt op :date', ['date' => $survey->created_at->format('d-m-Y')]) }}</flux:text>
                                     <flux:text class="text-sm text-zinc-500">{{ __('Einddatum') }}: {{ $survey->ends_at?->format('d-m-Y') ?? __('Geen einddatum') }}</flux:text>
-                                    <flux:text class="text-sm text-zinc-500">{{ __('Doelgroep: :target', ['target' => \App\Support\Academies::label($survey->target_academy)]) }}</flux:text>
+                                    <flux:text class="text-sm text-zinc-500">{{ __('Doelgroep: :target', ['target' => \App\Enums\Academy::labelFor($survey->target_academy)]) }}</flux:text>
 
                                     @if (auth()->user()?->isAdmin() || auth()->user()?->isLicEmployee())
                                         <flux:text class="text-sm text-zinc-500">{{ __('Maker: :name', ['name' => $survey->creator?->name ?? __('Onbekend')]) }}</flux:text>

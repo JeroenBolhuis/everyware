@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const removeCol = row.querySelector('.option-remove-col');
 
             if (isSwipe) {
-                labelCol?.classList.remove('md:col-span-11');
+                labelCol?.classList.remove('md:col-span-10', 'md:col-span-11');
                 labelCol?.classList.add('md:col-span-6');
 
                 imageField?.classList.remove('hidden');
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 removeCol?.classList.add('md:col-span-2');
             } else {
                 labelCol?.classList.remove('md:col-span-6');
-                labelCol?.classList.add('md:col-span-11');
+                labelCol?.classList.add('md:col-span-10');
 
                 imageField?.classList.add('hidden');
 
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 removeCol?.classList.remove('md:col-span-2');
-                removeCol?.classList.add('md:col-span-1');
+                removeCol?.classList.add('md:col-span-2');
             }
 
             updatePreviewAlt(row);

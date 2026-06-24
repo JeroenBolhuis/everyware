@@ -6,7 +6,6 @@ use App\Models\Participant;
 use App\Models\ParticipantIdentity;
 use App\Models\SurveyResponse;
 use App\Models\User;
-use App\Support\Academies;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -39,7 +38,7 @@ class ParticipantService
 
         return DB::transaction(function () use ($email): Participant {
             $participant = Participant::create([
-                'academy' => Academies::fromEmail($email),
+                'academy' => null,
             ]);
 
             ParticipantIdentity::updateOrCreate(
