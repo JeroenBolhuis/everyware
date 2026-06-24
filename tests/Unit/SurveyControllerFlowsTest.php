@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -123,6 +124,46 @@ it('shows active surveys and hides expired surveys from the public index', funct
     $response->assertOk()
         ->assertSee('Zichtbare enquete')
         ->assertDontSee('Verlopen enquete');
+});
+
+it('renders responsive survey index actions without oversized desktop buttons', function () {
+    $survey = Survey::factory()->active()->createOne([
+        'title' => 'Responsieve enquete',
+        'ends_at' => today()->addDay(),
+        'reward_points' => 25,
+    ]);
+    SurveyQuestion::factory()->createOne(['survey_id' => $survey->id]);
+
+    $this->get(route('surveys.index'))
+        ->assertOk()
+        ->assertDontSee('Zoeken op titel')
+        ->assertSee('btn-secondary w-full sm:w-auto sm:flex-none', false)
+        ->assertSee('btn-primary w-full text-center sm:w-auto sm:min-w-40 md:w-full md:min-w-0 lg:max-w-none', false)
+        ->assertSee('Beloning')
+        ->assertSee('25')
+        ->assertSee('punten');
+});
+
+it('sorts completed surveys below fillable surveys', function () {
+    $participant = Participant::factory()->createOne();
+    $openSurvey = Survey::factory()->active()->createOne([
+        'title' => 'Nog open enquete',
+        'created_at' => now()->subDay(),
+    ]);
+    $completedSurvey = Survey::factory()->active()->createOne([
+        'title' => 'Al ingevulde enquete',
+        'created_at' => now(),
+        'reward_points' => 100,
+    ]);
+
+    SurveyQuestion::factory()->createOne(['survey_id' => $openSurvey->id]);
+    SurveyQuestion::factory()->createOne(['survey_id' => $completedSurvey->id]);
+    createControllerFlowResponse($completedSurvey, $participant);
+
+    $this->actingAs($participant, 'participant')
+        ->get(route('surveys.index', ['sort' => 'reward_points_desc']))
+        ->assertOk()
+        ->assertSeeInOrder(['Nog open enquete', 'Al ingevulde enquete']);
 });
 
 it('shows a survey by share token for authenticated participants', function () {
