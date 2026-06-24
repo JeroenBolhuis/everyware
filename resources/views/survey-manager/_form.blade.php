@@ -201,7 +201,7 @@
                                 <option value="" @selected(old('target_academy', $survey->target_academy ?? '') === '')>
                                     Alle studenten
                                 </option>
-                                @foreach (\App\Support\Academies::options() as $academy => $label)
+                                @foreach (\App\Enums\Academy::options() as $academy => $label)
                                     <option value="{{ $academy }}" @selected(old('target_academy', $survey->target_academy ?? '') === $academy)>
                                         {{ $label }}
                                     </option>

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Surveys;
 
-use App\Support\Academies;
+use App\Enums\Academy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -22,7 +22,7 @@ class UpsertSurveyRequest extends FormRequest
             'is_active' => ['required', 'boolean'],
             'ends_at' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
             'reward_points' => ['nullable', 'integer', 'min:0'],
-            'target_academy' => ['nullable', 'string', Rule::in(Academies::keys())],
+            'target_academy' => ['nullable', 'string', Rule::in(Academy::keys())],
 
             'questions' => ['required', 'array', 'min:1'],
             'questions.*.id' => ['nullable', 'integer'],

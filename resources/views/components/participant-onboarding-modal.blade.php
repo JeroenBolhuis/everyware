@@ -86,7 +86,7 @@
                                     required
                                 >
                                     <option value="">Kies je afdeling</option>
-                                    @foreach (\App\Support\Academies::options() as $academy => $label)
+                                    @foreach (\App\Enums\Academy::options() as $academy => $label)
                                         <option value="{{ $academy }}" @selected(old('academy') === $academy)>
                                             {{ $label }}
                                         </option>
