@@ -2,17 +2,16 @@
 
 use App\Models\User;
 use Laravel\Fortify\Features;
-use Tests\TestCase;
 
 it('renders the login screen', function () {
-    /** @var TestCase $this */
+    /** @var \Tests\TestCase $this */
     $response = $this->get(route('login'));
 
     $response->assertOk();
 });
 
 it('authenticates users via the login screen', function () {
-    /** @var TestCase $this */
+    /** @var \Tests\TestCase $this */
     /** @var User $user */
     $user = User::factory()->create();
 
@@ -29,7 +28,7 @@ it('authenticates users via the login screen', function () {
 });
 
 it('rejects authentication with invalid password', function () {
-    /** @var TestCase $this */
+    /** @var \Tests\TestCase $this */
     /** @var User $user */
     $user = User::factory()->create();
 
@@ -44,7 +43,7 @@ it('rejects authentication with invalid password', function () {
 });
 
 it('redirects users with two factor enabled to two factor challenge', function () {
-    /** @var TestCase $this */
+    /** @var \Tests\TestCase $this */
     if (! Features::canManageTwoFactorAuthentication()) {
         $this->markTestSkipped('Two-factor authentication is not enabled.');
     }
@@ -67,7 +66,7 @@ it('redirects users with two factor enabled to two factor challenge', function (
 });
 
 it('logs out authenticated users', function () {
-    /** @var TestCase $this */
+    /** @var \Tests\TestCase $this */
     /** @var User $user */
     $user = User::factory()->create();
 

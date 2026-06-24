@@ -89,7 +89,7 @@
             action="{{ $isEdit ? route('survey-manager.update', $survey) : route('survey-manager.store') }}"
             class="space-y-4"
             enctype="multipart/form-data"
-            data-blob-upload-url="{{ config('services.vercel.blob_uploads_enabled') ? '/api/blob-upload' : '' }}"
+            data-blob-upload-url="{{ env('VERCEL') && filled(env('BLOB_READ_WRITE_TOKEN')) ? '/api/blob-upload' : '' }}"
             aria-describedby="survey-manager-form-help survey-manager-a11y-status"
         >
             @csrf

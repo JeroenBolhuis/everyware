@@ -1,4 +1,4 @@
-@if (config('services.vercel.enabled'))
+@if (env('VERCEL'))
     <script>
         window.va = window.va || function () {
             (window.vaq = window.vaq || []).push(arguments);

@@ -3,24 +3,27 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
-class ParticipantSurveyMagicLinkMail extends Mailable implements ShouldQueue
+class ParticipantSurveyMagicLinkMail extends Mailable implements ShouldBeEncrypted, ShouldQueueAfterCommit
 {
     use Queueable;
     use SerializesModels;
 
     public int $tries = 3;
 
+    public int $timeout = 30;
+
     public function __construct(
         public string $signedUrl,
-    ) {
-        $this->afterCommit();
-    }
+    ) {}
 
     /**
      * @return array<int, int>
@@ -28,6 +31,13 @@ class ParticipantSurveyMagicLinkMail extends Mailable implements ShouldQueue
     public function backoff(): array
     {
         return [60, 300, 900];
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        Log::error('Participant survey magic link delivery failed.', [
+            'exception_class' => $exception::class,
+        ]);
     }
 
     public function envelope(): Envelope

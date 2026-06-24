@@ -35,9 +35,4 @@ return [
         ],
     ],
 
-    'vercel' => [
-        'enabled' => (bool) env('VERCEL'),
-        'blob_uploads_enabled' => (bool) env('VERCEL') && filled(env('BLOB_READ_WRITE_TOKEN')),
-    ],
-
 ];

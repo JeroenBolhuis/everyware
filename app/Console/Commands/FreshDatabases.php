@@ -57,7 +57,7 @@ class FreshDatabases extends Command
         }
 
         foreach ($tables as $table) {
-            $connection->statement('DROP TABLE IF EXISTS '.$this->wrapIdentifier($table, $driver).($driver === 'pgsql' ? ' CASCADE' : ''));
+            $connection->statement('DROP TABLE IF EXISTS '.$this->wrapIdentifier($table, $driver));
         }
 
         if ($driver === 'mysql') {
@@ -80,12 +80,6 @@ class FreshDatabases extends Command
             ))->map(fn (object $row): string => $row->name)->all();
         }
 
-        if ($driver === 'pgsql') {
-            return collect($connection->select(
-                'SELECT tablename FROM pg_tables WHERE schemaname = current_schema() ORDER BY tablename'
-            ))->map(fn (object $row): string => $row->tablename)->all();
-        }
-
         return collect($connection->select('SHOW FULL TABLES WHERE Table_type = "BASE TABLE"'))
             ->map(fn (object $row): string => array_values((array) $row)[0])
             ->all();
@@ -93,8 +87,6 @@ class FreshDatabases extends Command
 
     private function wrapIdentifier(string $value, string $driver): string
     {
-        return in_array($driver, ['pgsql', 'sqlite'], true)
-            ? '"'.str_replace('"', '""', $value).'"'
-            : '`'.str_replace('`', '``', $value).'`';
+        return $driver === 'sqlite' ? '"'.str_replace('"', '""', $value).'"' : '`'.str_replace('`', '``', $value).'`';
     }
 }

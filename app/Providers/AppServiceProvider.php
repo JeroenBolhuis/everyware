@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureVercelServerless(): void
     {
-        if (! config('services.vercel.enabled')) {
+        if (! getenv('VERCEL')) {
             return;
         }
 
@@ -71,7 +71,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $cacheDirectory = storage_path('framework/views/livewire');
 
-        if (config('services.vercel.enabled')) {
+        if (getenv('VERCEL')) {
             $cacheDirectory = sys_get_temp_dir().DIRECTORY_SEPARATOR.'everyware-livewire-'.md5(base_path());
         }
 
