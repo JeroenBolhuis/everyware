@@ -69,7 +69,7 @@ it('sends participant magic links to unblocked participants', function () {
     $response->assertSessionHas('magicLinkStatus', 'sent');
     // Email is now in the personal DB — look it up via the service.
     expect(participantByEmail('jamie@example.com'))->not->toBeNull();
-    Mail::assertSent(ParticipantSurveyMagicLinkMail::class);
+    Mail::assertQueued(ParticipantSurveyMagicLinkMail::class);
 });
 
 it('does not send magic links to blocked participants', function () {
@@ -83,7 +83,7 @@ it('does not send magic links to blocked participants', function () {
         'email' => 'blocked@example.com',
     ])->assertSessionHas('magicLinkStatus', 'sent');
 
-    Mail::assertNotSent(ParticipantSurveyMagicLinkMail::class);
+    Mail::assertNotQueued(ParticipantSurveyMagicLinkMail::class);
 });
 
 it('verifies signed participant login links and regenerates the session', function () {

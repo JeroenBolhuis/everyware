@@ -6,12 +6,14 @@ on:
       - develop
       - main
       - master
+      - dev
       - workos
   pull_request:
     branches:
       - develop
       - main
       - master
+      - dev
       - workos
 
 jobs:

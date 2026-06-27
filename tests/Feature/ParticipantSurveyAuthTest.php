@@ -32,7 +32,7 @@ it('creates a participant when requesting a magic link for a new email', functio
     // Email lives in the personal DB — use the helper to verify it was created.
     expect(participantByEmail('nieuw@example.com'))->not->toBeNull();
 
-    Mail::assertSent(ParticipantSurveyMagicLinkMail::class, function (ParticipantSurveyMagicLinkMail $mail) {
+    Mail::assertQueued(ParticipantSurveyMagicLinkMail::class, function (ParticipantSurveyMagicLinkMail $mail) {
         return $mail->hasTo('nieuw@example.com')
             && str_contains($mail->signedUrl, 'deelnemer/verify');
     });
