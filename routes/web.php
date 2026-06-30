@@ -1,12 +1,72 @@
 <?php
 
+use App\Http\Controllers\ParticipantOnboardingController;
+use App\Http\Controllers\ParticipantSurveyAuthController;
+use App\Http\Controllers\StudentPointsController;
+use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\SurveyManagerController;
+use App\Http\Controllers\SurveyWithdrawalController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
-    Route::view('enquetes', 'enquetes')->name('enquetes');
+    Route::get('dashboard', function (Request $request) {
+        return redirect()->route($request->user()->homeRouteName());
+    })->name('dashboard');
+});
+Route::middleware(['auth', 'verified', 'role:admin|LICEmployee'])
+    ->prefix('enquetes')
+    ->name('survey-manager.')
+    ->group(function () {
+        Route::get('/', [SurveyManagerController::class, 'index'])->name('index');
+        Route::get('/nieuw', [SurveyManagerController::class, 'create'])->name('create');
+        Route::post('/', [SurveyManagerController::class, 'store'])->name('store');
+        Route::get('/{survey}/bewerken', [SurveyManagerController::class, 'edit'])->name('edit');
+        Route::put('/{survey}', [SurveyManagerController::class, 'update'])->name('update');
+        Route::get('/{survey}/qr-code', [SurveyManagerController::class, 'showQrCode'])->name('qr-code');
+        Route::patch('/{survey}/sluiten', [SurveyManagerController::class, 'close'])->name('close');
+    });
+
+Route::prefix('survey')->name('survey.')->group(function () {
+    Route::get('/thank-you', [SurveyController::class, 'genericThankYou'])->name('thankyou.generic');
+
+    Route::middleware('guest:participant')->group(function () {
+        Route::get('/deelnemer/inloggen', [ParticipantSurveyAuthController::class, 'create'])->name('participant.login');
+        Route::post('/deelnemer/inloggen', [ParticipantSurveyAuthController::class, 'store'])
+            ->middleware('throttle:6,1')
+            ->name('participant.login.store');
+    });
+
+    Route::get('/deelnemer/verify', [ParticipantSurveyAuthController::class, 'verify'])->name('participant.verify');
+
+    Route::middleware(['auth:participant', 'cache.headers:no_store'])->group(function () {
+        Route::post('/deelnemer/uitloggen', [ParticipantSurveyAuthController::class, 'destroy'])->name('participant.logout');
+        Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
+        Route::post('/{survey}', [SurveyController::class, 'store'])->name('store');
+        Route::get('/response/{response}/thank-you', [SurveyController::class, 'thankYou'])->name('thankyou');
+        Route::get('/response/{response}/al-ingevuld', [SurveyController::class, 'alreadyCompleted'])->name('already-completed');
+        Route::post('/response/{response}/contact-toestaan', [SurveyController::class, 'allowContact'])->name('contact-details.store');
+    });
 });
 
+Route::middleware(['auth:participant', 'cache.headers:no_store'])->group(function () {
+    Route::post('/student/onboarding', ParticipantOnboardingController::class)->name('student.onboarding.complete');
+    Route::get('/student/punten', StudentPointsController::class)->name('student.points');
+
+    Route::prefix('s')->name('survey.share.')->group(function () {
+        Route::get('/{token}', [SurveyController::class, 'showByToken'])->name('show');
+        Route::post('/{token}', [SurveyController::class, 'storeByToken'])->middleware('throttle:5,1')->name('store');
+    });
+});
+
+Route::prefix('survey-withdraw')->name('survey.withdraw.')->group(function () {
+    Route::get('/{token}', [SurveyWithdrawalController::class, 'show'])->name('show');
+    Route::post('/{token}', [SurveyWithdrawalController::class, 'destroy'])->name('destroy');
+});
+
+Route::get('/surveys', [SurveyController::class, 'index'])->name('surveys.index');
+
 require __DIR__.'/settings.php';
+require __DIR__.'/admin.php';

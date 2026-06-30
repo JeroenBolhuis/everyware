@@ -15,7 +15,7 @@ beforeEach(function () {
     ]);
 });
 
-test('two factor settings page can be rendered', function () {
+it('renders the two factor settings page', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)
@@ -26,7 +26,7 @@ test('two factor settings page can be rendered', function () {
         ->assertSee('Disabled');
 });
 
-test('two factor settings page requires password confirmation when enabled', function () {
+it('requires password confirmation to access two factor settings', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)
@@ -35,7 +35,7 @@ test('two factor settings page requires password confirmation when enabled', fun
     $response->assertRedirect(route('password.confirm'));
 });
 
-test('two factor settings page returns forbidden response when two factor is disabled', function () {
+it('returns forbidden for two factor settings when feature is disabled', function () {
     config(['fortify.features' => []]);
 
     $user = User::factory()->create();
@@ -47,7 +47,7 @@ test('two factor settings page returns forbidden response when two factor is dis
     $response->assertForbidden();
 });
 
-test('two factor authentication disabled when confirmation abandoned between requests', function () {
+it('disables two factor when confirmation is abandoned between requests', function () {
     $user = User::factory()->create();
 
     $user->forceFill([

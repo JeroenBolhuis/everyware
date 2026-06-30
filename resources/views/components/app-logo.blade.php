@@ -3,15 +3,15 @@
 ])
 
 @if($sidebar)
-    <flux:sidebar.brand name="{{ config('app.name', 'Everyware') }}" {{ $attributes }}>
-        <x-slot name="logo" class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-            <x-app-logo-icon class="size-5 fill-current text-white dark:text-black" />
+    <flux:sidebar.brand name="" {{ $attributes }}>
+        <x-slot name="logo" class="flex h-14 w-36 items-center justify-start overflow-visible">
+            <img src="/images/Avans_Hogeschool_Logo.png" alt="Avans Hogeschool Logo" class="h-8 w-auto max-w-none" />
         </x-slot>
     </flux:sidebar.brand>
 @else
-    <flux:brand name="{{ config('app.name', 'Everyware') }}" {{ $attributes }}>
-        <x-slot name="logo" class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-            <x-app-logo-icon class="size-5 fill-current text-white dark:text-black" />
+    <flux:brand name="" {{ $attributes }}>
+        <x-slot name="logo" class="flex h-14 w-36 items-center justify-start overflow-visible">
+            <img src="/images/Avans_Hogeschool_Logo.png" alt="Avans Hogeschool Logo" class="h-8 w-auto max-w-none" />
         </x-slot>
     </flux:brand>
 @endif

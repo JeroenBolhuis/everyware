@@ -5,12 +5,14 @@ on:
     branches:
       - develop
       - main
+      - dev
       - master
       - workos
   pull_request:
     branches:
       - develop
       - main
+      - dev
       - master
       - workos
 

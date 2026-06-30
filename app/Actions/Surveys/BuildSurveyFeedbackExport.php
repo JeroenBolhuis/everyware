@@ -1,0 +1,121 @@
+<?php
+
+namespace App\Actions\Surveys;
+
+use App\Models\Survey;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use RuntimeException;
+
+class BuildSurveyFeedbackExport
+{
+    private const EMPTY_VALUE = '-';
+
+    private const FORMATS = [
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'csv' => 'text/csv; charset=UTF-8',
+    ];
+
+    private const BASE_HEADERS = [
+        'Inzending ID',
+        'Ingestuurd op',
+        'Status',
+        'Volgnummer',
+    ];
+
+    private const BASE_WIDTHS = [70, 110, 90, 100];
+
+    public function __construct(
+        private readonly BuildSurveyFeedbackWorkbook $buildSurveyFeedbackWorkbook,
+    ) {}
+
+    public function build(Survey $survey, string $format = 'xlsx', bool $includePersonalData = true): string
+    {
+        $data = $this->data($survey);
+
+        return $format === 'csv' ? $this->csv($data) : $this->buildSurveyFeedbackWorkbook->build($data);
+    }
+
+    public function contentType(string $format = 'xlsx'): string
+    {
+        return self::FORMATS[$format] ?? self::FORMATS['xlsx'];
+    }
+
+    public function fileName(Survey $survey, string $format = 'xlsx'): string
+    {
+        $slug = Str::slug($survey->title);
+
+        return 'survey-feedback-'.($slug !== '' ? $slug : 'export').'.'.$format;
+    }
+
+    public function supports(string $format): bool
+    {
+        return isset(self::FORMATS[$format]);
+    }
+
+    private function data(Survey $survey): array
+    {
+        // Laad alles vooraf zodat de export per survey een vaste kolomvolgorde en complete response-data heeft.
+        $survey->loadMissing([
+            'questions',
+            'responses' => fn ($query) => $query->visibleInResults(),
+            'responses.answers',
+            'responses.participant',
+        ]);
+
+        $questions = $survey->questions->sortBy('sort_order')->values();
+
+        return [
+            'sheet' => $this->buildSurveyFeedbackWorkbook->sheetName($survey->title),
+            'headers' => [...self::BASE_HEADERS, ...$questions->pluck('question')->all()],
+            'widths' => [...self::BASE_WIDTHS, ...array_fill(0, $questions->count(), 260)],
+            'rows' => $this->rows($survey, $questions),
+        ];
+    }
+
+    private function rows(Survey $survey, Collection $questions): array
+    {
+        return $survey->responses
+            ->sortByDesc(fn ($response) => $response->submitted_at?->getTimestamp() ?? 0)
+            ->map(function ($response) use ($questions) {
+                $answers = $response->answers->pluck('answer', 'survey_question_id');
+                $baseColumns = [
+                    (string) $response->id,
+                    $response->submitted_at?->format('d-m-Y H:i') ?? self::EMPTY_VALUE,
+                    $response->withdrawn_at ? 'Ingetrokken' : 'Actief',
+                    $this->cellValue($response->participant?->pseudonym()),
+                ];
+
+                return [
+                    ...$baseColumns,
+                    ...$questions->map(fn ($question) => $this->cellValue($answers->get($question->id)))->all(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function cellValue(mixed $value): string
+    {
+        return (string) ($value === null || $value === '' ? self::EMPTY_VALUE : $value);
+    }
+
+    private function csv(array $data): string
+    {
+        $handle = fopen('php://temp', 'r+');
+
+        if ($handle === false) {
+            throw new RuntimeException('Kon het CSV-bestand niet opbouwen.');
+        }
+
+        foreach ([$data['headers'], ...$data['rows']] as $row) {
+            fputcsv($handle, $row, ';');
+        }
+
+        rewind($handle);
+        $content = stream_get_contents($handle);
+        fclose($handle);
+
+        return "\xEF\xBB\xBF".($content ?: '');
+    }
+}

@@ -1,0 +1,1 @@
+@include('survey-manager._form', ['survey' => $survey])

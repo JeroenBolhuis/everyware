@@ -22,3 +22,8 @@ yarn-error.log
 /.vscode
 /.zed
 .vercel
+
+.vercel
+composer.lock
+composer.lock
+composer.lock

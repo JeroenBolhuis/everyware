@@ -3,13 +3,16 @@
 use App\Models\User;
 use Laravel\Fortify\Features;
 
-test('login screen can be rendered', function () {
+it('renders the login screen', function () {
+    /** @var \Tests\TestCase $this */
     $response = $this->get(route('login'));
 
     $response->assertOk();
 });
 
-test('users can authenticate using the login screen', function () {
+it('authenticates users via the login screen', function () {
+    /** @var \Tests\TestCase $this */
+    /** @var User $user */
     $user = User::factory()->create();
 
     $response = $this->post(route('login.store'), [
@@ -24,7 +27,9 @@ test('users can authenticate using the login screen', function () {
     $this->assertAuthenticated();
 });
 
-test('users can not authenticate with invalid password', function () {
+it('rejects authentication with invalid password', function () {
+    /** @var \Tests\TestCase $this */
+    /** @var User $user */
     $user = User::factory()->create();
 
     $response = $this->post(route('login.store'), [
@@ -37,7 +42,8 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
-test('users with two factor enabled are redirected to two factor challenge', function () {
+it('redirects users with two factor enabled to two factor challenge', function () {
+    /** @var \Tests\TestCase $this */
     if (! Features::canManageTwoFactorAuthentication()) {
         $this->markTestSkipped('Two-factor authentication is not enabled.');
     }
@@ -47,6 +53,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
         'confirmPassword' => true,
     ]);
 
+    /** @var User $user */
     $user = User::factory()->withTwoFactor()->create();
 
     $response = $this->post(route('login.store'), [
@@ -58,7 +65,9 @@ test('users with two factor enabled are redirected to two factor challenge', fun
     $this->assertGuest();
 });
 
-test('users can logout', function () {
+it('logs out authenticated users', function () {
+    /** @var \Tests\TestCase $this */
+    /** @var User $user */
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('logout'));

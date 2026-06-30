@@ -1,0 +1,59 @@
+@props([
+    'step',
+    'questionId',
+    'type',
+    'required' => false,
+    'isFirst' => false,
+    'isLast' => false,
+    'question',
+    'currentQuestionNumber',
+    'totalQuestions',
+    'progressPercentage',
+])
+
+<section
+    class="question-step h-auto overflow-visible {{ $isFirst ? '' : 'hidden' }}"
+    data-step="{{ $step }}"
+    data-question-id="{{ $questionId }}"
+    data-type="{{ $type }}"
+    data-required="{{ $required ? '1' : '0' }}"
+    aria-hidden="{{ $isFirst ? 'false' : 'true' }}"
+>
+    <x-surveys.progress-bar
+        :current-question-number="$currentQuestionNumber"
+        :total-questions="$totalQuestions"
+        :progress-percentage="$progressPercentage"
+    />
+
+    <div class="max-h-none overflow-visible rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 class="text-3xl font-semibold text-gray-900 mb-3">
+            {{ $question }}
+        </h2>
+
+        <p class="text-sm text-gray-500 mb-8">
+            {{ $required ? 'Verplicht' : 'Optioneel' }}
+        </p>
+
+        {{ $slot }}
+
+        <div class="flex justify-between items-center mt-8">
+            <div>
+                @if (! $isFirst)
+                    <button
+                        type="button"
+                        class="prev-btn inline-flex items-center justify-center px-6 py-3 rounded-xl bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 transition"
+                    >
+                        Vorige
+                    </button>
+                @endif
+            </div>
+
+            <button
+                type="button"
+                class="next-btn btn-primary min-w-[140px]"
+            >
+                {{ $isLast ? 'Verzenden' : 'Volgende' }}
+            </button>
+        </div>
+    </div>
+</section>

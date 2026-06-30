@@ -23,6 +23,8 @@ services:
         depends_on:
             mysql:
                 condition: service_healthy
+            mysql-personal:
+                condition: service_healthy
         networks:
             - sail
     mysql:
@@ -48,6 +50,41 @@ services:
             timeout: 5s
             start_period: 10s
             interval: 5s
+    mysql-personal:
+        image: 'mysql:8.4'
+        ports:
+            - '${FORWARD_DB_PERSONAL_PORT:-3307}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PERSONAL_PASSWORD}'
+            MYSQL_ROOT_HOST: "%"
+            MYSQL_DATABASE: '${DB_PERSONAL_DATABASE}'
+            MYSQL_USER: '${DB_PERSONAL_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PERSONAL_PASSWORD}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+            MYSQL_EXTRA_OPTIONS: '${MYSQL_PERSONAL_EXTRA_OPTIONS:-}'
+        volumes:
+            - 'sail-mysql-personal:/var/lib/mysql'
+        networks:
+            - sail
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-p${DB_PERSONAL_PASSWORD}"]
+            retries: 3
+            timeout: 5s
+            start_period: 10s
+            interval: 5s
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        ports:
+            - '8080:80'
+        environment:
+            PMA_HOSTS: 'mysql,mysql-personal'
+            PMA_USER: '${DB_USERNAME}'
+            PMA_PASSWORD: '${DB_PASSWORD}'
+        depends_on:
+            - mysql
+            - mysql-personal
+        networks:
+            - sail
 
 networks:
     sail:
@@ -55,4 +92,6 @@ networks:
 
 volumes:
     sail-mysql:
+        driver: local
+    sail-mysql-personal:
         driver: local
